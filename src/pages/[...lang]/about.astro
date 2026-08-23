@@ -1,5 +1,6 @@
 ---
 import { getCollection, render } from 'astro:content'
+import Signature from '@/components/Widgets/Signature.astro'
 import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import Layout from '@/layouts/Layout.astro'
@@ -24,5 +25,7 @@ const { Content } = aboutEntry ? await render(aboutEntry) : { Content: null }
   <!-- About Page Content -->
   <div class="heti">
     {Content && <Content />}
+    <Signature mode="loop" />
+    <div style="clear: both"></div>
   </div>
 </Layout>

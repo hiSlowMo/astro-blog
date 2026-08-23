@@ -10,6 +10,10 @@ interface Translation {
   search: string
   archive: string
   links: string
+  moments: string
+  momentsIntro: string
+  momentsEmpty: string
+  momentsCount: string
   more: string
   searchPlaceholder: string
   searchNoResults: string
@@ -33,6 +37,10 @@ export const ui: Record<Language, Translation> = {
     search: '搜索',
     archive: '归档',
     links: '友链',
+    moments: '说说',
+    momentsIntro: '没长成文章的碎片想法，也值得留档。',
+    momentsEmpty: '还没有说说，去写第一条吧。',
+    momentsCount: '{COUNT} 条记录',
     more: '更多',
     searchPlaceholder: '搜索文章、标签或内容吧~',
     searchNoResults: '没有找到相关结果哦',

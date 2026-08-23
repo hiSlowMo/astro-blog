@@ -1,6 +1,6 @@
 ---
-import { friendLinks } from '@/data/friend-links'
 import { allLocales } from '@/config'
+import { applyRules, friendLinks, siteInfo, websiteLinks } from '@/data/friend-links'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { ui } from '@/i18n/ui'
 import Layout from '@/layouts/Layout.astro'
@@ -17,12 +17,17 @@ const currentUI = ui[currentLang as keyof typeof ui] ?? {}
 
 <Layout>
   <div class="uno-decorative-line" />
-  {friendLinks.length === 0 ? (
+
+  <!-- Friend Links -->
+  <h2 class="mt-6 text-4.5 c-primary font-bold">友情链接</h2>
+  {friendLinks.length === 0
+? (
     <p class="mt-4 c-secondary">{currentUI.linksEmpty}</p>
-  ) : (
+  )
+: (
     <ul class="mt-4 space-y-3">
       {friendLinks.map(link => (
-        <li class="uno-round-border border border-secondary/15 p-4 transition-colors hover:(border-primary/20)">
+        <li class="border uno-round-border border-secondary/15 p-4 transition-colors hover:(border-primary/20)">
           <a
             class="highlight-hover transition-colors after:bottom-0.35em hover:(c-primary font-bold)"
             href={link.url}
@@ -39,4 +44,91 @@ const currentUI = ui[currentLang as keyof typeof ui] ?? {}
       ))}
     </ul>
   )}
+
+  <!-- Website Links -->
+  {websiteLinks.length > 0 && (
+    <>
+      <h2 class="mt-10 text-4.5 c-primary font-bold">网站链接</h2>
+      <ul class="mt-4 space-y-3">
+        {websiteLinks.map(link => (
+          <li class="border uno-round-border border-secondary/15 p-4 transition-colors hover:(border-primary/20)">
+            <a
+              class="highlight-hover transition-colors after:bottom-0.35em hover:(c-primary font-bold)"
+              href={link.url}
+              target="_blank"
+              rel="noopener"
+              data-umami-event="outbound-link-click"
+            >
+              {link.name}
+            </a>
+            {link.description && (
+              <p class="mt-1 text-3.4 c-secondary">{link.description}</p>
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
+  )}
+
+  <!-- Apply -->
+  <h2 class="mt-10 text-4.5 c-primary font-bold">申请友链</h2>
+  <p class="mt-4 text-3.6 c-secondary">本站信息（点击即可复制）：</p>
+  <ul class="mt-3 space-y-2">
+    {siteInfo.map(field => (
+      <li>
+        <button
+          type="button"
+          class="site-info-copy w-full flex cursor-pointer items-baseline gap-3 border uno-round-border border-secondary/15 px-4 py-2.5 text-left font-mono transition-colors hover:(border-primary/25 bg-secondary/5)"
+          data-copy-value={field.value}
+        >
+          <span class="min-w-14 shrink-0 text-3.2 c-secondary op-80">{field.name}</span>
+          <span class="break-all text-3.4 c-primary">{field.value}</span>
+          <span class="copy-feedback ml-auto shrink-0 text-3 c-secondary op-0 transition-opacity" aria-hidden="true">已复制</span>
+        </button>
+      </li>
+    ))}
+  </ul>
+  <p class="mt-6 text-3.6 c-secondary">可在下方留言或发邮件申请友链，几点说明：</p>
+  <ul class="mt-3 list-disc pl-5 text-3.6 c-secondary space-y-1.5">
+    {applyRules.map(rule => (
+      <li>{rule}</li>
+    ))}
+  </ul>
 </Layout>
+
+<script is:inline data-astro-rerun>
+  (function () {
+    function initCopyButtons() {
+      document.querySelectorAll('.site-info-copy').forEach((button) => {
+        if (button.dataset.copyBound === '1') {
+          return
+        }
+        button.dataset.copyBound = '1'
+        button.addEventListener('click', async () => {
+          const value = button.dataset.copyValue || ''
+          try {
+            await navigator.clipboard.writeText(value)
+          }
+          catch {
+            const textarea = document.createElement('textarea')
+            textarea.value = value
+            document.body.appendChild(textarea)
+            textarea.select()
+            document.execCommand('copy')
+            textarea.remove()
+          }
+          const feedback = button.querySelector('.copy-feedback')
+          if (feedback) {
+            feedback.style.opacity = '1'
+            setTimeout(() => {
+              feedback.style.opacity = '0'
+            }, 1200)
+          }
+        })
+      })
+    }
+
+    initCopyButtons()
+    document.addEventListener('astro:page-load', initCopyButtons)
+  })()
+</script>

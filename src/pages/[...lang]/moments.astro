@@ -1,0 +1,79 @@
+---
+import type { CollectionEntry } from 'astro:content'
+import { getCollection, render } from 'astro:content'
+import { allLocales } from '@/config'
+import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
+import { ui } from '@/i18n/ui'
+import Layout from '@/layouts/Layout.astro'
+
+export async function getStaticPaths() {
+  return allLocales.map(lang => ({
+    params: { lang: getLangRouteParam(lang) },
+  }))
+}
+
+const currentLang = getLangFromLocale(Astro.currentLocale)
+const currentUI = ui[currentLang as keyof typeof ui] ?? {}
+
+const allMoments = await getCollection(
+  'moments',
+  ({ data }: CollectionEntry<'moments'>) => import.meta.env.DEV || !data.draft,
+)
+const moments = allMoments.sort(
+  (a, b) => b.data.published.valueOf() - a.data.published.valueOf(),
+)
+const renderedMoments = await Promise.all(
+  moments.map(async (moment) => {
+    const { Content } = await render(moment)
+    return { moment, Content }
+  }),
+)
+
+function formatMomentDate(date: Date) {
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date)
+}
+---
+
+<Layout>
+  <div class="uno-decorative-line" />
+  <p class="mt-4 text-3.6 c-secondary">{currentUI.momentsIntro}</p>
+  {moments.length === 0
+    ? (
+        <p class="mt-6 c-secondary">{currentUI.momentsEmpty}</p>
+      )
+    : (
+        <>
+          <p class="mt-2 text-3.2 c-secondary op-70">
+            {currentUI.momentsCount.replace('{COUNT}', String(moments.length))}
+          </p>
+          <ul class="mt-8 space-y-8">
+            {renderedMoments.map(({ moment, Content }) => (
+              <li class="moment-item border-l-2 border-secondary/15 pl-5 transition-colors hover:border-secondary/40">
+                <time
+                  class="block text-3.2 c-secondary font-mono op-80"
+                  datetime={moment.data.published.toISOString()}
+                >
+                  {formatMomentDate(moment.data.published)}
+                </time>
+                <div class="heti mt-2 text-3.8">
+                  <Content />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+</Layout>
+
+<style>
+.moment-item :global(p) {
+  margin: 0.4em 0;
+}
+</style>

@@ -2,7 +2,7 @@
 import { ui } from '@/i18n/ui'
 import { getPageInfo } from '@/utils/page'
 
-const { currentLang, isHome, isPost, isTag, isAbout, isSearch, isArchive, isLinks, getLocalizedPath } = getPageInfo(Astro.url.pathname)
+const { currentLang, isHome, isPost, isTag, isAbout, isSearch, isArchive, isLinks, isMoments, getLocalizedPath } = getPageInfo(Astro.url.pathname)
 const currentUI = ui[currentLang as keyof typeof ui] ?? {}
 
 const isPostActive = isHome || isPost
@@ -11,7 +11,8 @@ const isAboutActive = isAbout
 const isSearchActive = isSearch
 const isArchiveActive = isArchive
 const isLinksActive = isLinks
-const isMoreActive = isSearchActive || isArchiveActive || isLinksActive
+const isMomentsActive = isMoments
+const isMoreActive = isSearchActive || isArchiveActive || isLinksActive || isMomentsActive
 
 function getNavItemClass(isActive: boolean) {
   return isActive
@@ -60,6 +61,11 @@ const moreItems = [
     href: '/archive/',
     label: currentUI.archive,
     className: getNavMoreItemClass(isArchiveActive),
+  },
+  {
+    href: '/moments/',
+    label: currentUI.moments,
+    className: getNavMoreItemClass(isMomentsActive),
   },
   {
     href: '/links/',
@@ -140,60 +146,63 @@ const moreItems = [
 </nav>
 
 <script is:inline data-astro-rerun>
-  (function () {
-    function initNavMoreToggle() {
-      const nav = document.querySelector('nav[aria-label="Site Navigation"]')
-      if (!nav || nav.dataset.navBound === '1') return
+(function () {
+  function initNavMoreToggle() {
+    const nav = document.querySelector('nav[aria-label="Site Navigation"]')
+    if (!nav || nav.dataset.navBound === '1')
+      return
 
-      const trigger = nav.querySelector('[data-nav-more-trigger]')
-      const panel = nav.querySelector('.nav-more-panel')
-      if (!(trigger instanceof HTMLElement) || !(panel instanceof HTMLElement)) return
+    const trigger = nav.querySelector('[data-nav-more-trigger]')
+    const panel = nav.querySelector('.nav-more-panel')
+    if (!(trigger instanceof HTMLElement) || !(panel instanceof HTMLElement))
+      return
 
-      let isOpen = nav.dataset.navOpen === '1'
+    let isOpen = nav.dataset.navOpen === '1'
 
-      const setOpen = (nextOpen) => {
-        isOpen = nextOpen
-        nav.dataset.navOpen = nextOpen ? '1' : '0'
-        trigger.setAttribute('aria-expanded', nextOpen ? 'true' : 'false')
-        panel.setAttribute('aria-hidden', nextOpen ? 'false' : 'true')
-      }
-
-      const controller = new AbortController()
-
-      trigger.addEventListener('click', () => {
-        setOpen(!isOpen)
-      }, { signal: controller.signal })
-
-      document.addEventListener('keydown', (event) => {
-        if (!isOpen || event.key !== 'Escape') return
-        setOpen(false)
-        trigger.focus()
-      }, { signal: controller.signal })
-
-      setOpen(isOpen)
-      nav.dataset.navBound = '1'
-      nav.__navCleanup = () => {
-        controller.abort()
-        delete nav.dataset.navBound
-        delete nav.__navCleanup
-      }
+    const setOpen = (nextOpen) => {
+      isOpen = nextOpen
+      nav.dataset.navOpen = nextOpen ? '1' : '0'
+      trigger.setAttribute('aria-expanded', nextOpen ? 'true' : 'false')
+      panel.setAttribute('aria-hidden', nextOpen ? 'false' : 'true')
     }
 
-    function cleanupNavMoreToggle() {
-      document.querySelectorAll('nav[aria-label="Site Navigation"]').forEach((nav) => {
-        nav.__navCleanup?.()
-      })
-    }
+    const controller = new AbortController()
 
-    document.addEventListener('astro:page-load', initNavMoreToggle)
-    document.addEventListener('astro:before-swap', cleanupNavMoreToggle)
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initNavMoreToggle, { once: true })
+    trigger.addEventListener('click', () => {
+      setOpen(!isOpen)
+    }, { signal: controller.signal })
+
+    document.addEventListener('keydown', (event) => {
+      if (!isOpen || event.key !== 'Escape')
+        return
+      setOpen(false)
+      trigger.focus()
+    }, { signal: controller.signal })
+
+    setOpen(isOpen)
+    nav.dataset.navBound = '1'
+    nav.__navCleanup = () => {
+      controller.abort()
+      delete nav.dataset.navBound
+      delete nav.__navCleanup
     }
-    else {
-      initNavMoreToggle()
-    }
-  })()
+  }
+
+  function cleanupNavMoreToggle() {
+    document.querySelectorAll('nav[aria-label="Site Navigation"]').forEach((nav) => {
+      nav.__navCleanup?.()
+    })
+  }
+
+  document.addEventListener('astro:page-load', initNavMoreToggle)
+  document.addEventListener('astro:before-swap', cleanupNavMoreToggle)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNavMoreToggle, { once: true })
+  }
+  else {
+    initNavMoreToggle()
+  }
+})()
 </script>
 
 <style>

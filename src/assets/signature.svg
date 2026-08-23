@@ -1,0 +1,9 @@
+<svg width="440" height="130" viewBox="20 20 440 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path seq="1" data-duration="650" d="M 80 48 C 70 36 48 38 44 54 C 40 68 60 74 66 88 C 72 102 54 116 40 108" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path seq="2" data-duration="450" d="M 116 30 C 110 56 102 92 100 110 C 99 116 106 114 112 104" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path seq="3" data-duration="500" d="M 150 82 C 150 70 138 68 130 76 C 122 84 124 102 134 104 C 144 106 152 94 150 84 C 150 92 152 104 162 100" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path seq="4" data-duration="550" d="M 178 76 C 180 88 182 100 184 104 C 188 96 192 84 196 78 C 198 88 200 100 204 104 C 210 96 216 84 218 76 C 218 88 222 102 232 98" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path seq="5" data-duration="700" d="M 262 108 C 268 84 276 56 280 40 C 284 56 290 84 294 100 C 300 82 310 56 316 42 C 320 60 326 92 330 108" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path seq="6" data-duration="500" d="M 372 82 C 372 70 360 68 352 76 C 344 84 346 102 356 104 C 366 106 374 94 372 84 C 372 92 376 104 388 98" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path seq="7" data-duration="750" d="M 120 128 C 200 140 340 140 430 124" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
