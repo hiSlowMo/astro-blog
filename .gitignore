@@ -24,4 +24,7 @@ pnpm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
-"images-raw/" 
+images-raw/
+
+# 私密文章：只留在本机，不进仓库
+private/
