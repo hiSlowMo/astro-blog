@@ -11,7 +11,8 @@ const IGNORE_CLASS_HINTS = [
 ]
 
 function toClassList(value) {
-  if (!value) return []
+  if (!value)
+    return []
   if (Array.isArray(value)) {
     return value.flatMap(item => String(item).split(' '))
   }
@@ -25,7 +26,8 @@ export function rehypePagefindOptimize() {
       const hitClass = classes.some(cls => IGNORE_CLASS_HINTS.some(hint => cls.includes(hint)))
       const hitTag = IGNORE_TAGS.has(node.tagName)
 
-      if (!hitClass && !hitTag) return
+      if (!hitClass && !hitTag)
+        return
 
       node.properties = node.properties || {}
       node.properties['data-pagefind-ignore'] = 'all'

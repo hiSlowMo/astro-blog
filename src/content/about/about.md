@@ -5,14 +5,14 @@ description: 关于 SlowMoBlogs：写什么、为什么写、以及我是谁。
 lang: zh
 ---
 <div style="display: flex; align-items: center; gap: clamp(1rem, 3.2vw, 2rem); margin-bottom: 2rem; flex-wrap: wrap;">
-  <img 
-    src="https://img.theslowmo.com/2026/08/bf1a4df8e1e457061fcc750c054f6691.webp" 
-    alt="SlowMo 头像" 
+  <img
+    src="https://img.theslowmo.com/2026/08/bf1a4df8e1e457061fcc750c054f6691.webp"
+    alt="SlowMo 头像"
     loading="lazy"
     decoding="async"
-    style="width: clamp(96px, 28vw, 150px); height: clamp(96px, 28vw, 150px); border-radius: 1rem; object-fit: cover; flex-shrink: 0; border: 2px solid oklch(var(--un-preset-theme-colors-secondary) / 0.2);" 
+    style="width: clamp(96px, 28vw, 150px); height: clamp(96px, 28vw, 150px); border-radius: 1rem; object-fit: cover; flex-shrink: 0; border: 2px solid oklch(var(--un-preset-theme-colors-secondary) / 0.2);"
   />
-  
+
   <div style="flex: 1 1 260px; min-width: min(100%, 260px);">
     <h3 style="margin-top: 0; margin-bottom: 0.5rem;">你好，这里是开场白。</h3>
     <p style="margin: 0; line-height: 1.7; color: oklch(var(--un-preset-theme-colors-primary) / 0.86); text-wrap: pretty;">
@@ -28,10 +28,10 @@ lang: zh
 - 学习记录（AI / 前端 / 后端 / Rust / 数据库）
 - 各种语言学习历程
 - 一些生活随笔
-- VibeCoding 
+- VibeCoding
 
  :::note[你可以在这些地方找到我：]
- - GitHub：L0ne1y4Ever
+ - GitHub：[hiSlowMo](https://github.com/hiSlowMo)
 - 邮箱：me@theslowmo.com
 :::
 

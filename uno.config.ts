@@ -11,8 +11,7 @@ import { themeConfig } from './src/config.ts'
 
 const { light, dark } = themeConfig.color
 
-
-const fontSans = ['Inter Variable', 'Noto Sans SC Variable','LXGW WenKai Screen','system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Noto Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', 'Arial', 'sans-serif']
+const fontSans = ['Inter Variable', 'Noto Sans SC Variable', 'LXGW WenKai Screen', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Noto Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', 'Arial', 'sans-serif']
 const fontMono = ['JetBrains Mono Variable', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace']
 
 export default defineConfig({

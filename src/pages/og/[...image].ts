@@ -3,6 +3,7 @@ import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import process from 'node:process'
 import { OGImageRoute } from 'astro-og-canvas'
 import { getCollection } from 'astro:content'
 import { shouldIncludePost } from '@/utils/content'
@@ -45,7 +46,7 @@ async function resolveCoverImagePath(cover: string) {
 
   const response = await fetch(cover, {
     headers: {
-      Referer: 'https://theslowmo.com/',
+      'Referer': 'https://theslowmo.com/',
       'User-Agent': 'Mozilla/5.0',
     },
   })

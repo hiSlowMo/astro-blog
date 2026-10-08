@@ -28,6 +28,17 @@ function stripFrontmatter(md) {
   return md
 }
 
+// 与站点保持一致：草稿和私密文章不计入公开统计
+function isPublicPost(md) {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(md)
+  if (!match)
+    return true
+  const frontmatter = match[1]
+  const isDraft = /^draft:\s*true\s*$/m.test(frontmatter)
+  const isPrivate = /^visibility:\s*['"]?private['"]?\s*$/m.test(frontmatter)
+  return !isDraft && !isPrivate
+}
+
 function countCJKAndWords(text) {
   // 简单：中文按字符算；英文按单词算
   const cjk = (text.match(/[\u4E00-\u9FFF]/g) || []).length
@@ -40,13 +51,17 @@ if (!fs.existsSync(postsDir)) {
   process.exit(1)
 }
 
-const mdFiles = walk(postsDir).filter(f => f.toLowerCase().endsWith('.md'))
+const mdFiles = walk(postsDir).filter(f => /\.mdx?$/i.test(f))
 
+let totalPosts = 0
 let totalCJK = 0
 let totalEnWords = 0
 
 for (const file of mdFiles) {
   const raw = fs.readFileSync(file, 'utf8')
+  if (!isPublicPost(raw))
+    continue
+  totalPosts++
   const body = stripFrontmatter(raw)
   const { cjk, enWords } = countCJKAndWords(body)
   totalCJK += cjk
@@ -55,7 +70,7 @@ for (const file of mdFiles) {
 
 const now = new Date()
 const stats = {
-  posts: mdFiles.length,
+  posts: totalPosts,
   totalCJKChars: totalCJK,
   totalEnglishWords: totalEnWords,
   updatedAt: now.toISOString(),
@@ -68,7 +83,7 @@ const stats = {
 }
 
 fs.mkdirSync(outDir, { recursive: true })
-fs.writeFileSync(outFile, JSON.stringify(stats, null, 2), 'utf8')
+fs.writeFileSync(outFile, `${JSON.stringify(stats, null, 2)}\n`, 'utf8')
 
 console.warn('✅ stats generated:', outFile)
 console.warn(stats)

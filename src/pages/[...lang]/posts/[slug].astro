@@ -12,7 +12,7 @@ import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { getPostPath } from '@/i18n/path'
 import Layout from '@/layouts/Layout.astro'
-import { checkPostSlugDuplication, getPostCoverURL, getPostUpdatedAt, getPostsBySeries, shouldIncludePost } from '@/utils/content'
+import { checkPostSlugDuplication, getPostCoverURL, getPostsBySeries, getPostUpdatedAt, shouldIncludePost } from '@/utils/content'
 import { getPostDescription } from '@/utils/description'
 
 export async function getStaticPaths() {

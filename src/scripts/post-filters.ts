@@ -7,7 +7,8 @@ type PostFilterRoot = HTMLElement & {
 
 function initPostFilters() {
   const root = document.querySelector<PostFilterRoot>('[data-posts-root]')
-  if (!root || root.dataset.filterBound === '1') return
+  if (!root || root.dataset.filterBound === '1')
+    return
 
   const triggerLabel = root.querySelector<HTMLElement>('[data-dropdown-label]')
   const sortLabel = root.querySelector<HTMLElement>('.post-sort-label')
@@ -121,6 +122,8 @@ function initPostFilters() {
       .forEach(entry => root.appendChild(entry.section))
   }
 
+  let activeFilterValues: string[] = []
+
   const updatePostState = (filter: string) => {
     updateButtons(filter)
     syncSortLabel()
@@ -138,8 +141,6 @@ function initPostFilters() {
 
     reorderBySortKey()
   }
-
-  let activeFilterValues: string[] = []
 
   const applyFilter = async (filter: string, filterValues: string[] = [], animate: boolean = true) => {
     const requestId = ++transitionRequestId
@@ -186,7 +187,8 @@ function initPostFilters() {
 
   const handleClick = (event: Event) => {
     const target = event.target
-    if (!(target instanceof Element)) return
+    if (!(target instanceof Element))
+      return
 
     const button = target.closest<HTMLElement>('.post-filter-option[data-filter]')
     if (button && root.contains(button)) {

@@ -24,6 +24,8 @@ interface Translation {
   linksEmpty: string
   toc: string
   series: string
+  updatedAt: string
+  readingMinutes: string
 }
 
 export const ui: Record<Language, Translation> = {
@@ -51,5 +53,7 @@ export const ui: Record<Language, Translation> = {
     linksEmpty: '暂无友链',
     toc: '目录',
     series: '系列文章',
+    updatedAt: '更新于 {DATE}',
+    readingMinutes: '{COUNT} 分钟',
   },
 }

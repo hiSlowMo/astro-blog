@@ -504,7 +504,8 @@ const isNonDesktopViewport = window.matchMedia('(max-width: 1535px)')
 
 function initMobileTocPanels() {
   const shell = document.querySelector<MobileTocShell>('[data-mobile-toc-shell]')
-  if (!shell || shell.dataset.mobileTocBound === '1') return
+  if (!shell || shell.dataset.mobileTocBound === '1')
+    return
 
   const controller = new AbortController()
   const trigger = shell.querySelector<HTMLElement>('[data-mobile-panel-trigger]')
@@ -551,7 +552,8 @@ function initMobileTocPanels() {
 
   shell.addEventListener('click', (event) => {
     const target = event.target
-    if (!(target instanceof Element)) return
+    if (!(target instanceof Element))
+      return
 
     if (target.closest('[data-mobile-panel-trigger]')) {
       setOpen(shell.dataset.open !== '1')

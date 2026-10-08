@@ -7,10 +7,12 @@ type ArchiveRoot = HTMLElement & {
 
 function initArchiveInteractions() {
   const root = document.querySelector<ArchiveRoot>('[data-archive-root]')
-  if (!root || root.dataset.archiveBound === '1') return
+  if (!root || root.dataset.archiveBound === '1')
+    return
 
   const yearsContainer = root.querySelector<HTMLElement>('.archive-years')
-  if (!yearsContainer) return
+  if (!yearsContainer)
+    return
 
   const filterLabel = root.querySelector<HTMLElement>('[data-dropdown-label]')
   const sortLabel = root.querySelector<HTMLElement>('.archive-sort-label')
@@ -186,7 +188,8 @@ function initArchiveInteractions() {
 
   root.addEventListener('click', (event) => {
     const target = event.target
-    if (!(target instanceof Element)) return
+    if (!(target instanceof Element))
+      return
 
     const filterButton = target.closest<HTMLElement>('.archive-filter-option[data-filter]')
     if (filterButton && root.contains(filterButton)) {
@@ -205,25 +208,31 @@ function initArchiveInteractions() {
   }, { signal: interactionController.signal })
 
   root.addEventListener('pointerover', (event) => {
-    if (isLayoutAnimating()) return
+    if (isLayoutAnimating())
+      return
 
     const target = event.target
-    if (!(target instanceof Element)) return
+    if (!(target instanceof Element))
+      return
 
     const item = target.closest<HTMLElement>('.archive-item')
-    if (!item || !root.contains(item)) return
+    if (!item || !root.contains(item))
+      return
 
     item.closest<HTMLElement>('.archive-year')?.classList.add('is-active')
   }, { signal: interactionController.signal })
 
   root.addEventListener('pointerout', (event) => {
-    if (isLayoutAnimating()) return
+    if (isLayoutAnimating())
+      return
 
     const target = event.target
-    if (!(target instanceof Element)) return
+    if (!(target instanceof Element))
+      return
 
     const item = target.closest<HTMLElement>('.archive-item')
-    if (!item || !root.contains(item)) return
+    if (!item || !root.contains(item))
+      return
 
     const year = item.closest<HTMLElement>('.archive-year')
     const relatedTarget = event.relatedTarget
@@ -234,19 +243,23 @@ function initArchiveInteractions() {
   }, { signal: interactionController.signal })
 
   root.addEventListener('focusin', (event) => {
-    if (isLayoutAnimating()) return
+    if (isLayoutAnimating())
+      return
 
     const target = event.target
-    if (!(target instanceof Element)) return
+    if (!(target instanceof Element))
+      return
 
     target.closest<HTMLElement>('.archive-item')?.closest<HTMLElement>('.archive-year')?.classList.add('is-active')
   }, { signal: interactionController.signal })
 
   root.addEventListener('focusout', (event) => {
-    if (isLayoutAnimating()) return
+    if (isLayoutAnimating())
+      return
 
     const target = event.target
-    if (!(target instanceof Element)) return
+    if (!(target instanceof Element))
+      return
 
     const year = target.closest<HTMLElement>('.archive-item')?.closest<HTMLElement>('.archive-year')
     const relatedTarget = event.relatedTarget

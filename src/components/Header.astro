@@ -15,6 +15,7 @@ const SubtitleTag = isPost ? 'div' : 'h2'
 ---
 
 <header
+  id="site-header"
   class:list={[
     'lg:(uno-desktop-column top-20) cjk:tracking-wide',
     isPost
@@ -27,7 +28,7 @@ const SubtitleTag = isPost ? 'div' : 'h2'
       'font-bold font-title',
       isPost
         ? `mb-1.5 mt-1.2 text-5.375 c-secondary lg:(mb-1.8 mt-0 text-9 c-primary)`
-        : `mb-1.8 w-75% text-8 c-primary lg:(w-full text-9)`,
+        : `mb-1.8 text-8 c-primary cjk:break-keep lg:text-9`,
     ]}
   >
     <!-- Fix text cropping issues during view transition on iOS by adding a div tag -->
@@ -48,7 +49,7 @@ const SubtitleTag = isPost ? 'div' : 'h2'
   {headerSubtitle && (
     <SubtitleTag
       class:list={[
-        'text-3.5 c-secondary font-navbar lg:text-4',
+        'whitespace-pre-line text-3.5 c-secondary font-navbar lg:text-4',
         isPost
         ? 'hidden lg:block'
         : 'w-75% lg:w-full',

@@ -27,7 +27,7 @@ const isHome = isHomePage(Astro.url.pathname)
     return (
       <li
         class:list={[
-          'post-item mb-4',
+          'post-item mb-4 lg:(flex flex-wrap items-baseline gap-x-2.5)',
           isHome ? 'lg:mb-6' : '',
         ]}
         data-tags={tags.join(',')}
@@ -39,8 +39,8 @@ const isHome = isHomePage(Astro.url.pathname)
         <h3 class="inline-flex flex-wrap items-center gap-x-2 gap-y-1 transition-colors hover:c-primary">
           <a
             class:list={[
-              'cjk:tracking-wide',
-              isHome ? 'lg:font-medium lg:text-4.5' : '',
+              'text-pretty cjk:tracking-wide',
+              isHome ? 'sm:(font-medium text-4.5)' : '',
             ]}
             href={getPostPath(slug, lang)}
             transition:name={`post-${slug}${lang ? `-${lang}` : ''}`}
@@ -77,7 +77,7 @@ const isHome = isHomePage(Astro.url.pathname)
         </div>
 
         {/* desktop post time */}
-        <div class="hidden text-3.65 font-time lg:(ml-2.5 inline)">
+        <div class="hidden whitespace-nowrap text-3.65 font-time lg:block">
           <PostDate
             date={post.data.published}
             minutes={post.remarkPluginFrontmatter.minutes}
@@ -87,7 +87,7 @@ const isHome = isHomePage(Astro.url.pathname)
         {/* desktop post description */}
         {isHome && (
           <div
-            class="heti hidden lg:(mt-2.25 block)"
+            class="heti hidden lg:(mt-2.25 basis-full) sm:(mt-1 block)"
           >
             <p>{getPostDescription(post, 'list')}</p>
           </div>

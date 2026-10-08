@@ -39,7 +39,7 @@ const ignoredKeys = new Set([
 
 const clickSelector = clickTargets.join(',')
 const typingSelector = typingTargets.join(',')
-type NavigatorConnection = {
+interface NavigatorConnection {
   saveData?: boolean
   effectiveType?: string
 }
@@ -67,7 +67,7 @@ class SoundEffectManager {
   constructor() {
     const connection = (navigator as Navigator & { connection?: NavigatorConnection }).connection
     const saveDataEnabled = Boolean(connection?.saveData)
-    const slowConnection = typeof connection?.effectiveType === 'string' && /(^|-)2g$/.test(connection.effectiveType)
+    const slowConnection = typeof connection?.effectiveType === 'string' && /(?:^|-)2g$/.test(connection.effectiveType)
     this.shouldPreload = !isMobileDevice() && !saveDataEnabled && !slowConnection
   }
 

@@ -59,6 +59,7 @@ const uptimeDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60
 ---
 
 <footer
+  id="site-footer"
   class="text-3 leading-1.25em font-navbar"
   lg="uno-desktop-column bottom-20 text-3.5"
 >
@@ -75,7 +76,7 @@ const uptimeDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60
     © {year} {author}
   </p>
 
-  <p>
+  <p class="footer-stats">
   运行 <span data-uptime-days data-start-date={themeConfig.site.startDate}>{uptimeDays}</span> 天 · 文章 {stats.posts} 篇 · 中文 {stats.totalCJKChars} 字 · 英文 {stats.totalEnglishWords} 词 · 统计更新 {statsDate}
   </p>
 

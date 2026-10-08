@@ -11,7 +11,7 @@ tags:
 categories:
   - 代码日常
   - 随笔
-series: SlowMi 与 AI 部署
+series: SlowMi 与树莓派
 status: completed
 draft: false
 pin: 0

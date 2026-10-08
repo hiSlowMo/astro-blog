@@ -12,7 +12,7 @@ const isSearchActive = isSearch
 const isArchiveActive = isArchive
 const isLinksActive = isLinks
 const isMomentsActive = isMoments
-const isMoreActive = isSearchActive || isArchiveActive || isLinksActive || isMomentsActive
+const isMoreActive = isSearchActive || isArchiveActive || isLinksActive || isTagActive
 
 function getNavItemClass(isActive: boolean) {
   return isActive
@@ -39,9 +39,9 @@ const navItems = [
     className: getNavItemClass(isPostActive),
   },
   {
-    href: '/tags/',
-    label: currentUI.tags,
-    className: getNavItemClass(isTagActive),
+    href: '/moments/',
+    label: currentUI.moments,
+    className: getNavItemClass(isMomentsActive),
   },
   {
     href: '/about/',
@@ -63,9 +63,9 @@ const moreItems = [
     className: getNavMoreItemClass(isArchiveActive),
   },
   {
-    href: '/moments/',
-    label: currentUI.moments,
-    className: getNavMoreItemClass(isMomentsActive),
+    href: '/tags/',
+    label: currentUI.tags,
+    className: getNavMoreItemClass(isTagActive),
   },
   {
     href: '/links/',
@@ -76,6 +76,7 @@ const moreItems = [
 ---
 
 <nav
+  id="site-nav"
   aria-label="Site Navigation"
   data-nav-open={isMoreActive ? '1' : '0'}
   class:list={[

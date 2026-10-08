@@ -79,7 +79,7 @@ export const themeConfig: ThemeConfig = {
     // giscus
     // https://giscus.app/
     giscus: {
-      repo: 'L0ne1y4Ever/astro-blog',
+      repo: 'hiSlowMo/astro-blog',
       repoId: 'R_kgDORQRiqA',
       category: 'General',
       categoryId: 'DIC_kwDORQRiqM4C2fHT',
@@ -164,7 +164,7 @@ export const themeConfig: ThemeConfig = {
       },
       {
         name: 'GitHub',
-        url: 'https://github.com/L0ne1y4Ever',
+        url: 'https://github.com/hiSlowMo',
       },
       {
         name: 'Email',

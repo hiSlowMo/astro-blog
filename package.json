@@ -3,10 +3,11 @@
   "type": "module",
   "version": "1.0.0",
   "packageManager": "pnpm@10.26.0",
-  "repository": "https://github.com/L0ne1y4Ever/astro-blog",
+  "repository": "https://github.com/hiSlowMo/astro-blog",
   "scripts": {
     "stats": "node src/tools/gen-stats.mjs",
-    "dev": "pnpm stats && astro check && astro dev",
+    "dev": "pnpm stats && astro dev",
+    "check": "astro check",
     "build": "pnpm stats && astro check && astro build && pnpm apply-lqip && pagefind --site dist --force-language zh --quiet",
     "preview": "astro preview",
     "astro": "astro",

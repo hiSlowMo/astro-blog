@@ -1,9 +1,9 @@
 ---
-import { ui } from '@/i18n/ui'
-import { getPageInfo } from '@/utils/page'
+import type { TocPanelProps, TocSeriesItem } from '@/components/Widgets/toc-shared'
 import TOCDesktop from '@/components/Widgets/TOCDesktop.astro'
 import TOCMobile from '@/components/Widgets/TOCMobile.astro'
-import type { TocPanelProps, TocSeriesItem } from '@/components/Widgets/toc-shared'
+import { ui } from '@/i18n/ui'
+import { getPageInfo } from '@/utils/page'
 
 interface Props {
   headings: TocPanelProps['filteredHeadings']

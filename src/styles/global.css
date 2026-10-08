@@ -189,3 +189,33 @@ html.dark .code-copy-button.copied {
   display: block;
   flex: none;
 }
+
+/* Short Desktop Viewports >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
+/* 右栏的标题、导航、按钮行、页脚都是 fixed 定位，视口矮于约 700px 时（如 1366×768 或 150% 缩放的 1080p 笔记本）会互相重叠。
+   这里收紧上下留白与导航行距、暂时隐藏统计信息，让整列在 ~540px 高度内放得下。 */
+@media (min-width: 1024px) and (max-height: 720px) {
+  html #site-header {
+    top: 2.5rem;
+  }
+  html #site-nav {
+    bottom: 9rem;
+    margin-bottom: 0;
+    line-height: 2.15em;
+  }
+  html #site-utility {
+    bottom: 7.25rem;
+  }
+  html #site-footer {
+    bottom: 2.5rem;
+  }
+  html #site-footer .footer-stats {
+    display: none;
+  }
+}
+
+/* 更矮时连副标题一起让位，只保留站名 */
+@media (min-width: 1024px) and (max-height: 560px) {
+  html #site-header > :not(:first-child) {
+    display: none;
+  }
+}

@@ -1,6 +1,4 @@
 import type { CollectionEntry } from 'astro:content'
-import { existsSync, statSync } from 'node:fs'
-import path from 'node:path'
 import type { Language } from '@/i18n/config'
 import type { Post } from '@/types'
 import { getCollection, render } from 'astro:content'
@@ -8,7 +6,6 @@ import { base, defaultLocale } from '@/config'
 import { memoize } from '@/utils/cache'
 
 const metaCache = new Map<string, { minutes: number }>()
-const postsRoot = path.resolve(process.cwd(), 'src/content/posts')
 const postStatusLabelMap = {
   idea: '想法',
   ongoing: '进行中',
@@ -29,37 +26,9 @@ export function shouldIncludePost(
   return includeHidden || isPostPublic(data)
 }
 
-function resolvePostFilePath(id: string) {
-  const normalized = id.replace(/\\/g, '/')
-  const basePath = path.resolve(postsRoot, normalized)
-  if (/\.(md|mdx)$/.test(basePath) && existsSync(basePath)) {
-    return basePath
-  }
-  const mdPath = `${basePath}.md`
-  if (existsSync(mdPath)) {
-    return mdPath
-  }
-  const mdxPath = `${basePath}.mdx`
-  if (existsSync(mdxPath)) {
-    return mdxPath
-  }
-  return ''
-}
-
+// 只认 frontmatter 里显式写的更新时间：文件 mtime 在 Vercel 上等于部署时间，会让所有文章都显示“刚更新”
 export function getPostUpdatedAt(post: CollectionEntry<'posts'>) {
-  if (post.data.updated) {
-    return post.data.updated
-  }
-  const filePath = resolvePostFilePath(post.id)
-  if (!filePath) {
-    return post.data.published
-  }
-  try {
-    return statSync(filePath).mtime
-  }
-  catch {
-    return post.data.published
-  }
+  return post.data.updated
 }
 
 export function getPostStatusLabel(status?: CollectionEntry<'posts'>['data']['status']) {

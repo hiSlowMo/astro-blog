@@ -45,7 +45,7 @@
 
 /* Paragraphs */
 .heti :where(p:not(.no-heti):not(.no-heti *)) {
-  --at-apply: 'mb-4 text-pretty cjk:text-justify c-primary/92';
+  --at-apply: 'mb-4 text-pretty leading-[1.75] cjk:text-justify c-primary/92';
   font-weight: 430;
 }
 
@@ -182,7 +182,7 @@ html.dark .heti pre span {
 
 /* Lists */
 .heti :where(ul, ol) {
-  --at-apply: 'my-6 pl-2em';
+  --at-apply: 'my-6 pl-2em leading-[1.75]';
 }
 .heti :where(ul, ol) :where(ul, ol) {
   --at-apply: 'mb-0.25em mt-0';

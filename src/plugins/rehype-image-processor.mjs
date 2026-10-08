@@ -29,11 +29,11 @@ function normalizeCssSize(value) {
     return SIZE_KEYWORD_MAP[normalized]
   }
 
-  if (/^\d+(\.\d+)?$/.test(normalized)) {
+  if (/^\d+(?:\.\d+)?$/.test(normalized)) {
     return `${normalized}px`
   }
 
-  if (/^\d+(\.\d+)?(px|%|rem|em|vw|vh|vmin|vmax|ch|ex)$/.test(normalized)) {
+  if (/^\d+(?:\.\d+)?(?:px|%|rem|em|vw|vh|vmin|vmax|ch|ex)$/.test(normalized)) {
     return normalized
   }
 

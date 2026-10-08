@@ -4,8 +4,8 @@ import LanguageSwitcherIcon from '@/assets/icons/language-switcher.svg'
 import ThemeToggleIcon from '@/assets/icons/theme-toggle.svg'
 import TopIcon from '@/assets/icons/top-icon.svg'
 import { moreLocales, themeConfig } from '@/config'
-import { isPostPage } from '@/utils/page'
 import { getNextGlobalLangPath, getNextSupportedLangPath } from '@/i18n/path'
+import { isPostPage } from '@/utils/page'
 
 interface Props {
   supportedLangs: Language[]
@@ -38,6 +38,7 @@ const showPostShortcuts = isPost
 ---
 
 <div
+  id="site-utility"
   class:list={[
   'fixed bottom-24 right-[min(7.25vw,3.731rem)] z-30 flex items-center gap-4 min-[823px]:max-lg:right-[calc(50vw-22rem)]',
 
@@ -67,7 +68,7 @@ const showPostShortcuts = isPost
     data-light-mode={lightMode}
     data-dark-mode={darkMode}
     aria-label="Switch light/dark theme"
-    >
+  >
       <ThemeToggleIcon
         aria-hidden="true"
         class="floating-utility-button__icon"
@@ -238,5 +239,48 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', han
     width: 1.16rem;
     height: 1.16rem;
     transform: translateY(-0.01rem);
+  }
+
+  /* 触屏与窄屏：收进与目录按钮同款的玻璃胶囊，放大点击区域，并与左下角目录按钮对称 */
+  @media (max-width: 1023.98px) {
+    #site-utility {
+      --utility-offset-bottom: calc(8.25rem + env(safe-area-inset-bottom));
+      right: max(0.75rem, calc(env(safe-area-inset-right) + 0.7rem));
+      bottom: var(--utility-offset-bottom);
+      gap: 0.125rem;
+      padding: 0.19rem;
+      border: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
+      border-radius: 0.95rem;
+      background:
+        linear-gradient(180deg, rgb(255 255 255 / 0.09), transparent 56%),
+        oklch(var(--un-preset-theme-colors-background) / 0.55);
+      box-shadow:
+        0 18px 32px oklch(0 0 0 / 0.15),
+        inset 0 1px 0 rgb(255 255 255 / 0.13);
+      backdrop-filter: blur(20px) saturate(165%);
+      -webkit-backdrop-filter: blur(20px) saturate(165%);
+    }
+
+    .floating-utility-button {
+      width: 2.18rem;
+      height: 2.18rem;
+      border-radius: 0.75rem;
+    }
+
+    .floating-utility-button:hover {
+      background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.08);
+    }
+
+    .floating-utility-button:focus-visible {
+      outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.45);
+      outline-offset: 1px;
+    }
+  }
+
+  /* 与目录按钮在触屏平板上的位置保持一致 */
+  @media (min-width: 769px) and (max-width: 1023.98px) and (hover: none) and (pointer: coarse) {
+    #site-utility {
+      --utility-offset-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    }
   }
 </style>

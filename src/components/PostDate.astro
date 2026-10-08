@@ -1,7 +1,8 @@
 ---
 import type { ThemeConfig } from '@/types'
 import { themeConfig } from '@/config'
-import { isPostPage } from '@/utils/page'
+import { ui } from '@/i18n/ui'
+import { getPageInfo } from '@/utils/page'
 
 type DateFormat = ThemeConfig['global']['dateFormat']
 
@@ -13,8 +14,14 @@ interface Props {
 
 const { date, updatedDate, minutes } = Astro.props
 const { dateFormat: format } = themeConfig.global
-const isPost = isPostPage(Astro.url.pathname)
+const { currentLang, isPost } = getPageInfo(Astro.url.pathname)
+const currentUI = ui[currentLang as keyof typeof ui] ?? {}
 const timeSpacingClass = isPost ? 'ml-1.75' : 'ml-1.5'
+
+// 同一天内的修订不算“更新”
+const showUpdated = updatedDate
+  && formatDate(updatedDate, 'YYYY-MM-DD') !== formatDate(date, 'YYYY-MM-DD')
+const readingLabel = currentUI.readingMinutes?.replace('{COUNT}', String(minutes)) ?? `${minutes} min`
 
 function formatDate(date: Date, format: DateFormat) {
   if (format === 'YYYY-MM-DD') {
@@ -65,16 +72,16 @@ function formatDate(date: Date, format: DateFormat) {
 </time>
 
 <!-- updated date -->
-{updatedDate && (
+{showUpdated && updatedDate && (
   <time
     datetime={updatedDate.toISOString().split('T')[0]}
     class={timeSpacingClass}
   >
-    updated {formatDate(updatedDate, format)}
+    {currentUI.updatedAt?.replace('{DATE}', formatDate(updatedDate, format)) ?? `updated ${formatDate(updatedDate, format)}`}
   </time>
 )}
 
 <!-- reading time -->
 <span class={timeSpacingClass}>
-  {minutes} min
+  {readingLabel}
 </span>

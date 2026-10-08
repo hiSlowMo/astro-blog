@@ -1,4 +1,4 @@
-import { MOTION_EASING_STANDARD, getMotionDuration, prefersReducedMotion } from '@/scripts/motion'
+import { getMotionDuration, MOTION_EASING_STANDARD, prefersReducedMotion } from '@/scripts/motion'
 
 const MOTION_EASING = MOTION_EASING_STANDARD
 const MOTION_DURATION = getMotionDuration('slow')

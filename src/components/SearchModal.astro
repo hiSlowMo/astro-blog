@@ -69,261 +69,285 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
   type="module"
   is:inline
   data-astro-rerun
-  define:vars={{ pagefindBase, pagefindTranslations, pagefindNotReady, isProd }}
+  define:vars={{ pagefindBase, pagefindTranslations, isProd }}
 >
-  (function () {
-    const modal = document.querySelector('[data-search-modal]')
-    if (!modal) return
+(function () {
+  const modal = document.querySelector('[data-search-modal]')
+  if (!modal)
+    return
 
-    const state = globalThis.__searchModalState || {
-      bound: false,
-      modal: null,
-      lastActive: null,
-      pagefindReady: false,
-      pagefindLoading: null,
-      resizeObserver: null,
-      pendingResizeFrame: null,
-      lastDialogHeight: 0,
-      pagefindBase,
-      pagefindTranslations,
-      isProd,
-      notReadyText: '',
-      autoOpen: false,
-      setOpen: null,
-      ensurePagefind: null,
-      focusInput: null,
-      openModal: null,
-      closeModal: null,
-      handleClick: null,
-      handleKeydown: null,
-      handleSearchOpen: null,
-      handleSearchIntent: null,
-      syncDialogHeight: null,
-      scheduleDialogResize: null,
+  const state = globalThis.__searchModalState || {
+    bound: false,
+    modal: null,
+    lastActive: null,
+    pagefindReady: false,
+    pagefindLoading: null,
+    resizeObserver: null,
+    pendingResizeFrame: null,
+    lastDialogHeight: 0,
+    pagefindBase,
+    pagefindTranslations,
+    isProd,
+    notReadyText: '',
+    autoOpen: false,
+    setOpen: null,
+    ensurePagefind: null,
+    focusInput: null,
+    openModal: null,
+    closeModal: null,
+    handleClick: null,
+    handleKeydown: null,
+    handleSearchOpen: null,
+    handleSearchIntent: null,
+    syncDialogHeight: null,
+    scheduleDialogResize: null,
+  }
+
+  const previousModal = state.modal
+  state.modal = modal
+  state.pagefindBase = pagefindBase
+  state.pagefindTranslations = pagefindTranslations
+  state.isProd = isProd
+  state.notReadyText = modal.getAttribute('data-not-ready') || 'Search index is not ready.'
+  state.autoOpen = modal.getAttribute('data-auto-open') === '1'
+
+  if (previousModal && previousModal !== modal) {
+    state.pagefindReady = false
+    state.pagefindLoading = null
+    if (state.resizeObserver) {
+      state.resizeObserver.disconnect()
+      state.resizeObserver = null
+    }
+  }
+
+  globalThis.__searchModalState = state
+
+  const getModal = () => state.modal
+
+  if (!state.bound) {
+    state.setOpen = (nextOpen) => {
+      const modal = getModal()
+      if (!modal)
+        return
+      modal.dataset.open = nextOpen ? '1' : '0'
+      modal.setAttribute('aria-hidden', nextOpen ? 'false' : 'true')
+      document.documentElement.classList.toggle('search-modal-open', nextOpen)
     }
 
-    const previousModal = state.modal
-    state.modal = modal
-    state.pagefindBase = pagefindBase
-    state.pagefindTranslations = pagefindTranslations
-    state.isProd = isProd
-    state.notReadyText = modal.getAttribute('data-not-ready') || 'Search index is not ready.'
-    state.autoOpen = modal.getAttribute('data-auto-open') === '1'
+    state.ensurePagefind = async () => {
+      if (!state.isProd || state.pagefindReady)
+        return
+      if (state.pagefindLoading)
+        return state.pagefindLoading
 
-    if (previousModal && previousModal !== modal) {
-      state.pagefindReady = false
-      state.pagefindLoading = null
+      const modal = getModal()
+      if (!modal)
+        return
+      const container = modal.querySelector('#pagefind-modal')
+      if (!container)
+        return
+
+      const fallbackMarkup = container.innerHTML
+
+      state.pagefindLoading = (async () => {
+        try {
+          let link = document.querySelector('link[data-pagefind-ui]')
+          if (!link) {
+            link = document.createElement('link')
+            link.rel = 'stylesheet'
+            link.href = `${state.pagefindBase}/pagefind-ui.css`
+            link.dataset.pagefindUi = '1'
+            document.head.appendChild(link)
+          }
+
+          await import(`${state.pagefindBase}/pagefind-ui.js`)
+
+          const { PagefindUI } = globalThis
+          if (!PagefindUI)
+            throw new Error('PagefindUI is not available on globalThis')
+
+          container.innerHTML = ''
+          void new PagefindUI({
+            element: '#pagefind-modal',
+            showSubResults: true,
+            debounceTimeoutMs: 320,
+            excerptLength: 18,
+            resetStyles: false,
+            translations: state.pagefindTranslations,
+          })
+          state.pagefindReady = true
+        }
+        catch (error) {
+          if (!container.innerHTML) {
+            container.innerHTML = fallbackMarkup || `<p class="pagefind-fallback">${state.notReadyText}</p>`
+          }
+          console.warn('[Pagefind] Failed to load search assets:', error)
+        }
+        finally {
+          if (!state.pagefindReady) {
+            state.pagefindLoading = null
+          }
+        }
+      })()
+
+      return state.pagefindLoading
+    }
+
+    state.focusInput = () => {
+      const modal = getModal()
+      if (!modal)
+        return
+      const input
+        = modal.querySelector('.pagefind-ui__search-input')
+          || modal.querySelector('.pagefind-fallback-input')
+      if (input)
+        input.focus()
+    }
+
+    state.syncDialogHeight = () => {
+      const modal = getModal()
+      if (!modal || modal.dataset.open !== '1')
+        return
+      const dialog = modal.querySelector('.search-modal__dialog')
+      const innerContainer = modal.querySelector('#pagefind-modal')
+      if (!dialog || !innerContainer)
+        return
+
+      const modalStyle = getComputedStyle(modal)
+      const paddingTop = Number.parseFloat(modalStyle.paddingTop) || 0
+      const paddingBottom = Number.parseFloat(modalStyle.paddingBottom) || 0
+      const maxH = Math.max(0, modal.clientHeight - paddingTop - paddingBottom)
+      const targetH = Math.min(innerContainer.scrollHeight + 2, maxH)
+      if (Math.abs(targetH - state.lastDialogHeight) < 1)
+        return
+
+      state.lastDialogHeight = targetH
+      dialog.style.height = `${targetH}px`
+    }
+
+    state.scheduleDialogResize = () => {
+      if (state.pendingResizeFrame !== null)
+        return
+      state.pendingResizeFrame = requestAnimationFrame(() => {
+        state.pendingResizeFrame = null
+        state.syncDialogHeight()
+      })
+    }
+
+    state.openModal = async () => {
+      const modal = getModal()
+      if (!modal)
+        return
+      if (modal.dataset.open === '1')
+        return
+      state.lastActive = document.activeElement
+
+      state.setOpen(true)
+
+      // === 核心动画逻辑：开启 ResizeObserver ===
+      const dialog = modal.querySelector('.search-modal__dialog')
+      const innerContainer = modal.querySelector('#pagefind-modal')
+
+      if (dialog && innerContainer && typeof ResizeObserver !== 'undefined') {
+        if (state.resizeObserver) {
+          state.resizeObserver.disconnect()
+        }
+        state.resizeObserver = new ResizeObserver(() => {
+          if (modal.dataset.open !== '1')
+            return
+          state.scheduleDialogResize()
+        })
+        // 开始监听内容高度
+        state.resizeObserver.observe(innerContainer)
+      }
+      state.scheduleDialogResize()
+
+      await state.ensurePagefind()
+      state.scheduleDialogResize()
+      requestAnimationFrame(() => state.focusInput())
+    }
+
+    state.closeModal = () => {
+      const modal = getModal()
+      if (!modal)
+        return
+      if (modal.dataset.open !== '1')
+        return
+      state.setOpen(false)
+
+      // 关闭时断开监听，并重置高度为初始状态 (单行搜索框的高度)
       if (state.resizeObserver) {
         state.resizeObserver.disconnect()
         state.resizeObserver = null
       }
+      if (state.pendingResizeFrame !== null) {
+        cancelAnimationFrame(state.pendingResizeFrame)
+        state.pendingResizeFrame = null
+      }
+      const dialog = modal.querySelector('.search-modal__dialog')
+      if (dialog)
+        dialog.style.height = ''
+      state.lastDialogHeight = 0
+
+      if (state.lastActive && typeof state.lastActive.focus === 'function') {
+        state.lastActive.focus()
+      }
     }
 
-    globalThis.__searchModalState = state
+    state.handleClick = (event) => {
+      const target = event.target
+      if (!(target instanceof Element))
+        return
 
-    const getModal = () => state.modal
-
-    if (!state.bound) {
-      state.setOpen = (nextOpen) => {
-        const modal = getModal()
-        if (!modal) return
-        modal.dataset.open = nextOpen ? '1' : '0'
-        modal.setAttribute('aria-hidden', nextOpen ? 'false' : 'true')
-        document.documentElement.classList.toggle('search-modal-open', nextOpen)
-      }
-
-      state.ensurePagefind = async () => {
-        if (!state.isProd || state.pagefindReady) return
-        if (state.pagefindLoading) return state.pagefindLoading
-
-        const modal = getModal()
-        if (!modal) return
-        const container = modal.querySelector('#pagefind-modal')
-        if (!container) return
-
-        const fallbackMarkup = container.innerHTML
-
-        state.pagefindLoading = (async () => {
-          try {
-            let link = document.querySelector('link[data-pagefind-ui]')
-            if (!link) {
-              link = document.createElement('link')
-              link.rel = 'stylesheet'
-              link.href = `${state.pagefindBase}/pagefind-ui.css`
-              link.dataset.pagefindUi = '1'
-              document.head.appendChild(link)
-            }
-
-            await import(`${state.pagefindBase}/pagefind-ui.js`)
-
-            const { PagefindUI } = globalThis
-            if (!PagefindUI) throw new Error('PagefindUI is not available on globalThis')
-
-            container.innerHTML = ''
-            void new PagefindUI({
-              element: '#pagefind-modal',
-              showSubResults: true,
-              debounceTimeoutMs: 320,
-              excerptLength: 18,
-              resetStyles: false,
-              translations: state.pagefindTranslations,
-            })
-            state.pagefindReady = true
-          }
-          catch (error) {
-            if (!container.innerHTML) {
-              container.innerHTML = fallbackMarkup || `<p class="pagefind-fallback">${state.notReadyText}</p>`
-            }
-            console.warn('[Pagefind] Failed to load search assets:', error)
-          }
-          finally {
-            if (!state.pagefindReady) {
-              state.pagefindLoading = null
-            }
-          }
-        })()
-
-        return state.pagefindLoading
-      }
-
-      state.focusInput = () => {
-        const modal = getModal()
-        if (!modal) return
-        const input =
-          modal.querySelector('.pagefind-ui__search-input') ||
-          modal.querySelector('.pagefind-fallback-input')
-        if (input) input.focus()
-      }
-
-      state.syncDialogHeight = () => {
-        const modal = getModal()
-        if (!modal || modal.dataset.open !== '1') return
-        const dialog = modal.querySelector('.search-modal__dialog')
-        const innerContainer = modal.querySelector('#pagefind-modal')
-        if (!dialog || !innerContainer) return
-
-        const modalStyle = getComputedStyle(modal)
-        const paddingTop = Number.parseFloat(modalStyle.paddingTop) || 0
-        const paddingBottom = Number.parseFloat(modalStyle.paddingBottom) || 0
-        const maxH = Math.max(0, modal.clientHeight - paddingTop - paddingBottom)
-        const targetH = Math.min(innerContainer.scrollHeight + 2, maxH)
-        if (Math.abs(targetH - state.lastDialogHeight) < 1) return
-
-        state.lastDialogHeight = targetH
-        dialog.style.height = `${targetH}px`
-      }
-
-      state.scheduleDialogResize = () => {
-        if (state.pendingResizeFrame !== null) return
-        state.pendingResizeFrame = requestAnimationFrame(() => {
-          state.pendingResizeFrame = null
-          state.syncDialogHeight()
-        })
-      }
-
-      state.openModal = async () => {
-        const modal = getModal()
-        if (!modal) return
-        if (modal.dataset.open === '1') return
-        state.lastActive = document.activeElement
-
-        state.setOpen(true)
-
-        // === 核心动画逻辑：开启 ResizeObserver ===
-        const dialog = modal.querySelector('.search-modal__dialog')
-        const innerContainer = modal.querySelector('#pagefind-modal')
-
-        if (dialog && innerContainer && typeof ResizeObserver !== 'undefined') {
-          if (state.resizeObserver) {
-            state.resizeObserver.disconnect()
-          }
-          state.resizeObserver = new ResizeObserver(() => {
-            if (modal.dataset.open !== '1') return
-            state.scheduleDialogResize()
-          })
-          // 开始监听内容高度
-          state.resizeObserver.observe(innerContainer)
-        }
-        state.scheduleDialogResize()
-
-        await state.ensurePagefind()
-        state.scheduleDialogResize()
-        requestAnimationFrame(() => state.focusInput())
-      }
-
-      state.closeModal = () => {
-        const modal = getModal()
-        if (!modal) return
-        if (modal.dataset.open !== '1') return
-        state.setOpen(false)
-
-        // 关闭时断开监听，并重置高度为初始状态 (单行搜索框的高度)
-        if (state.resizeObserver) {
-          state.resizeObserver.disconnect()
-          state.resizeObserver = null
-        }
-        if (state.pendingResizeFrame !== null) {
-          cancelAnimationFrame(state.pendingResizeFrame)
-          state.pendingResizeFrame = null
-        }
-        const dialog = modal.querySelector('.search-modal__dialog')
-        if (dialog) dialog.style.height = ''
-        state.lastDialogHeight = 0
-
-        if (state.lastActive && typeof state.lastActive.focus === 'function') {
-          state.lastActive.focus()
-        }
-      }
-
-      state.handleClick = (event) => {
-        const target = event.target
-        if (!(target instanceof Element)) return
-
-        const trigger = target.closest('[data-search-open]')
-        if (trigger) {
-          event.preventDefault()
-          void state.openModal()
-          return
-        }
-
-        if (target.closest('[data-search-close]')) {
-          state.closeModal()
-        }
-      }
-
-      state.handleKeydown = (event) => {
-        if (event.key === 'Escape') state.closeModal()
-      }
-
-      state.handleSearchOpen = () => void state.openModal()
-      state.handleSearchIntent = (event) => {
-        const target = event.target
-        if (!(target instanceof Element)) return
-        if (!target.closest('[data-search-open]')) return
-
-        document.removeEventListener('pointerover', state.handleSearchIntent)
-        document.removeEventListener('focusin', state.handleSearchIntent)
-        void state.ensurePagefind()
-      }
-
-      document.addEventListener('click', state.handleClick)
-      document.addEventListener('keydown', state.handleKeydown)
-      document.addEventListener('search-modal-open', state.handleSearchOpen)
-      document.addEventListener('pointerover', state.handleSearchIntent, { passive: true })
-      document.addEventListener('focusin', state.handleSearchIntent)
-      window.addEventListener('resize', state.scheduleDialogResize, { passive: true })
-
-      state.bound = true
-    }
-
-    if (state.autoOpen) {
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => void state.openModal(), { once: true })
-      } else {
+      const trigger = target.closest('[data-search-open]')
+      if (trigger) {
+        event.preventDefault()
         void state.openModal()
+        return
+      }
+
+      if (target.closest('[data-search-close]')) {
+        state.closeModal()
       }
     }
-  })()
+
+    state.handleKeydown = (event) => {
+      if (event.key === 'Escape')
+        state.closeModal()
+    }
+
+    state.handleSearchOpen = () => void state.openModal()
+    state.handleSearchIntent = (event) => {
+      const target = event.target
+      if (!(target instanceof Element))
+        return
+      if (!target.closest('[data-search-open]'))
+        return
+
+      document.removeEventListener('pointerover', state.handleSearchIntent)
+      document.removeEventListener('focusin', state.handleSearchIntent)
+      void state.ensurePagefind()
+    }
+
+    document.addEventListener('click', state.handleClick)
+    document.addEventListener('keydown', state.handleKeydown)
+    document.addEventListener('search-modal-open', state.handleSearchOpen)
+    document.addEventListener('pointerover', state.handleSearchIntent, { passive: true })
+    document.addEventListener('focusin', state.handleSearchIntent)
+    window.addEventListener('resize', state.scheduleDialogResize, { passive: true })
+
+    state.bound = true
+  }
+
+  if (state.autoOpen) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => void state.openModal(), { once: true })
+    }
+    else {
+      void state.openModal()
+    }
+  }
+})()
 </script>
 
 <style is:global>
@@ -395,16 +419,16 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     border: 1px solid var(--search-modal-border);
     border-radius: 0.8rem;
     box-shadow: 0 10px 34px rgba(0, 0, 0, 0.48);
-    padding: 0; 
+    padding: 0;
     z-index: 1;
     contain: layout paint;
-    
+
     /* === 动画核心设定 === */
     height: 3.8rem; /* 初始状态：仅输入框的高度 */
     overflow: hidden; /* 防止内容突围 */
     display: flex; /* 让内部可以正确滚动 */
     flex-direction: column;
-    
+
     /* 高级阻尼动画曲线，带来 Apple 级别的丝滑回弹感 */
     transform: translateY(calc(var(--search-modal-rest-shift) - 8px)) scale(0.985);
     transition: height var(--motion-slow, 300ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
@@ -474,9 +498,9 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     padding: 0 3rem;
     font-size: 1rem;
     color: var(--search-modal-text) !important;
-    
-    background: transparent !important; 
-    border: none !important; 
+
+    background: transparent !important;
+    border: none !important;
     box-shadow: none !important;
     outline: none !important;
 
@@ -499,10 +523,10 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     margin: 0 !important;
     background-color: transparent !important;
     border: none !important;
-    
+
     /* 核心魔法：彻底隐藏 Pagefind 默认生成的“清除”或“Clear”文字 */
     color: transparent !important;
-    font-size: 0 !important; 
+    font-size: 0 !important;
     cursor: pointer;
     z-index: 10; /* 确保它不会被输入框遮挡 */
   }
@@ -552,9 +576,9 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     outline: none !important;
     border-radius: 0.5rem;
     padding: 0.8rem 1rem !important;
-    background: transparent !important; 
+    background: transparent !important;
     margin-bottom: 0.2rem;
-    
+
     transition: background-color var(--motion-fast, 160ms) ease;
   }
 
@@ -572,7 +596,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     font-size: 0.95rem;
     margin-bottom: 0.3rem;
   }
-  
+
   .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-excerpt {
     font-size: 0.85rem;
     color: var(--search-modal-muted);

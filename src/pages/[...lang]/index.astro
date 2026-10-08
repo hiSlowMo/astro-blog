@@ -1,10 +1,10 @@
 ---
 import PostList from '@/components/PostList.astro'
 import { allLocales } from '@/config'
-import { postCategoryFilters } from '@/data/post-categories'
+import { getUsedCategoryFilters } from '@/data/post-categories'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import Layout from '@/layouts/Layout.astro'
-import { getFeaturedPosts, getPinnedPosts, getPostsByYear } from '@/utils/content'
+import { getFeaturedPosts, getPinnedPosts, getPosts, getPostsByYear } from '@/utils/content'
 
 export async function getStaticPaths() {
   return allLocales.map(lang => ({
@@ -16,6 +16,7 @@ const currentLang = getLangFromLocale(Astro.currentLocale)
 const pinnedPosts = await getPinnedPosts(currentLang)
 const featuredPosts = await getFeaturedPosts(currentLang)
 const postsByYear = await getPostsByYear(currentLang)
+const categoryFilters = getUsedCategoryFilters(await getPosts(currentLang))
 const featuredIds = new Set(featuredPosts.map(post => post.id))
 const visiblePostsByYear = new Map(
   [...postsByYear.entries()]
@@ -40,11 +41,11 @@ const visiblePostsByYear = new Map(
             data-dropdown-trigger
           >
             <span class="post-filter-icon" aria-hidden="true">
-              <svg viewBox="0 0 20 20" width="1em" height="1em"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"/></svg>
+              <svg viewBox="0 0 20 20" width="1em" height="1em"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z" /></svg>
             </span>
             <span class="post-filter-label" data-dropdown-label>全部分类</span>
             <span class="post-filter-caret" aria-hidden="true">
-              <svg viewBox="0 0 20 20" width="1em" height="1em"><path fill="none" stroke="currentColor" stroke-width="1.5" d="m5.5 8 4.5 4.5L14.5 8"/></svg>
+              <svg viewBox="0 0 20 20" width="1em" height="1em"><path fill="none" stroke="currentColor" stroke-width="1.5" d="m5.5 8 4.5 4.5L14.5 8" /></svg>
             </span>
           </button>
           <div
@@ -64,11 +65,11 @@ const visiblePostsByYear = new Map(
               aria-selected="true"
             >
               <span class="post-filter-icon" aria-hidden="true">
-                <svg viewBox="0 0 20 20" width="1em" height="1em"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"/></svg>
+                <svg viewBox="0 0 20 20" width="1em" height="1em"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z" /></svg>
               </span>
               显示全部
             </button>
-            {postCategoryFilters.map(category => (
+            {categoryFilters.map(category => (
               <button
                 class="post-filter-option"
                 type="button"

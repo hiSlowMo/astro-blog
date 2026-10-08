@@ -43,3 +43,11 @@ const categories: PostCategoryOption[] = [
 export const postCategoryFilters = categories
   .slice()
   .sort((a, b) => a.order - b.order)
+
+// 只保留至少有一篇文章的分类，避免筛选出空列表
+export function getUsedCategoryFilters(posts: { data: { categories?: string[] } }[]) {
+  const used = new Set(posts.flatMap(post => post.data.categories ?? []))
+  return postCategoryFilters.filter(category =>
+    (category.matches ?? [category.value]).some(value => used.has(value)),
+  )
+}
