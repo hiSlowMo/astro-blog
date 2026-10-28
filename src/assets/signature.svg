@@ -1,9 +1,11 @@
-<svg width="440" height="130" viewBox="20 20 440 130" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path seq="1" data-duration="650" d="M 80 48 C 70 36 48 38 44 54 C 40 68 60 74 66 88 C 72 102 54 116 40 108" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path seq="2" data-duration="450" d="M 116 30 C 110 56 102 92 100 110 C 99 116 106 114 112 104" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path seq="3" data-duration="500" d="M 150 82 C 150 70 138 68 130 76 C 122 84 124 102 134 104 C 144 106 152 94 150 84 C 150 92 152 104 162 100" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path seq="4" data-duration="550" d="M 178 76 C 180 88 182 100 184 104 C 188 96 192 84 196 78 C 198 88 200 100 204 104 C 210 96 216 84 218 76 C 218 88 222 102 232 98" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path seq="5" data-duration="700" d="M 262 108 C 268 84 276 56 280 40 C 284 56 290 84 294 100 C 300 82 310 56 316 42 C 320 60 326 92 330 108" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path seq="6" data-duration="500" d="M 372 82 C 372 70 360 68 352 76 C 344 84 346 102 356 104 C 366 106 374 94 372 84 C 372 92 376 104 388 98" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path seq="7" data-duration="750" d="M 120 128 C 200 140 340 140 430 124" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<svg width="296" height="120" viewBox="10 16 296 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g transform="skewX(-12)">
+    <path seq="1" data-duration="650" d="M 80 40 C 74 28 50 26 46 42 C 42 56 60 62 70 72 C 82 84 74 104 54 104 C 44 104 38 98 38 92" stroke="#000" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path seq="2" data-duration="450" d="M 90 92 C 100 80 116 50 114 34 C 112 24 102 28 100 42 C 98 60 96 84 100 98 C 102 104 108 102 112 96" stroke="#000" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path seq="3" data-duration="380" d="M 146 76 C 140 68 128 68 124 78 C 120 90 126 102 136 102 C 146 102 150 90 148 80 C 147 75 144 72 140 72" stroke="#000" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path seq="4" data-duration="520" d="M 158 72 C 160 84 164 96 168 100 C 172 94 175 84 178 78 C 180 86 184 96 188 100 C 193 92 197 80 198 70" stroke="#000" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path seq="5" data-duration="620" d="M 212 102 C 216 80 220 52 224 34 C 229 52 235 72 240 84 C 245 70 251 50 256 34 C 258 56 260 82 264 102" stroke="#000" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path seq="6" data-duration="380" d="M 294 76 C 288 68 276 68 272 78 C 268 90 274 102 284 102 C 294 102 298 90 296 80 C 295 75 292 72 288 72" stroke="#000" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path seq="7" data-duration="600" d="M 60 120 C 140 130 250 128 322 112" stroke="#000" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>

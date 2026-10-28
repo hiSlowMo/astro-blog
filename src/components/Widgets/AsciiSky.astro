@@ -1,0 +1,1482 @@
+---
+import portraitImage from '@/assets/portrait.png'
+import worldImage from '@/assets/world.png'
+
+// Decorative ASCII sky beside the reading column. It persists across navigations,
+// decodes into a different scene for each section of the site, and on wide screens
+// a portrait settles into it that takes on the texture of each scene
+interface Props {
+  scene?: 'clouds' | 'haze' | 'rain' | 'stars' | 'world' | 'contour' | 'fireflies'
+}
+
+const { scene = 'clouds' } = Astro.props
+---
+
+<div
+  class="ascii-sky"
+  aria-hidden="true"
+  data-ascii-sky
+  data-portrait={portraitImage.src}
+  data-world={worldImage.src}
+  transition:persist="ascii-sky"
+>
+  <canvas class="ascii-sky-canvas" />
+</div>
+<!-- The persisted sky keeps the markup of the first page, so the scene rides on a sibling that gets swapped -->
+<span hidden data-sky-scene={scene} />
+
+<style>
+  /* Mobile: behind the title and navigation, dissolving before the content (the edges are drawn on the canvas) */
+  .ascii-sky {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -2;
+    width: 100%;
+    height: 26rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s ease-out;
+  }
+
+  .ascii-sky[data-ready] {
+    opacity: 1;
+  }
+
+  .ascii-sky-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Desktop: everything right of the reading column (see Layout.astro), dissolving in from its edge and out toward the bottom */
+  @media (min-width: 1024px) {
+    .ascii-sky {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      left: calc(max(5.75rem, 50vw - 34.25rem) + min(75vw - 16rem, 44rem));
+      width: auto;
+      height: auto;
+    }
+  }
+
+  :global(html.reduce-motion) .ascii-sky {
+    transition: none;
+  }
+</style>
+
+<script>
+  import { prefersReducedMotion } from '@/scripts/motion'
+
+  type SceneName = 'clouds' | 'haze' | 'rain' | 'stars' | 'world' | 'contour' | 'fireflies'
+
+  interface Point {
+    x: number
+    y: number
+  }
+
+  interface Field {
+    cols: number
+    rows: number
+    cellW: number
+    cellH: number
+    width: number
+    height: number
+    alpha: Float32Array
+    glyph: Uint8Array
+    tone: Uint8Array
+    dark: boolean
+    // Center of the site title, the focal point most scenes gather around
+    anchor: Point
+    pointer: (Point & { strength: number }) | null
+  }
+
+  interface Sky {
+    root: HTMLElement
+    refresh: () => void
+    setScene: (scene: SceneName) => void
+    destroy: () => void
+  }
+
+  interface Box {
+    col: number
+    row: number
+    cols: number
+    rows: number
+  }
+
+  // Darkness of each pixel of an image, 0 for paper and 1 for full ink
+  interface InkMap {
+    width: number
+    height: number
+    data: Float32Array
+  }
+
+  // The portrait as sky cells, laid out over the box it was matched for
+  interface Portrait extends Box {
+    glyph: Uint8Array
+    alpha: Float32Array
+    part: Uint8Array
+    // How far into condensing each cell decodes
+    reveal: Float32Array
+  }
+
+  // Every glyph the sky or the portrait can draw, index 0 being an empty cell
+  const GLYPHS = ' .:-=+*#%|\'_¯/\\·,;`~@()'
+  const glyphIndex = (char: string) => GLYPHS.indexOf(char)
+  const [DOT, COLON, DASH, EQUALS, PLUS, STAR, BAR, TICK, LOW, HIGH, SLASH, BACKSLASH, MIDDOT, TILDE] = Array.from('.:-=+*|\'_¯/\\·~', glyphIndex)
+  // From thin cloud edges to dense cores
+  const CLOUD_RAMP = Array.from('.:-=+*#%', glyphIndex)
+
+  // What each cell of the portrait is part of: the light fill of the hair, which takes on the texture
+  // of the current scene, a stroke, or the solid ink of the eyes, which takes the accent and blinks
+  const HAIR = 1
+  const STROKE = 2
+  const EYE = 3
+  // What a cell flickers through while it decodes into the next scene
+  const SCRAMBLE = Array.from('.:-=+*#%|/\\', glyphIndex)
+
+  const FONT_FAMILY = '"JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace'
+  const FONT_SIZE = 12
+  const LINE_HEIGHT = 15
+  // Opacity steps baked into the glyph atlas, up to MAX_ALPHA
+  const LEVELS = 24
+  const MAX_ALPHA = 0.9
+  // ~14fps keeps the drift calm and cheap, decoding runs a little smoother
+  const FRAME_INTERVAL = 70
+  const MORPH_FRAME_INTERVAL = 40
+  const MORPH_DURATION = 1500
+  // Share of the morph each cell spends scrambling
+  const DECODE_SPAN = 0.3
+  // The portrait only shimmers in a thin wave, so it never breaks up while the sky changes around it
+  const WAVE_SPAN = 0.07
+  const LANTERN_RADIUS = 150
+
+  const SCENE_STRENGTH: Record<SceneName, number> = {
+    clouds: 1,
+    haze: 0.55,
+    rain: 0.9,
+    stars: 1,
+    world: 0.9,
+    contour: 0.85,
+    fireflies: 1,
+  }
+
+  // Text the sky thins out behind, with how much of the sky is left there
+  const QUIET_ZONES: Array<[string, number]> = [
+    ['#site-header', 0.75],
+    ['#site-header > :not(:first-child)', 0.4],
+    ['#site-nav', 0.35],
+    ['#site-utility', 0.4],
+    ['#site-footer', 0.35],
+    ['main', 0.3],
+  ]
+  const QUIET_FEATHER = 44
+  // How far, in cells, the quiet zones and the edges of the sky wander
+  const WANDER_COLS = 8
+  const WANDER_ROWS = 4
+  // The sky dissolves in over about this much of its left edge on desktop
+  const EDGE_FADE = 90
+
+  // The portrait looks for the largest clear square beside the text, within these sizes
+  const PORTRAIT_MIN_ROWS = 13
+  const PORTRAIT_MAX_ROWS = 20
+  const PORTRAIT_AVOID = '#site-header, #site-nav, #site-utility, #site-footer'
+  // How long after the sky first settles before the portrait starts to condense
+  const PORTRAIT_DELAY = 600
+  const PORTRAIT_CONDENSE = 2600
+  const PORTRAIT_DISPERSE = 1200
+  // Cells within this many pixels of the pointer get pushed aside
+  const PORTRAIT_TOUCH = 64
+
+  let activeSky: Sky | null = null
+  // The land of the world map, loaded the first time the archive is visited
+  let worldMap: InkMap | null = null
+
+  function hash3(x: number, y: number, z: number) {
+    let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z, 1440662683)) | 0
+    h = Math.imul(h ^ (h >>> 13), 1274126177)
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296
+  }
+
+  function smooth(t: number) {
+    return t * t * (3 - 2 * t)
+  }
+
+  function lerp(a: number, b: number, t: number) {
+    return a + (b - a) * t
+  }
+
+  function clamp01(t: number) {
+    return Math.min(Math.max(t, 0), 1)
+  }
+
+  // Trilinear value noise in [0, 1]
+  function noise3(x: number, y: number, z: number) {
+    const xi = Math.floor(x)
+    const yi = Math.floor(y)
+    const zi = Math.floor(z)
+    const u = smooth(x - xi)
+    const v = smooth(y - yi)
+    const w = smooth(z - zi)
+
+    const front = lerp(
+      lerp(hash3(xi, yi, zi), hash3(xi + 1, yi, zi), u),
+      lerp(hash3(xi, yi + 1, zi), hash3(xi + 1, yi + 1, zi), u),
+      v,
+    )
+    const back = lerp(
+      lerp(hash3(xi, yi, zi + 1), hash3(xi + 1, yi, zi + 1), u),
+      lerp(hash3(xi, yi + 1, zi + 1), hash3(xi + 1, yi + 1, zi + 1), u),
+      v,
+    )
+    return lerp(front, back, w)
+  }
+
+  function fbm(x: number, y: number, z: number) {
+    return noise3(x, y, z) * 0.6
+      + noise3(x * 2.1, y * 2.1, z * 1.6) * 0.28
+      + noise3(x * 4.3, y * 4.3, z * 2.2) * 0.12
+  }
+
+  // Wall-clock seconds, so every visitor sees the same sky at the same moment
+  function skyTime() {
+    return Date.now() / 1000
+  }
+
+  // Keeps the brightest glyph when scenes draw over the same cell
+  function plot(f: Field, col: number, row: number, alpha: number, glyph: number, tone = 0) {
+    if (col < 0 || row < 0 || col >= f.cols || row >= f.rows)
+      return
+
+    const i = row * f.cols + col
+    if (alpha > f.alpha[i]) {
+      f.alpha[i] = alpha
+      f.glyph[i] = glyph
+      f.tone[i] = tone
+    }
+  }
+
+  function plotLine(f: Field, from: Point, to: Point, alpha: number) {
+    const steps = Math.ceil(Math.max(Math.abs(to.x - from.x) / f.cellW, Math.abs(to.y - from.y) / f.cellH))
+    for (let step = 1; step < steps; step++) {
+      const k = step / steps
+      plot(f, Math.floor(lerp(from.x, to.x, k) / f.cellW), Math.floor(lerp(from.y, to.y, k) / f.cellH), alpha, MIDDOT)
+    }
+  }
+
+  // Drifting clouds, a touch denser around the title; at night stars show through the gaps
+  function drawClouds(f: Field, t: number, threshold: number, stars: boolean) {
+    const drift = t * 0.04
+    const morph = t * 0.022
+    for (let row = 0; row < f.rows; row++) {
+      const y = row * f.cellH
+      const bank = 0.04 * Math.exp(-(((y - f.anchor.y) / 160) ** 2))
+      for (let col = 0; col < f.cols; col++) {
+        const density = (fbm(col * f.cellW / 150 - drift, y / 80, morph) + bank - threshold) / 0.26
+        if (density > 0) {
+          // Soft edges with only a few dense cores
+          const level = Math.min(density, 0.999)
+          plot(f, col, row, 0.18 + level * 0.67, CLOUD_RAMP[Math.floor(level ** 1.4 * CLOUD_RAMP.length)])
+        }
+        else if (stars && f.dark) {
+          const star = hash3(col, row, 7)
+          if (star > 0.982)
+            plot(f, col, row, 0.2 + 0.4 * (0.5 + 0.5 * Math.sin(t * 1.4 + star * 900)), star > 0.995 ? PLUS : DOT)
+        }
+      }
+    }
+  }
+
+  function rainGlyph(depth: number, length: number) {
+    if (depth < length * 0.45)
+      return BAR
+
+    return depth < length * 0.8 ? COLON : TICK
+  }
+
+  // Showers drifting across the lanes beneath a thin cloud deck
+  function drawRain(f: Field, t: number) {
+    const deck = f.height * 0.22
+    for (let row = 0; row * f.cellH < deck; row++) {
+      const y = row * f.cellH
+      const thinning = 0.47 + 0.25 * (y / deck) ** 2
+      for (let col = 0; col < f.cols; col++) {
+        // Broken stratus: streaks stretched sideways, thinning out towards the rain
+        const density = (fbm(col * f.cellW / 160 - t * 0.03, y / 45, t * 0.02) - thinning) / 0.2
+        if (density > 0) {
+          const level = Math.min(density, 0.999)
+          plot(f, col, row, 0.22 + level * 0.55, CLOUD_RAMP[Math.floor(level ** 1.5 * 5)])
+        }
+      }
+    }
+
+    for (let col = 0; col < f.cols; col++) {
+      const shower = noise3(col / 14, t * 0.08, 5.3)
+      if (shower < 0.38)
+        continue
+
+      const intensity = Math.min((shower - 0.38) / 0.25, 1)
+      for (let drop = 0; drop < 2; drop++) {
+        const seed = hash3(col, drop, 11)
+        const speed = 9 + seed * 9
+        const length = 3 + Math.floor(hash3(col, drop, 12) * 6)
+        const period = f.rows + length + 6 + Math.floor(hash3(col, drop, 13) * f.rows)
+        const head = Math.floor((t * speed + seed * 997) % period)
+        for (let depth = 0; depth < length; depth++) {
+          const fade = depth === 0 ? 1 : 0.8 * (1 - depth / length)
+          plot(f, col, head - depth, intensity * (0.45 + 0.55 * seed) * fade, rainGlyph(depth, length))
+        }
+      }
+    }
+  }
+
+  function starGlyph(magnitude: number) {
+    if (magnitude > 0.8)
+      return STAR
+
+    return magnitude > 0.42 ? PLUS : DOT
+  }
+
+  // A starfield turning around the title once every ten minutes, with a band of haze turning along
+  function drawStars(f: Field, t: number) {
+    const { x: px, y: py } = f.anchor
+    const turn = (t % 600) / 600 * Math.PI * 2
+    const cos = Math.cos(turn)
+    const sin = Math.sin(turn)
+
+    for (let row = 0; row < f.rows; row++) {
+      const dy = row * f.cellH - py
+      for (let col = 0; col < f.cols; col++) {
+        const dx = col * f.cellW - px
+        // In the turning frame the band lies along a fixed line through the pole
+        const u = dx * cos + dy * sin
+        const v = dy * cos - dx * sin
+        const band = (v - u * 0.4) / 120
+        // Dithered, so the band reads as countless faint stars rather than a screen
+        const haze = Math.min((Math.exp(-band * band) * fbm(u / 56, v / 56, 9.1) - 0.28) * 3.2, 1)
+        const grain = hash3(col, row, 13)
+        if (grain < haze * 0.5)
+          plot(f, col, row, 0.2 + 0.35 * haze, grain < haze * 0.08 ? COLON : DOT)
+      }
+    }
+
+    const reach = Math.hypot(Math.max(px, f.width - px), Math.max(py, f.height - py)) + f.cellW
+    const count = Math.round(Math.PI * reach * reach / 2200)
+    for (let n = 0; n < count; n++) {
+      const radius = reach * Math.sqrt(hash3(n, 1, 21))
+      const theta = hash3(n, 2, 21) * Math.PI * 2 + turn
+      const x = px + radius * Math.cos(theta)
+      const y = py + radius * Math.sin(theta)
+      if (x < 0 || y < 0 || x >= f.width || y >= f.height)
+        continue
+
+      const magnitude = hash3(n, 3, 21) ** 2
+      const alpha = (0.35 + 0.65 * magnitude) * (0.65 + 0.35 * Math.sin(t * (0.8 + magnitude * 2.4) + n))
+      plot(f, Math.floor(x / f.cellW), Math.floor(y / f.cellH), alpha, starGlyph(magnitude), magnitude > 0.8 ? 1 : 0)
+
+      // Brighter stars trail a short arc, like a long exposure
+      if (magnitude > 0.55 && radius > 60) {
+        for (let k = 1; k <= 3; k++) {
+          const back = theta - k * 1.4 * f.cellW / radius
+          plot(f, Math.floor((px + radius * Math.cos(back)) / f.cellW), Math.floor((py + radius * Math.sin(back)) / f.cellH), alpha * (0.4 - k * 0.1), DOT)
+        }
+      }
+    }
+  }
+
+  function flatGlyph(cross: number) {
+    if (cross < 0.36)
+      return HIGH
+
+    return cross < 0.66 ? DASH : LOW
+  }
+
+  let corners = new Float32Array(0)
+
+  // Draws every integer level of `height`, with glyphs that follow the direction of each line
+  function drawIsolines(f: Field, height: (x: number, y: number) => number, strength: (level: number, x: number, y: number) => number) {
+    const stride = f.cols + 1
+    if (corners.length < stride * (f.rows + 1))
+      corners = new Float32Array(stride * (f.rows + 1))
+
+    for (let row = 0; row <= f.rows; row++) {
+      for (let col = 0; col <= f.cols; col++)
+        corners[row * stride + col] = height(col * f.cellW, row * f.cellH)
+    }
+
+    for (let row = 0; row < f.rows; row++) {
+      for (let col = 0; col < f.cols; col++) {
+        const i = row * stride + col
+        const a = corners[i]
+        const b = corners[i + 1]
+        const c = corners[i + stride]
+        const d = corners[i + stride + 1]
+        const level = Math.floor(Math.max(a, b, c, d))
+        if (level < Math.min(a, b, c, d))
+          continue
+
+        const gx = (b - a + d - c) / f.cellW
+        const gy = (c - a + d - b) / f.cellH
+        let glyph = BAR
+        // Nearly flat lines sit high, centered or low in the cell, wherever the level crosses it
+        if (Math.abs(gy) > Math.abs(gx) * 2.4)
+          glyph = flatGlyph((level - (a + b) / 2) / ((c + d - a - b) / 2))
+        else if (Math.abs(gy) * 2.4 > Math.abs(gx))
+          glyph = gx * gy > 0 ? SLASH : BACKSLASH
+
+        plot(f, col, row, strength(level, col * f.cellW, row * f.cellH), glyph)
+      }
+    }
+  }
+
+  const DEG = Math.PI / 180
+
+  // Land at a longitude and latitude in degrees, from 0 for open sea to 1 inland
+  function landAt(map: InkMap, lon: number, lat: number) {
+    const x = (((lon + 180) / 360 % 1 + 1) % 1) * map.width - 0.5
+    const y = Math.min(Math.max((90 - lat) / 180 * map.height - 0.5, 0), map.height - 1.001)
+    const x0 = Math.floor(x)
+    const y0 = Math.floor(y)
+    const left = (x0 + map.width) % map.width
+    const right = (x0 + 1) % map.width
+    const top = y0 * map.width
+    const bottom = top + map.width
+    return lerp(
+      lerp(map.data[top + left], map.data[top + right], x - x0),
+      lerp(map.data[bottom + left], map.data[bottom + right], x - x0),
+      y - y0,
+    )
+  }
+
+  // A dotted world map drifting east under the real sun: land lit by day and pricked with city lights by night,
+  // a faint graticule over the sea, and a line of dots where dusk and dawn fall right now
+  function drawWorld(f: Field, t: number) {
+    const north = 74
+    // Wide enough to take in whole continents, the far south sinking into the fade at the bottom
+    const scale = Math.min(f.width / 150, f.height / (north + 58))
+    // Once round the world every ten minutes, setting out from east Asia
+    const center = 115 - (t % 600) * 0.6
+    const days = t / 86400
+    const declination = -23.44 * DEG * Math.cos(2 * Math.PI * (days % 365.2422 + 10) / 365.2422)
+    const sunLon = 180 - (days % 1) * 360
+    const sinDeclination = Math.sin(declination)
+    const cosDeclination = Math.cos(declination)
+    const lonStep = f.cellW / scale
+    const latStep = f.cellH / scale
+
+    for (let row = 0; row < f.rows; row++) {
+      const lat = north - (row + 0.5) * latStep
+      if (lat < -89)
+        break
+
+      const sinLat = Math.sin(lat * DEG)
+      const cosLat = Math.cos(lat * DEG)
+      const onParallel = Math.abs(lat - Math.round(lat / 30) * 30) < latStep / 2
+      for (let col = 0; col < f.cols; col++) {
+        const lon = center + ((col + 0.5) * f.cellW - f.width / 2) / scale
+        // Sine of the sun's height above the horizon here
+        const sun = sinLat * sinDeclination + cosLat * cosDeclination * Math.cos((lon - sunLon) * DEG)
+        const land = worldMap ? landAt(worldMap, lon, lat) : 0
+        if (land > 0.2) {
+          // Coasts fade in and out as they drift across a cell
+          const cover = smooth(clamp01((land - 0.2) / 0.6))
+          const coast = land < 0.8
+          if (sun > 0) {
+            // A bright coastline around fine dotted ground, the high country a shade denser
+            const relief = fbm(lon / 9, lat / 9, 3.7)
+            const glyph = coast ? COLON : relief > 0.62 ? DASH : relief > 0.5 ? COLON : DOT
+            plot(f, col, row, cover * (coast ? 0.62 : 0.3 + 0.3 * relief) * (0.75 + 0.25 * clamp01(sun * 4)), glyph)
+            continue
+          }
+
+          // City lights, fixed to the ground as it drifts past
+          const light = hash3(Math.floor(((lon % 360) + 360) % 360 / lonStep), Math.floor((lat + 90) / latStep), 71)
+          if (light > 0.92)
+            plot(f, col, row, cover * (0.45 + 0.3 * Math.sin(t * 1.3 + light * 90)), light > 0.99 ? STAR : MIDDOT, 1)
+          else
+            plot(f, col, row, cover * (coast ? 0.36 : 0.2), coast ? COLON : DOT)
+        }
+        else if (Math.abs(sun) < 0.03) {
+          plot(f, col, row, 0.3, DOT)
+        }
+        else if (sun > 0.985) {
+          // The sun glinting on the sea
+          plot(f, col, row, 0.15 + 0.3 * noise3(col * 0.5, row, t * 0.8), TILDE)
+        }
+        else if ((onParallel && col % 2 === 0) || Math.abs(lon - Math.round(lon / 30) * 30) < lonStep / 2) {
+          plot(f, col, row, 0.1, MIDDOT)
+        }
+      }
+    }
+  }
+
+  // Contour lines of a slowly breathing landscape, every fourth one an index line
+  function drawContour(f: Field, t: number) {
+    drawIsolines(
+      f,
+      (x, y) => 10 * fbm(x / 280 + 11.3, y / 280 + 4.1, t * 0.012),
+      level => (level % 4 === 0 ? 1 : 0.55),
+    )
+  }
+
+  // Wandering lights that link up whenever they drift close, and reach for the pointer too
+  function drawFireflies(f: Field, t: number) {
+    const count = Math.min(64, Math.max(14, Math.round(f.width * f.height / 11000)))
+    const reach = Math.min(170, f.width * 0.3)
+    const lights: Array<Point & { glow: number }> = []
+    for (let n = 0; n < count; n++) {
+      const travel = (((hash3(n, 1, 31) + t * (hash3(n, 3, 31) - 0.5) * 0.01) % 1) + 1) % 1
+      lights.push({
+        x: (travel * 1.2 - 0.1) * f.width + 24 * Math.sin(t * 0.21 + n * 1.7),
+        y: (hash3(n, 2, 31) * 1.1 - 0.05) * f.height + 30 * Math.sin(t * (0.17 + hash3(n, 4, 31) * 0.2) + n),
+        glow: 0.5 + 0.5 * Math.sin(t * (0.6 + 0.9 * hash3(n, 5, 31)) + n * 2.3),
+      })
+    }
+
+    lights.forEach((light, i) => {
+      for (const other of lights.slice(i + 1)) {
+        const distance = Math.hypot(other.x - light.x, other.y - light.y)
+        if (distance < reach)
+          plotLine(f, light, other, 0.75 * (1 - distance / reach) ** 1.2 * (0.45 + 0.55 * Math.min(light.glow, other.glow)))
+      }
+
+      const pointer = f.pointer
+      if (pointer && pointer.x >= 0) {
+        const distance = Math.hypot(pointer.x - light.x, pointer.y - light.y)
+        if (distance < reach * 1.3)
+          plotLine(f, light, pointer, 0.6 * pointer.strength * (1 - distance / (reach * 1.3)))
+      }
+    })
+
+    for (const light of lights)
+      plot(f, Math.floor(light.x / f.cellW), Math.floor(light.y / f.cellH), 0.45 + 0.55 * light.glow, light.glow > 0.7 ? STAR : PLUS, 1)
+  }
+
+  const SCENES: Record<SceneName, (f: Field, t: number) => void> = {
+    clouds: (f, t) => drawClouds(f, t, 0.55, true),
+    haze: (f, t) => drawClouds(f, t, 0.6, false),
+    rain: drawRain,
+    stars: drawStars,
+    world: drawWorld,
+    contour: drawContour,
+    fireflies: drawFireflies,
+  }
+
+  // The texture each scene lends the light fill of the portrait's hair
+  const hairCell = { glyph: 0, alpha: 0, tone: 0 }
+
+  function textureHair(scene: SceneName, col: number, row: number, t: number) {
+    hairCell.tone = 0
+    switch (scene) {
+      case 'rain': {
+        // Streaks running down through it
+        const phase = ((row - t * 6 + hash3(col, 0, 61) * 40) % 7 + 7) % 7
+        hairCell.glyph = phase < 1 ? BAR : phase < 2.5 ? COLON : DOT
+        hairCell.alpha = phase < 1 ? 1 : phase < 2.5 ? 0.75 : 0.45
+        break
+      }
+      case 'stars': {
+        const seed = hash3(col, row, 62)
+        const twinkle = 0.5 + 0.5 * Math.sin(t * (0.6 + seed * 2) + seed * 60)
+        const bright = seed > 0.94
+        hairCell.glyph = bright ? (twinkle > 0.6 ? STAR : PLUS) : seed > 0.45 ? DOT : MIDDOT
+        hairCell.alpha = bright ? 0.5 + 0.5 * twinkle : 0.5 + 0.2 * twinkle
+        hairCell.tone = bright && twinkle > 0.85 ? 1 : 0
+        break
+      }
+      case 'world': {
+        // A grid of dots with a scan line sweeping down
+        const behind = ((t * 3 - row) % 40 + 40) % 40
+        hairCell.glyph = behind < 1 ? EQUALS : (col + row) % 2 ? COLON : DOT
+        hairCell.alpha = behind < 1 ? 1 : 0.45 + 0.45 * Math.exp(-behind / 3)
+        break
+      }
+      case 'contour': {
+        const height = 5 * noise3(col * 0.16, row * 0.38, t * 0.04)
+        const onLine = height - Math.floor(height) < 0.22
+        hairCell.glyph = onLine ? TILDE : DOT
+        hairCell.alpha = onLine ? 0.95 : 0.35
+        break
+      }
+      case 'fireflies': {
+        const glow = noise3(col * 0.45, row * 0.8, t * 0.5)
+        hairCell.glyph = glow > 0.72 ? STAR : glow > 0.6 ? PLUS : MIDDOT
+        hairCell.alpha = glow > 0.6 ? 0.6 + glow * 0.5 : 0.4
+        hairCell.tone = glow > 0.72 ? 1 : 0
+        break
+      }
+      case 'haze': {
+        const mist = noise3(col * 0.22 - t * 0.12, row * 0.45, t * 0.05)
+        hairCell.glyph = mist > 0.55 ? COLON : mist > 0.4 ? DOT : MIDDOT
+        hairCell.alpha = 0.25 + 0.7 * mist
+        break
+      }
+      default: {
+        // Wind combing through it
+        const wind = noise3(col * 0.3 - t * 0.4, row * 0.6, t * 0.1)
+        hairCell.glyph = wind > 0.6 ? COLON : wind > 0.42 ? DOT : MIDDOT
+        hairCell.alpha = 0.3 + 0.8 * (wind - 0.25)
+      }
+    }
+  }
+
+  function readScene(): SceneName {
+    const name = document.querySelector<HTMLElement>('[data-sky-scene]')?.dataset.skyScene
+    return name && name in SCENES ? name as SceneName : 'clouds'
+  }
+
+  // Theme colors are stored as bare oklch channels, e.g. "77% 0.005 298"
+  function readColors() {
+    const style = getComputedStyle(document.documentElement)
+    const read = (name: string) => {
+      const channels = style.getPropertyValue(name).trim()
+      return channels ? `oklch(${channels})` : 'gray'
+    }
+    return {
+      base: read('--un-preset-theme-colors-secondary'),
+      accent: read('--un-preset-theme-colors-accent'),
+      dark: document.documentElement.classList.contains('dark'),
+    }
+  }
+
+  // How much of each glyph's ink falls in the six regions of a cell, two across and three down
+  function measureGlyphShapes(cellW: number, cellH: number) {
+    const scale = 4
+    const width = Math.ceil(cellW * scale)
+    const height = Math.ceil(cellH * scale)
+    const canvas = document.createElement('canvas')
+    canvas.width = width * GLYPHS.length
+    canvas.height = height
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    if (!context)
+      return null
+
+    context.font = `${FONT_SIZE * scale}px ${FONT_FAMILY}`
+    context.textBaseline = 'middle'
+    for (let glyph = 1; glyph < GLYPHS.length; glyph++)
+      context.fillText(GLYPHS[glyph], glyph * width, height / 2)
+
+    const pixels = context.getImageData(0, 0, canvas.width, height).data
+    const shapes = new Float32Array(GLYPHS.length * 6)
+    for (let y = 0; y < height; y++) {
+      const band = Math.floor(y * 3 / height) * 2
+      for (let x = 0; x < canvas.width; x++)
+        shapes[Math.floor(x / width) * 6 + band + Math.floor(x % width * 2 / width)] += pixels[(y * canvas.width + x) * 4 + 3]
+    }
+    // Relative to the inkiest region of any glyph, the way solid black in the portrait counts as 1
+    const peak = shapes.reduce((max, value) => Math.max(max, value), 0) || 1
+    return shapes.map(value => value / peak)
+  }
+
+  async function readInkMap(source: string): Promise<InkMap> {
+    const image = new Image()
+    image.src = source
+    await image.decode()
+    const canvas = document.createElement('canvas')
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    if (!context)
+      throw new Error('Canvas 2D is unavailable')
+
+    context.drawImage(image, 0, 0)
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
+    const data = new Float32Array(canvas.width * canvas.height)
+    for (let i = 0; i < data.length; i++)
+      data[i] = 1 - pixels[i * 4] / 255
+    return { width: canvas.width, height: canvas.height, data }
+  }
+
+  // Shape-matched ASCII: each cell takes the glyph whose ink sits where the portrait's does
+  function matchPortrait(ink: InkMap, shapes: Float32Array, box: Box): Portrait {
+    const { cols, rows } = box
+    const size = cols * rows
+    const portrait = {
+      ...box,
+      glyph: new Uint8Array(size),
+      alpha: new Float32Array(size),
+      part: new Uint8Array(size),
+      reveal: new Float32Array(size),
+    }
+    const sample = new Float32Array(6)
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        let peak = 0
+        let low = 1
+        let total = 0
+        for (let region = 0; region < 6; region++) {
+          // Average the ink map over this region of the cell
+          const sx = col * 2 + region % 2
+          const sy = row * 3 + Math.floor(region / 2)
+          const x0 = Math.floor(sx * ink.width / (cols * 2))
+          const x1 = Math.max(x0 + 1, Math.floor((sx + 1) * ink.width / (cols * 2)))
+          const y0 = Math.floor(sy * ink.height / (rows * 3))
+          const y1 = Math.max(y0 + 1, Math.floor((sy + 1) * ink.height / (rows * 3)))
+          let sum = 0
+          for (let y = y0; y < y1; y++) {
+            for (let x = x0; x < x1; x++)
+              sum += ink.data[y * ink.width + x]
+          }
+          sample[region] = sum / ((x1 - x0) * (y1 - y0))
+          peak = Math.max(peak, sample[region])
+          low = Math.min(low, sample[region])
+          total += sample[region]
+        }
+        if (peak < 0.04)
+          continue
+
+        // Sharpen the contrast within the cell, so edges pick crisp glyphs
+        for (let region = 0; region < 6; region++)
+          sample[region] = (sample[region] / peak) ** 1.6 * peak
+
+        let best = 0
+        let bestDistance = Infinity
+        for (let glyph = 0; glyph < GLYPHS.length; glyph++) {
+          let distance = 0
+          for (let region = 0; region < 6; region++)
+            distance += (sample[region] - shapes[glyph * 6 + region]) ** 2
+          if (distance < bestDistance) {
+            best = glyph
+            bestDistance = distance
+          }
+        }
+
+        const i = row * cols + col
+        const strength = Math.min(1, peak * 1.6)
+        portrait.glyph[i] = best
+        portrait.alpha[i] = 0.3 + 0.7 * strength
+        // Only the eyes are solid ink, and the hair an even light grey
+        portrait.part[i] = total > 3 ? EYE : peak < 0.3 && peak - low < 0.1 ? HAIR : STROKE
+        // Bold strokes decode first, the light fill of the hair last
+        portrait.reveal[i] = (1 - DECODE_SPAN) * (0.6 * (1 - strength) + 0.4 * hash3(col, row, 41))
+      }
+    }
+    return portrait
+  }
+
+  function createSky(root: HTMLElement): Sky | null {
+    const canvas = root.querySelector('canvas')
+    const ctx = canvas?.getContext('2d')
+    const atlas = document.createElement('canvas')
+    const atlasCtx = atlas.getContext('2d')
+    if (!canvas || !ctx || !atlasCtx)
+      return null
+
+    const controller = new AbortController()
+    const { signal } = controller
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    let reduceMotion = prefersReducedMotion()
+    let scene = readScene()
+    let colors = readColors()
+    let ratio = 1
+    let glyphW = 0
+    let glyphH = 0
+    let skyRect = root.getBoundingClientRect()
+
+    const field: Field = {
+      cols: 0,
+      rows: 0,
+      cellW: 7.2,
+      cellH: LINE_HEIGHT,
+      width: 0,
+      height: 0,
+      alpha: new Float32Array(0),
+      glyph: new Uint8Array(0),
+      tone: new Uint8Array(0),
+      dark: colors.dark,
+      anchor: { x: 0, y: 0 },
+      pointer: null,
+    }
+
+    // What is on screen, what it decodes from, and when each cell switches over
+    let shownAlpha = new Float32Array(0)
+    let shownGlyph = new Uint8Array(0)
+    let shownTone = new Uint8Array(0)
+    let fromAlpha = new Float32Array(0)
+    let fromGlyph = new Uint8Array(0)
+    let fromTone = new Uint8Array(0)
+    let switchAt = new Float32Array(0)
+    let waveAt = new Float32Array(0)
+    let quiet = new Float32Array(0)
+    let morphStart = -1
+
+    const lantern = { x: 0, y: 0, strength: 0 }
+    let pointerTarget: Point | null = null
+    let lastPress: (Point & { time: number }) | null = null
+
+    let inView = true
+    let rafId = 0
+    let lastFrame = 0
+    let frame = 0
+    let settleTimer = 0
+
+    // The portrait, which settles in once the sky has and then stays
+    const desktop = window.matchMedia('(min-width: 1024px)')
+    let ink: InkMap | null = null
+    let inkRequested = false
+    let inkTimer = 0
+    let worldRequested = false
+    let portrait: Portrait | null = null
+    let portraitLevel = 0
+    let portraitClock = performance.now()
+    const portraitAfter = portraitClock + (reduceMotion ? 0 : MORPH_DURATION + PORTRAIT_DELAY)
+    let portraitMoving = false
+    // Placed for a layout that has since changed, so it disperses before finding a new place
+    let portraitStale = false
+    // Nothing fits the current layout, so it isn't measured again until the layout changes
+    let portraitMissing = false
+    let blinkAt = portraitAfter + 4000
+    // The hair keeps the old scene's texture until the morph ripples through it
+    let previousScene = scene
+    let morphProgress = 1
+    // Cells the portrait drew this frame, which the quiet zones and the edges leave alone
+    let lifted = new Uint32Array(0)
+
+    const buildAtlas = () => {
+      glyphW = Math.ceil(field.cellW * ratio) + 1
+      glyphH = Math.ceil(field.cellH * ratio)
+      // Resizing the canvas resets the context state
+      atlas.width = glyphW * GLYPHS.length
+      atlas.height = glyphH * LEVELS * 2
+      atlasCtx.font = `${FONT_SIZE * ratio}px ${FONT_FAMILY}`
+      atlasCtx.textBaseline = 'middle'
+      for (let tone = 0; tone < 2; tone++) {
+        atlasCtx.fillStyle = tone ? colors.accent : colors.base
+        for (let level = 1; level <= LEVELS; level++) {
+          atlasCtx.globalAlpha = MAX_ALPHA * level / LEVELS
+          const y = (tone * LEVELS + level - 1) * glyphH + glyphH / 2
+          for (let glyph = 1; glyph < GLYPHS.length; glyph++)
+            atlasCtx.fillText(GLYPHS[glyph], glyph * glyphW, y)
+        }
+      }
+    }
+
+    // Thins the sky out around a rect given in sky coordinates
+    const hush = (rect: DOMRect, weight: number) => {
+      const left = rect.left - skyRect.left
+      const top = rect.top - skyRect.top
+      const right = rect.right - skyRect.left
+      const bottom = rect.bottom - skyRect.top
+      const colEnd = Math.min(field.cols, Math.ceil((right + QUIET_FEATHER) / field.cellW))
+      const rowEnd = Math.min(field.rows, Math.ceil((bottom + QUIET_FEATHER) / field.cellH))
+      for (let row = Math.max(0, Math.floor((top - QUIET_FEATHER) / field.cellH)); row < rowEnd; row++) {
+        const y = (row + 0.5) * field.cellH
+        const dy = Math.max(top - y, 0, y - bottom)
+        for (let col = Math.max(0, Math.floor((left - QUIET_FEATHER) / field.cellW)); col < colEnd; col++) {
+          const x = (col + 0.5) * field.cellW
+          const distance = Math.hypot(Math.max(left - x, 0, x - right), dy)
+          if (distance >= QUIET_FEATHER)
+            continue
+
+          const i = row * field.cols + col
+          quiet[i] = Math.min(quiet[i], lerp(weight, 1, smooth(distance / QUIET_FEATHER)))
+        }
+      }
+    }
+
+    const isShown = (element: Element | null) =>
+      !!element && (element.checkVisibility?.({ opacityProperty: true, visibilityProperty: true }) ?? true)
+
+    // Rects of the text and icons laid over the sky
+    const textRects = () => {
+      const rects: DOMRect[] = []
+      document.querySelectorAll(PORTRAIT_AVOID).forEach((container) => {
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT)
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+          if (!node.textContent?.trim() || !isShown(node.parentElement))
+            continue
+
+          const range = document.createRange()
+          range.selectNodeContents(node)
+          rects.push(...Array.from(range.getClientRects()))
+        }
+        container.querySelectorAll('svg, img').forEach((element) => {
+          if (isShown(element))
+            rects.push(element.getBoundingClientRect())
+        })
+      })
+      return rects
+    }
+
+    // Summed-area table of the cells the portrait keeps clear of, so each candidate box is checked in one step
+    const clearance = () => {
+      const { cols, rows, cellW, cellH } = field
+      const blocked = new Uint8Array(cols * rows)
+      const block = (left: number, top: number, right: number, bottom: number) => {
+        const colStart = Math.max(0, Math.floor(left / cellW))
+        const colEnd = Math.min(cols, Math.ceil(right / cellW))
+        if (colStart >= colEnd)
+          return
+
+        const rowEnd = Math.min(rows, Math.ceil(bottom / cellH))
+        for (let row = Math.max(0, Math.floor(top / cellH)); row < rowEnd; row++)
+          blocked.fill(1, row * cols + colStart, row * cols + colEnd)
+      }
+      for (const rect of textRects())
+        block(rect.left - skyRect.left - 12, rect.top - skyRect.top - 10, rect.right - skyRect.left + 12, rect.bottom - skyRect.top + 10)
+      // Keep clear of where the panel dissolves in from the column and out toward the bottom
+      block(0, 0, 72, field.height)
+      block(field.width - 16, 0, field.width, field.height)
+      block(0, 0, field.width, 24)
+      block(0, field.height * 0.8, field.width, field.height)
+
+      const stride = cols + 1
+      const sums = new Int32Array(stride * (rows + 1))
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++)
+          sums[(row + 1) * stride + col + 1] = blocked[row * cols + col] + sums[row * stride + col + 1] + sums[(row + 1) * stride + col] - sums[row * stride + col]
+      }
+      return sums
+    }
+
+    // How many blocked cells fall in a box
+    const clutter = (sums: Int32Array, { col, row, cols, rows }: Box) => {
+      const stride = field.cols + 1
+      if (col < 0 || row < 0 || col + cols > field.cols || row + rows > field.rows)
+        return Infinity
+
+      return sums[(row + rows) * stride + col + cols] - sums[row * stride + col + cols] - sums[(row + rows) * stride + col] + sums[row * stride + col]
+    }
+
+    // The largest clear square of sky beside the text, nearest the middle of the column
+    const findPortraitBox = (): Box | null => {
+      const { cols, rows, cellW, cellH } = field
+      if (!desktop.matches || !cols || !rows)
+        return null
+
+      const sums = clearance()
+      const header = document.querySelector('#site-header')?.getBoundingClientRect()
+      const target = {
+        x: header ? header.left + header.width / 2 - skyRect.left : field.width / 2,
+        y: field.height * 0.45,
+      }
+      for (let size = PORTRAIT_MAX_ROWS; size >= PORTRAIT_MIN_ROWS; size--) {
+        // Square on screen, as cells are about twice as tall as they are wide
+        const width = Math.round(size * cellH / cellW)
+        let best: Box | null = null
+        let bestDistance = Infinity
+        for (let row = 0; row + size <= rows; row++) {
+          for (let col = 0; col + width <= cols; col++) {
+            const box = { col, row, cols: width, rows: size }
+            const distance = Math.hypot((col + width / 2) * cellW - target.x, (row + size / 2) * cellH - target.y)
+            if (distance < bestDistance && !clutter(sums, box)) {
+              best = box
+              bestDistance = distance
+            }
+          }
+        }
+        if (best)
+          return best
+      }
+      return null
+    }
+
+    const placePortrait = () => {
+      const box = ink && findPortraitBox()
+      const shapes = box && measureGlyphShapes(field.cellW, field.cellH)
+      if (ink && box && shapes)
+        portrait = matchPortrait(ink, shapes, box)
+      else
+        portraitMissing = true
+    }
+
+    const layout = () => {
+      skyRect = root.getBoundingClientRect()
+      const title = document.querySelector('#site-title-link')?.getBoundingClientRect()
+      field.anchor = title
+        ? { x: title.left + title.width / 2 - skyRect.left, y: title.top + title.height / 2 - skyRect.top }
+        : { x: field.width / 2, y: field.height * 0.15 }
+
+      quiet.fill(1)
+      for (const [selector, weight] of QUIET_ZONES) {
+        document.querySelectorAll(selector).forEach((element) => {
+          const rect = element.getBoundingClientRect()
+          if (rect.width > 0 && rect.height > 0)
+            hush(rect, weight)
+        })
+      }
+
+      // Only if text has moved over the portrait does it disperse and find a new place
+      portraitMissing = false
+      if (portrait && (!desktop.matches || clutter(clearance(), portrait)))
+        portraitStale = true
+    }
+
+    const resize = () => {
+      skyRect = root.getBoundingClientRect()
+      ratio = Math.min(window.devicePixelRatio || 1, 2)
+      field.width = skyRect.width
+      field.height = skyRect.height
+      canvas.width = Math.round(field.width * ratio)
+      canvas.height = Math.round(field.height * ratio)
+      ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`
+      field.cellW = ctx.measureText('M').width || 7.2
+
+      const cols = Math.ceil(field.width / field.cellW)
+      const rows = Math.ceil(field.height / field.cellH)
+      if (cols !== field.cols || rows !== field.rows) {
+        const size = cols * rows
+        field.cols = cols
+        field.rows = rows
+        field.alpha = new Float32Array(size)
+        field.glyph = new Uint8Array(size)
+        field.tone = new Uint8Array(size)
+        shownAlpha = new Float32Array(size)
+        shownGlyph = new Uint8Array(size)
+        shownTone = new Uint8Array(size)
+        fromAlpha = new Float32Array(size)
+        fromGlyph = new Uint8Array(size)
+        fromTone = new Uint8Array(size)
+        switchAt = new Float32Array(size)
+        waveAt = new Float32Array(size)
+        quiet = new Float32Array(size)
+        lifted = new Uint32Array(size)
+        // The old frame no longer lines up with the grid
+        morphStart = -1
+        portrait = null
+        portraitLevel = 0
+      }
+
+      buildAtlas()
+      layout()
+    }
+
+    // Snapshots the current frame and lets cells decode into the next scene in a ripple from `origin`
+    const beginMorph = (origin: Point) => {
+      fromAlpha.set(shownAlpha)
+      fromGlyph.set(shownGlyph)
+      fromTone.set(shownTone)
+      const far = Math.hypot(Math.max(origin.x, field.width - origin.x), Math.max(origin.y, field.height - origin.y)) || 1
+      for (let row = 0; row < field.rows; row++) {
+        for (let col = 0; col < field.cols; col++) {
+          const distance = Math.hypot((col + 0.5) * field.cellW - origin.x, (row + 0.5) * field.cellH - origin.y)
+          switchAt[row * field.cols + col] = (1 - DECODE_SPAN) * (0.75 * distance / far + 0.25 * hash3(col, row, 9))
+          waveAt[row * field.cols + col] = (1 - WAVE_SPAN) * distance / far
+        }
+      }
+      morphStart = performance.now()
+    }
+
+    // Hushes a wavering halo of sky around the portrait and draws it in: decoding while it condenses,
+    // then breathing, blinking, catching a sheen now and then, wearing the texture of the scene and
+    // giving way wherever the pointer reaches into it
+    const overlayPortrait = (p: Portrait, now: number) => {
+      const t = skyTime()
+      const centerCol = p.col + p.cols / 2
+      const centerRow = p.row + p.rows / 2
+      const radiusCols = p.cols / 2 + 2
+      const radiusRows = p.rows / 2 + 1
+      const colStart = Math.max(0, Math.floor(centerCol - radiusCols * 1.4))
+      const colEnd = Math.min(field.cols, Math.ceil(centerCol + radiusCols * 1.4))
+      const rowEnd = Math.min(field.rows, Math.ceil(centerRow + radiusRows * 1.4))
+      for (let row = Math.max(0, Math.floor(centerRow - radiusRows * 1.4)); row < rowEnd; row++) {
+        for (let col = colStart; col < colEnd; col++) {
+          // The rim drifts in and out instead of tracing an oval
+          const distance = Math.hypot((col + 0.5 - centerCol) / radiusCols, (row + 0.5 - centerRow) / radiusRows)
+            + 0.5 * (noise3(col * 0.18, row * 0.36, t * 0.15) - 0.5)
+          shownAlpha[row * field.cols + col] *= 1 - 0.85 * portraitLevel * (1 - smooth(clamp01((distance - 0.7) / 0.55)))
+        }
+      }
+
+      const blinking = !reduceMotion && now >= blinkAt
+      if (now > blinkAt + 160)
+        blinkAt = now + 2600 + Math.random() * 4400
+      const breath = 0.92 + 0.08 * Math.sin(t * 0.9)
+      // A sheen sweeping across every nine seconds
+      const sheen = reduceMotion ? -1 : (now / 9000 % 1) * 1.8 - 0.4
+      const pointer = field.pointer
+      for (let row = 0; row < p.rows; row++) {
+        for (let col = 0; col < p.cols; col++) {
+          const j = row * p.cols + col
+          const part = p.part[j]
+          const reveal = (portraitLevel - p.reveal[j]) / DECODE_SPAN
+          if (!part || reveal <= 0)
+            continue
+
+          let x = p.col + col
+          let y = p.row + row
+          const i = y * field.cols + x
+          // Scene changes pass through the portrait as one clean wavefront on their way across the sky
+          const wave = (morphProgress - waveAt[i]) / WAVE_SPAN
+          const glint = ((col + row * 2) / (p.cols + p.rows * 2) - sheen) / 0.07
+          let glyph = p.glyph[j]
+          let alpha = p.alpha[j] * breath * (1 + 0.5 * Math.exp(-glint * glint))
+          let tone = part === EYE ? 1 : 0
+          if (part === HAIR) {
+            textureHair(wave > 0 ? scene : previousScene, x, y, t)
+            glyph = hairCell.glyph
+            alpha *= hairCell.alpha * 1.15
+            tone = hairCell.tone
+          }
+          else if (part === EYE && blinking) {
+            glyph = DASH
+          }
+          if (reveal < 1) {
+            glyph = SCRAMBLE[Math.floor(hash3(i, frame, 6) * SCRAMBLE.length)]
+            alpha *= 0.55
+            tone = 0
+          }
+          else if (wave > 0 && wave < 1) {
+            glyph = SCRAMBLE[Math.floor(hash3(i, frame, 6) * SCRAMBLE.length)]
+            alpha = Math.max(alpha, 0.5) * 1.2
+          }
+
+          // Pushed aside by the pointer, settling back once it moves on
+          if (pointer) {
+            const dx = (x + 0.5) * field.cellW - pointer.x
+            const dy = (y + 0.5) * field.cellH - pointer.y
+            const reach = Math.hypot(dx, dy)
+            if (reach > 0 && reach < PORTRAIT_TOUCH) {
+              const push = pointer.strength * PORTRAIT_TOUCH * 0.5 * (1 - reach / PORTRAIT_TOUCH) ** 2
+              x = Math.round(x + dx / reach * push / field.cellW)
+              y = Math.round(y + dy / reach * push / field.cellH)
+              if (x < 0 || y < 0 || x >= field.cols || y >= field.rows)
+                continue
+            }
+          }
+
+          const k = y * field.cols + x
+          if (lifted[k] === frame && shownAlpha[k] >= alpha)
+            continue
+
+          shownAlpha[k] = alpha
+          shownGlyph[k] = glyph
+          shownTone[k] = tone
+          lifted[k] = frame
+        }
+      }
+    }
+
+    const compose = (now: number) => {
+      field.alpha.fill(0)
+      field.dark = colors.dark
+      SCENES[scene](field, skyTime())
+
+      const strength = SCENE_STRENGTH[scene]
+      const progress = morphStart < 0 ? 1 : (now - morphStart) / MORPH_DURATION
+      if (progress >= 1)
+        morphStart = -1
+      morphProgress = Math.min(progress, 1)
+
+      frame++
+      for (let i = 0; i < shownAlpha.length; i++) {
+        const local = (progress - switchAt[i]) / DECODE_SPAN
+        if (local >= 1) {
+          shownAlpha[i] = field.alpha[i] * strength
+          shownGlyph[i] = field.glyph[i]
+          shownTone[i] = field.tone[i]
+        }
+        else if (local <= 0) {
+          shownAlpha[i] = fromAlpha[i]
+          shownGlyph[i] = fromGlyph[i]
+          shownTone[i] = fromTone[i]
+        }
+        else {
+          shownAlpha[i] = Math.max(field.alpha[i] * strength, fromAlpha[i])
+          shownGlyph[i] = SCRAMBLE[Math.floor(hash3(i, frame, 5) * SCRAMBLE.length)]
+          shownTone[i] = 0
+        }
+      }
+
+      if (portrait && portraitLevel > 0)
+        overlayPortrait(portrait, now)
+    }
+
+    const paint = () => {
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Dark glyphs on a light background read heavier, so give them less ink
+      const ink = colors.dark ? 0.68 : 0.55
+      const pointer = field.pointer
+      const { cols, rows, cellW, cellH } = field
+      const t = skyTime()
+      // The sky dissolves in from the column on desktop, and out toward the bottom everywhere
+      const fadeLeft = desktop.matches ? EDGE_FADE : 0
+      const fadeTop = field.height * (desktop.matches ? 0.45 : 0.4)
+      const fadeBottom = field.height * (desktop.matches ? 0.96 : 1)
+      for (let row = 0; row < rows; row++) {
+        const top = Math.round(row * cellH * ratio)
+        const y = (row + 0.5) * cellH
+        for (let col = 0; col < cols; col++) {
+          const i = row * cols + col
+          let alpha = shownAlpha[i]
+          if (alpha < 0.01)
+            continue
+
+          alpha *= ink
+          // The portrait stands clear of the quiet zones and the edges
+          if (lifted[i] !== frame) {
+            // Slow noise nudges where each cell looks up its quiet zone and edges, so none of them runs straight
+            const wx = noise3(col * 0.09, row * 0.17, t * 0.06) - 0.5
+            const wy = noise3(col * 0.09 + 41.3, row * 0.17, t * 0.06) - 0.5
+            const qc = Math.min(cols - 1, Math.max(0, col + Math.round(wx * WANDER_COLS)))
+            const qr = Math.min(rows - 1, Math.max(0, row + Math.round(wy * WANDER_ROWS)))
+            alpha *= quiet[qr * cols + qc]
+
+            let edge = smooth(clamp01((fadeBottom - y + wy * 120) / (fadeBottom - fadeTop)))
+            if (fadeLeft)
+              edge *= smooth(clamp01(((col + 0.5) * cellW - 6 - (wx + 0.5) * fadeLeft * 0.6) / fadeLeft))
+            // Thinning into drifting grain rather than a smooth gradient
+            if (edge < 1)
+              alpha *= edge * clamp01((edge * 1.5 - noise3(col * 0.55, row * 0.9, t * 0.35)) * 3)
+          }
+
+          // The pointer works like a lantern held up to the sky
+          if (pointer) {
+            const dx = (col + 0.5) * cellW - pointer.x
+            const dy = y - pointer.y
+            alpha *= 1 + 0.9 * pointer.strength * Math.exp(-(dx * dx + dy * dy) / LANTERN_RADIUS ** 2)
+          }
+
+          const level = Math.min(LEVELS, Math.round(alpha / MAX_ALPHA * LEVELS))
+          if (level > 0) {
+            ctx.drawImage(
+              atlas,
+              shownGlyph[i] * glyphW,
+              (shownTone[i] * LEVELS + level - 1) * glyphH,
+              glyphW,
+              glyphH,
+              Math.round(col * cellW * ratio),
+              top,
+              glyphW,
+              glyphH,
+            )
+          }
+        }
+      }
+    }
+
+    const updateLantern = () => {
+      if (pointerTarget) {
+        if (lantern.strength === 0)
+          Object.assign(lantern, pointerTarget)
+
+        lantern.x = lerp(lantern.x, pointerTarget.x, 0.3)
+        lantern.y = lerp(lantern.y, pointerTarget.y, 0.3)
+        lantern.strength = Math.min(1, lantern.strength + 0.12)
+      }
+      else {
+        lantern.strength = Math.max(0, lantern.strength - 0.08)
+      }
+      field.pointer = lantern.strength > 0 ? lantern : null
+    }
+
+    // Condenses once the sky has first settled and stays, dispersing only to make way for text
+    const stepPortrait = (now: number) => {
+      const elapsed = now - portraitClock
+      portraitClock = now
+      const wanted = desktop.matches && !portraitStale && now >= portraitAfter
+      if (wanted && !portrait && !portraitMissing)
+        placePortrait()
+
+      const before = portraitLevel
+      if (wanted && portrait)
+        portraitLevel = reduceMotion ? 1 : Math.min(1, portraitLevel + elapsed / PORTRAIT_CONDENSE)
+      else
+        portraitLevel = reduceMotion ? 0 : Math.max(0, portraitLevel - elapsed / PORTRAIT_DISPERSE)
+      portraitMoving = portraitLevel !== before
+
+      // Once gone, the next portrait measures the page afresh
+      if (portraitLevel === 0) {
+        portrait = null
+        portraitStale = false
+      }
+    }
+
+    const render = (now = performance.now()) => {
+      updateLantern()
+      stepPortrait(now)
+      compose(now)
+      paint()
+    }
+
+    const tick = (now: number) => {
+      rafId = requestAnimationFrame(tick)
+      // Smoother while something is on the move, including the pointer reaching into the portrait
+      const busy = morphStart >= 0 || portraitMoving || (portrait && lantern.strength > 0 && lantern.x >= 0)
+      if (now - lastFrame < (busy ? MORPH_FRAME_INTERVAL : FRAME_INTERVAL))
+        return
+
+      lastFrame = now
+      render(now)
+    }
+
+    const start = () => {
+      if (reduceMotion || rafId || document.hidden || !inView)
+        return
+
+      rafId = requestAnimationFrame(tick)
+    }
+
+    const stop = () => {
+      cancelAnimationFrame(rafId)
+      rafId = 0
+    }
+
+    // The portrait is fetched once the sky has settled on a wide screen
+    const loadInk = () => {
+      const source = root.dataset.portrait
+      if (inkRequested || !source || !desktop.matches)
+        return
+
+      inkRequested = true
+      readInkMap(source).then((map) => {
+        ink = map
+        portraitMissing = false
+        if (reduceMotion)
+          render()
+      }).catch(() => {})
+    }
+
+    // The world map is fetched the first time the archive is visited
+    const loadWorld = () => {
+      const source = root.dataset.world
+      if (worldMap || worldRequested || !source)
+        return
+
+      worldRequested = true
+      readInkMap(source).then((map) => {
+        worldMap = map
+        if (reduceMotion)
+          render()
+      }).catch(() => {})
+    }
+
+    const setScene = (next: SceneName) => {
+      if (next === scene)
+        return
+
+      previousScene = scene
+      scene = next
+      if (scene === 'world')
+        loadWorld()
+      if (reduceMotion) {
+        render()
+        return
+      }
+
+      // Decode from wherever the visitor just clicked, otherwise from the title
+      const press = lastPress && performance.now() - lastPress.time < 3000 ? lastPress : null
+      beginMorph(press ?? field.anchor)
+      lastPress = null
+    }
+
+    // The next page may still be settling in, so measure its layout twice
+    const refresh = () => {
+      layout()
+      window.clearTimeout(settleTimer)
+      settleTimer = window.setTimeout(layout, 700)
+    }
+
+    const themeObserver = new MutationObserver(() => {
+      colors = readColors()
+      reduceMotion = prefersReducedMotion()
+      buildAtlas()
+      render()
+      if (reduceMotion)
+        stop()
+      else
+        start()
+    })
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+
+    const resizeObserver = new ResizeObserver(() => {
+      resize()
+      render()
+      // The window may have just widened enough for the portrait
+      window.clearTimeout(inkTimer)
+      if (!ink)
+        inkTimer = window.setTimeout(loadInk, Math.max(0, portraitAfter - performance.now()))
+    })
+    resizeObserver.observe(root)
+
+    // Pause while scrolled away (mobile) or while the tab is hidden
+    const intersectionObserver = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting
+      if (inView)
+        start()
+      else
+        stop()
+    })
+    intersectionObserver.observe(root)
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden)
+        stop()
+      else
+        start()
+    }, { signal })
+
+    document.addEventListener('pointerdown', (event) => {
+      const rect = root.getBoundingClientRect()
+      lastPress = { x: event.clientX - rect.left, y: event.clientY - rect.top, time: performance.now() }
+    }, { passive: true, signal })
+
+    if (finePointer) {
+      document.addEventListener('pointermove', (event) => {
+        pointerTarget = { x: event.clientX - skyRect.left, y: event.clientY - skyRect.top }
+      }, { passive: true, signal })
+      document.addEventListener('pointerout', (event) => {
+        if (!event.relatedTarget)
+          pointerTarget = null
+      }, { signal })
+    }
+
+    // Re-measure once the monospace font is ready
+    document.fonts.load(`${FONT_SIZE}px "JetBrains Mono Variable"`).then(() => {
+      if (signal.aborted)
+        return
+
+      resize()
+      render()
+    }).catch(() => {})
+
+    resize()
+    // The first visit decodes the sky out of the title
+    if (!reduceMotion)
+      beginMorph(field.anchor)
+    render()
+    root.dataset.ready = ''
+    start()
+    if (scene === 'world')
+      loadWorld()
+
+    return {
+      root,
+      refresh,
+      setScene,
+      destroy() {
+        stop()
+        window.clearTimeout(settleTimer)
+        window.clearTimeout(inkTimer)
+        controller.abort()
+        themeObserver.disconnect()
+        resizeObserver.disconnect()
+        intersectionObserver.disconnect()
+      },
+    }
+  }
+
+  function mountSky() {
+    const root = document.querySelector<HTMLElement>('[data-ascii-sky]')
+    if (activeSky && activeSky.root !== root) {
+      activeSky.destroy()
+      activeSky = null
+    }
+
+    if (activeSky)
+      activeSky.refresh()
+    else if (root)
+      activeSky = createSky(root)
+  }
+
+  mountSky()
+  document.addEventListener('astro:page-load', mountSky)
+  // The swapped-in page names its scene, so start decoding before it finishes loading
+  document.addEventListener('astro:after-swap', () => {
+    activeSky?.setScene(readScene())
+  })
+</script>

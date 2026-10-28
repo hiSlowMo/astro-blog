@@ -4,7 +4,7 @@ import { ui } from '@/i18n/ui'
 import { getPageInfo } from '@/utils/page'
 
 const { currentLang, getLocalizedPath, isPost } = getPageInfo(Astro.url.pathname)
-const { title, subtitle, i18nTitle } = themeConfig.site
+const { title, subtitle, i18nTitle, status } = themeConfig.site
 
 const currentUI = ui[currentLang as keyof typeof ui] ?? {}
 const headerTitle = i18nTitle ? currentUI.title : title
@@ -59,4 +59,83 @@ const SubtitleTag = isPost ? 'div' : 'h2'
       {headerSubtitle}
     </SubtitleTag>
   )}
+
+  {status && (
+    <p
+      class:list={[
+        'site-status mt-3 items-center gap-2 text-3 font-time lg:(mt-4 text-3.25)',
+        isPost ? 'hidden lg:flex' : 'flex',
+      ]}
+      data-tone={status.tone ?? 'online'}
+    >
+      <span class="site-status-dot" aria-hidden="true" />
+      {status.text}
+    </p>
+  )}
 </header>
+
+<style>
+  .site-status {
+    --status-color: oklch(var(--un-preset-theme-colors-accent));
+  }
+  .site-status[data-tone='away'] {
+    --status-color: oklch(66% 0.14 70);
+  }
+  :global(html.dark) .site-status[data-tone='away'] {
+    --status-color: oklch(80% 0.14 80);
+  }
+  .site-status[data-tone='offline'] {
+    --status-color: oklch(var(--un-preset-theme-colors-secondary) / 0.5);
+  }
+
+  .site-status-dot {
+    position: relative;
+    flex: none;
+    width: 0.45rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--status-color);
+  }
+
+  /* online: ping ripple, away: slow breathing, offline: static */
+  .site-status-dot::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: inherit;
+    content: '';
+    animation: site-status-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .site-status:not([data-tone='online']) .site-status-dot::after {
+    display: none;
+  }
+  .site-status[data-tone='away'] .site-status-dot {
+    animation: site-status-breathe 3.2s ease-in-out infinite;
+  }
+
+  @keyframes site-status-ping {
+    75%,
+    100% {
+      opacity: 0;
+      scale: 2.6;
+    }
+  }
+
+  @keyframes site-status-breathe {
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  :global(html.reduce-motion) .site-status-dot,
+  :global(html.reduce-motion) .site-status-dot::after {
+    animation: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-status-dot,
+    .site-status-dot::after {
+      animation: none;
+    }
+  }
+</style>

@@ -25,6 +25,11 @@ export const themeConfig: ThemeConfig = {
     startDate: '2026-02-14',
     // used by the archive page age watermark
     birthYear: 2007,
+    // status light under the site title, remove to hide it
+    status: {
+      text: '办公中',
+      tone: 'online', // online | away | offline
+    },
   },
   // SITE INFORMATION >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END
 
@@ -32,22 +37,26 @@ export const themeConfig: ThemeConfig = {
   color: {
     // default theme mode
     mode: 'dark', // light | dark | auto
+    // Plain black and white, with one restrained accent each
     light: {
-      primary: 'oklch(28% 0.006 298)',
-      secondary: 'oklch(40% 0.006 298)',
-      background: 'oklch(94% 0.006 298)',
-      highlight: 'oklch(0.93 0.16 103 / 0.30)',
+      primary: 'oklch(20% 0 0)',
+      secondary: 'oklch(44% 0 0)',
+      background: 'oklch(98.5% 0 0)',
+      accent: 'oklch(46% 0.27 265)', // klein blue
+      highlight: 'oklch(46% 0.27 265 / 0.14)',
     },
 
     dark: {
       // primary color
-      primary: 'oklch(92% 0.005 298)',
+      primary: 'oklch(94% 0 0)',
       // secondary color
-      secondary: 'oklch(77% 0.005 298)',
+      secondary: 'oklch(72% 0 0)',
       // background color
-      background: 'oklch(22% 0.005 298)',
+      background: 'oklch(14.5% 0 0)',
+      // accent color, used sparingly: links, the status light, a few glyphs of the sky
+      accent: 'oklch(76% 0.15 167)', // mint
       // highlight color
-      highlight: 'oklch(0.93 0.195089 103.2532 / 0.2)', // rgba(255,235,0,0.2)
+      highlight: 'oklch(76% 0.15 167 / 0.2)',
     },
   },
   // COLOR SETTINGS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END

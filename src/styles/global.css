@@ -30,6 +30,11 @@ h1, h2, h3, h4 {
   opacity: 0.82;
 }
 
+.font-time {
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
 .year-watermark {
   color: transparent;
   -webkit-text-stroke: 1px oklch(var(--un-preset-theme-colors-secondary) / 0.18);

@@ -5,6 +5,7 @@ import Footer from '@/components/Footer.astro'
 import Header from '@/components/Header.astro'
 import Navbar from '@/components/Navbar.astro'
 import SearchModal from '@/components/SearchModal.astro'
+import AsciiSky from '@/components/Widgets/AsciiSky.astro'
 import CodeCopyButton from '@/components/Widgets/CodeCopyButton.astro'
 import GithubCard from '@/components/Widgets/GithubCard.astro'
 import ImageZoom from '@/components/Widgets/ImageZoom.astro'
@@ -35,7 +36,17 @@ const {
   supportedLangs = [],
   enableContentEnhancements = false,
 } = Astro.props
-const { isPost, isSearch } = getPageInfo(Astro.url.pathname)
+const { isPost, isSearch, isMoments, isAbout, isArchive, isTag, isLinks } = getPageInfo(Astro.url.pathname)
+// Each section of the site gets its own sky, the rest share the clouds
+const skyScenes = [
+  [isMoments, 'rain'],
+  [isAbout, 'stars'],
+  [isArchive, 'world'],
+  [isTag, 'contour'],
+  [isLinks, 'fireflies'],
+  [isPost, 'haze'],
+] as const
+const skyScene = skyScenes.find(([matches]) => matches)?.[1] ?? 'clouds'
 const fontStyle = themeConfig.global.fontStyle === 'serif' ? 'font-serif' : 'font-sans'
 const MarginBottom = isPost && themeConfig.comment.enabled
   ? 'mb-10' // Post page with comment
@@ -51,38 +62,14 @@ const MarginBottom = isPost && themeConfig.comment.enabled
 >
   <Head {postTitle} {postDescription} {postSlug} />
   <body data-pagefind-ignore={isPost ? undefined : 'all'}>
+    <AsciiSky scene={skyScene} />
     <div
-      class="group mx-auto max-w-205.848 min-h-vh w-full min-h-dvh sm:(max-w-45rem px-10 py-10)"
+      class="mx-auto max-w-205.848 min-h-vh w-full min-h-dvh sm:(max-w-45rem px-10 py-10)"
       p="x-[min(6vw,1.35rem)] y-7"
       lg="mx-[max(5.75rem,calc(50vw-34.25rem))] my-20 max-w-[min(calc(75vw-16rem),44rem)] min-h-full p-0"
     >
       <Header />
       <Navbar />
-      <!-- 图像 -->
-      <div
-        class="pointer-events-none fixed top-14 z--1 hidden lg:block"
-        style="
-          --side-gap: 2rem;
-          left: calc(50% + min(calc(37.5vw - 8rem), 22rem) + var(--side-gap));
-        "
-      >
-        <div
-          class:list={[
-            'mt-8 w-42 overflow-hidden rounded-xl border border-secondary/10 shadow-sm',
-            'op-0 blur-md scale-95 transition-all duration-700 ease-in-out',
-            'group-hover:(op-50 blur-none scale-100)',
-          ]}
-        >
-          <img
-            src="https://img.theslowmo.com/2026/02/53b430a94fe1774680cd438cbe36658c.webp"
-            alt="Side Banner"
-            class="w-full object-cover"
-            loading="lazy"
-            decoding="async"
-            fetchpriority="low"
-          />
-        </div>
-      </div>
       <main
         class={MarginBottom}
         data-pagefind-body={isPost ? '' : undefined}

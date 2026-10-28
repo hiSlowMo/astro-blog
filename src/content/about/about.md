@@ -5,13 +5,20 @@ description: 关于 SlowMoBlogs：写什么、为什么写、以及我是谁。
 lang: zh
 ---
 <div style="display: flex; align-items: center; gap: clamp(1rem, 3.2vw, 2rem); margin-bottom: 2rem; flex-wrap: wrap;">
-  <img
-    src="https://img.theslowmo.com/2026/08/bf1a4df8e1e457061fcc750c054f6691.webp"
-    alt="SlowMo 头像"
-    loading="lazy"
-    decoding="async"
-    style="width: clamp(96px, 28vw, 150px); height: clamp(96px, 28vw, 150px); border-radius: 1rem; object-fit: cover; flex-shrink: 0; border: 2px solid oklch(var(--un-preset-theme-colors-secondary) / 0.2);"
-  />
+  <div class="about-avatar">
+    <span class="about-orbit" aria-hidden="true">
+      <span class="about-orbit-hatch"></span>
+      <span class="about-orbit-cross"></span>
+      <span class="about-orbit-ring"></span>
+    </span>
+    <img
+      src="https://img.theslowmo.com/2026/08/bf1a4df8e1e457061fcc750c054f6691.webp"
+      alt="SlowMo 头像"
+      loading="lazy"
+      decoding="async"
+      style="width: clamp(96px, 28vw, 150px); height: clamp(96px, 28vw, 150px); border-radius: 1rem; object-fit: cover; flex-shrink: 0; border: 2px solid oklch(var(--un-preset-theme-colors-secondary) / 0.2);"
+    />
+  </div>
 
   <div style="flex: 1 1 260px; min-width: min(100%, 260px);">
     <h3 style="margin-top: 0; margin-bottom: 0.5rem;">你好，这里是开场白。</h3>

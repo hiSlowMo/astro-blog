@@ -19,6 +19,10 @@ export interface ThemeConfig {
     favicon: string
     startDate: string
     birthYear?: number
+    status?: {
+      text: string
+      tone?: 'online' | 'away' | 'offline'
+    }
   }
   color: {
     mode: 'light' | 'dark' | 'auto'
@@ -26,12 +30,14 @@ export interface ThemeConfig {
       primary: string
       secondary: string
       background: string
+      accent: string
       highlight: string
     }
     dark: {
       primary: string
       secondary: string
       background: string
+      accent: string
       highlight: string
     }
   }
