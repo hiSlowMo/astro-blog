@@ -87,6 +87,8 @@ const { scene = 'clouds' } = Astro.props
     glyph: Uint8Array
     tone: Uint8Array
     dark: boolean
+    // The short band behind the header on phones, where each scene runs a little denser
+    compact: boolean
     // Center of the site title, the focal point most scenes gather around
     anchor: Point
     pointer: (Point & { strength: number }) | null
@@ -152,6 +154,9 @@ const { scene = 'clouds' } = Astro.props
   // The portrait only shimmers in a thin wave, so it never breaks up while the sky changes around it
   const WAVE_SPAN = 0.07
   const LANTERN_RADIUS = 150
+  // A tap or click sends a ring of light out across the sky, in pixels per millisecond and milliseconds
+  const RIPPLE_SPEED = 0.34
+  const RIPPLE_LIFE = 1500
 
   const SCENE_STRENGTH: Record<SceneName, number> = {
     clouds: 1,
@@ -173,6 +178,9 @@ const { scene = 'clouds' } = Astro.props
     ['main', 0.3],
   ]
   const QUIET_FEATHER = 44
+  // On phones the sky sits right behind the title and navigation, so it steps back from each line of text, not whole blocks
+  const LINE_QUIET = 0.2
+  const LINE_FEATHER = 24
   // How far, in cells, the quiet zones and the edges of the sky wander
   const WANDER_COLS = 8
   const WANDER_ROWS = 4
@@ -268,6 +276,7 @@ const { scene = 'clouds' } = Astro.props
 
   // Drifting clouds, a touch denser around the title; at night stars show through the gaps
   function drawClouds(f: Field, t: number, threshold: number, stars: boolean) {
+    threshold -= f.compact ? 0.045 : 0
     const drift = t * 0.04
     const morph = t * 0.022
     for (let row = 0; row < f.rows; row++) {
@@ -314,11 +323,12 @@ const { scene = 'clouds' } = Astro.props
 
     for (let col = 0; col < f.cols; col++) {
       const shower = noise3(col / 14, t * 0.08, 5.3)
-      if (shower < 0.38)
+      const onset = f.compact ? 0.3 : 0.38
+      if (shower < onset)
         continue
 
-      const intensity = Math.min((shower - 0.38) / 0.25, 1)
-      for (let drop = 0; drop < 2; drop++) {
+      const intensity = Math.min((shower - onset) / 0.25, 1)
+      for (let drop = 0; drop < (f.compact ? 3 : 2); drop++) {
         const seed = hash3(col, drop, 11)
         const speed = 9 + seed * 9
         const length = 3 + Math.floor(hash3(col, drop, 12) * 6)
@@ -363,7 +373,7 @@ const { scene = 'clouds' } = Astro.props
     }
 
     const reach = Math.hypot(Math.max(px, f.width - px), Math.max(py, f.height - py)) + f.cellW
-    const count = Math.round(Math.PI * reach * reach / 2200)
+    const count = Math.round(Math.PI * reach * reach / (f.compact ? 1400 : 2200))
     for (let n = 0; n < count; n++) {
       const radius = reach * Math.sqrt(hash3(n, 1, 21))
       const theta = hash3(n, 2, 21) * Math.PI * 2 + turn
@@ -454,8 +464,9 @@ const { scene = 'clouds' } = Astro.props
   // a faint graticule over the sea, and a line of dots where dusk and dawn fall right now
   function drawWorld(f: Field, t: number) {
     const north = 74
-    // Wide enough to take in whole continents, the far south sinking into the fade at the bottom
-    const scale = Math.min(f.width / 150, f.height / (north + 58))
+    // Wide enough to take in whole continents, the far south sinking into the fade at the bottom;
+    // the short band on phones keeps to the northern half, which would otherwise shrink to a few rows
+    const scale = f.compact ? f.height / 100 : Math.min(f.width / 150, f.height / (north + 58))
     // Once round the world every ten minutes, setting out from east Asia
     const center = 115 - (t % 600) * 0.6
     const days = t / 86400
@@ -496,7 +507,7 @@ const { scene = 'clouds' } = Astro.props
           if (light > 0.92)
             plot(f, col, row, cover * (0.45 + 0.3 * Math.sin(t * 1.3 + light * 90)), light > 0.99 ? STAR : MIDDOT, 1)
           else
-            plot(f, col, row, cover * (coast ? 0.36 : 0.2), coast ? COLON : DOT)
+            plot(f, col, row, cover * (coast ? 0.4 : 0.24), coast ? COLON : DOT)
         }
         else if (Math.abs(sun) < 0.03) {
           plot(f, col, row, 0.3, DOT)
@@ -523,8 +534,8 @@ const { scene = 'clouds' } = Astro.props
 
   // Wandering lights that link up whenever they drift close, and reach for the pointer too
   function drawFireflies(f: Field, t: number) {
-    const count = Math.min(64, Math.max(14, Math.round(f.width * f.height / 11000)))
-    const reach = Math.min(170, f.width * 0.3)
+    const count = Math.min(64, Math.max(f.compact ? 24 : 14, Math.round(f.width * f.height / 11000)))
+    const reach = Math.min(170, f.width * (f.compact ? 0.4 : 0.3))
     const lights: Array<Point & { glow: number }> = []
     for (let n = 0; n < count; n++) {
       const travel = (((hash3(n, 1, 31) + t * (hash3(n, 3, 31) - 0.5) * 0.01) % 1) + 1) % 1
@@ -786,6 +797,7 @@ const { scene = 'clouds' } = Astro.props
       glyph: new Uint8Array(0),
       tone: new Uint8Array(0),
       dark: colors.dark,
+      compact: false,
       anchor: { x: 0, y: 0 },
       pointer: null,
     }
@@ -805,6 +817,7 @@ const { scene = 'clouds' } = Astro.props
     const lantern = { x: 0, y: 0, strength: 0 }
     let pointerTarget: Point | null = null
     let lastPress: (Point & { time: number }) | null = null
+    const ripples: Array<Point & { time: number }> = []
 
     let inView = true
     let rafId = 0
@@ -854,24 +867,24 @@ const { scene = 'clouds' } = Astro.props
     }
 
     // Thins the sky out around a rect given in sky coordinates
-    const hush = (rect: DOMRect, weight: number) => {
+    const hush = (rect: DOMRect, weight: number, feather = QUIET_FEATHER) => {
       const left = rect.left - skyRect.left
       const top = rect.top - skyRect.top
       const right = rect.right - skyRect.left
       const bottom = rect.bottom - skyRect.top
-      const colEnd = Math.min(field.cols, Math.ceil((right + QUIET_FEATHER) / field.cellW))
-      const rowEnd = Math.min(field.rows, Math.ceil((bottom + QUIET_FEATHER) / field.cellH))
-      for (let row = Math.max(0, Math.floor((top - QUIET_FEATHER) / field.cellH)); row < rowEnd; row++) {
+      const colEnd = Math.min(field.cols, Math.ceil((right + feather) / field.cellW))
+      const rowEnd = Math.min(field.rows, Math.ceil((bottom + feather) / field.cellH))
+      for (let row = Math.max(0, Math.floor((top - feather) / field.cellH)); row < rowEnd; row++) {
         const y = (row + 0.5) * field.cellH
         const dy = Math.max(top - y, 0, y - bottom)
-        for (let col = Math.max(0, Math.floor((left - QUIET_FEATHER) / field.cellW)); col < colEnd; col++) {
+        for (let col = Math.max(0, Math.floor((left - feather) / field.cellW)); col < colEnd; col++) {
           const x = (col + 0.5) * field.cellW
           const distance = Math.hypot(Math.max(left - x, 0, x - right), dy)
-          if (distance >= QUIET_FEATHER)
+          if (distance >= feather)
             continue
 
           const i = row * field.cols + col
-          quiet[i] = Math.min(quiet[i], lerp(weight, 1, smooth(distance / QUIET_FEATHER)))
+          quiet[i] = Math.min(quiet[i], lerp(weight, 1, smooth(distance / feather)))
         }
       }
     }
@@ -879,13 +892,13 @@ const { scene = 'clouds' } = Astro.props
     const isShown = (element: Element | null) =>
       !!element && (element.checkVisibility?.({ opacityProperty: true, visibilityProperty: true }) ?? true)
 
-    // Rects of the text and icons laid over the sky
-    const textRects = () => {
+    // Rects of the text and icons laid over the sky, skipping anything that starts below it
+    const textRects = (selector = PORTRAIT_AVOID) => {
       const rects: DOMRect[] = []
-      document.querySelectorAll(PORTRAIT_AVOID).forEach((container) => {
+      document.querySelectorAll(selector).forEach((container) => {
         const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT)
         for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-          if (!node.textContent?.trim() || !isShown(node.parentElement))
+          if (!node.textContent?.trim() || !isShown(node.parentElement) || node.parentElement!.getBoundingClientRect().top > skyRect.bottom)
             continue
 
           const range = document.createRange()
@@ -990,12 +1003,18 @@ const { scene = 'clouds' } = Astro.props
         : { x: field.width / 2, y: field.height * 0.15 }
 
       quiet.fill(1)
-      for (const [selector, weight] of QUIET_ZONES) {
-        document.querySelectorAll(selector).forEach((element) => {
-          const rect = element.getBoundingClientRect()
-          if (rect.width > 0 && rect.height > 0)
-            hush(rect, weight)
-        })
+      if (desktop.matches) {
+        for (const [selector, weight] of QUIET_ZONES) {
+          document.querySelectorAll(selector).forEach((element) => {
+            const rect = element.getBoundingClientRect()
+            if (rect.width > 0 && rect.height > 0)
+              hush(rect, weight)
+          })
+        }
+      }
+      else {
+        for (const rect of textRects(`${PORTRAIT_AVOID}, main`))
+          hush(rect, LINE_QUIET, LINE_FEATHER)
       }
 
       // Only if text has moved over the portrait does it disperse and find a new place
@@ -1149,9 +1168,48 @@ const { scene = 'clouds' } = Astro.props
       }
     }
 
+    // Rings sent out by taps and clicks: what they pass over lights up, and their crest catches the accent color
+    const overlayRipples = (now: number) => {
+      const { cols, rows, cellW, cellH } = field
+      for (let n = ripples.length - 1; n >= 0; n--) {
+        if (now - ripples[n].time > RIPPLE_LIFE)
+          ripples.splice(n, 1)
+      }
+      for (const ripple of ripples) {
+        const age = (now - ripple.time) / RIPPLE_LIFE
+        const front = (now - ripple.time) * RIPPLE_SPEED
+        const fade = 1 - age
+        const rowEnd = Math.min(rows, Math.ceil((ripple.y + front + 40) / cellH))
+        const colEnd = Math.min(cols, Math.ceil((ripple.x + front + 40) / cellW))
+        for (let row = Math.max(0, Math.floor((ripple.y - front - 40) / cellH)); row < rowEnd; row++) {
+          for (let col = Math.max(0, Math.floor((ripple.x - front - 40) / cellW)); col < colEnd; col++) {
+            // A little noise keeps the ring from tracing a perfect circle
+            const distance = Math.hypot((col + 0.5) * cellW - ripple.x, (row + 0.5) * cellH - ripple.y)
+              + 10 * (noise3(col * 0.3, row * 0.6, age * 3) - 0.5)
+            const crest = (distance - front) / 18
+            if (Math.abs(crest) > 2.4)
+              continue
+
+            const glow = fade * Math.exp(-crest * crest)
+            const i = row * cols + col
+            if (shownAlpha[i] > 0.04) {
+              shownAlpha[i] = Math.min(MAX_ALPHA, shownAlpha[i] + 0.7 * glow)
+            }
+            else if (glow > 0.12) {
+              shownAlpha[i] = 0.75 * glow
+              shownGlyph[i] = glow > 0.5 ? COLON : DOT
+            }
+            if (glow > 0.55)
+              shownTone[i] = 1
+          }
+        }
+      }
+    }
+
     const compose = (now: number) => {
       field.alpha.fill(0)
       field.dark = colors.dark
+      field.compact = !desktop.matches
       SCENES[scene](field, skyTime())
 
       const strength = SCENE_STRENGTH[scene]
@@ -1180,6 +1238,8 @@ const { scene = 'clouds' } = Astro.props
         }
       }
 
+      if (ripples.length)
+        overlayRipples(now)
       if (portrait && portraitLevel > 0)
         overlayPortrait(portrait, now)
     }
@@ -1189,13 +1249,14 @@ const { scene = 'clouds' } = Astro.props
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       // Dark glyphs on a light background read heavier, so give them less ink
-      const ink = colors.dark ? 0.68 : 0.55
+      // and phones get more, the sky there being a narrow band mostly behind text
+      const ink = (colors.dark ? 0.68 : 0.55) * (field.compact ? 1.3 : 1)
       const pointer = field.pointer
       const { cols, rows, cellW, cellH } = field
       const t = skyTime()
       // The sky dissolves in from the column on desktop, and out toward the bottom everywhere
       const fadeLeft = desktop.matches ? EDGE_FADE : 0
-      const fadeTop = field.height * (desktop.matches ? 0.45 : 0.4)
+      const fadeTop = field.height * (desktop.matches ? 0.45 : 0.6)
       const fadeBottom = field.height * (desktop.matches ? 0.96 : 1)
       for (let row = 0; row < rows; row++) {
         const top = Math.round(row * cellH * ratio)
@@ -1296,7 +1357,7 @@ const { scene = 'clouds' } = Astro.props
     const tick = (now: number) => {
       rafId = requestAnimationFrame(tick)
       // Smoother while something is on the move, including the pointer reaching into the portrait
-      const busy = morphStart >= 0 || portraitMoving || (portrait && lantern.strength > 0 && lantern.x >= 0)
+      const busy = morphStart >= 0 || portraitMoving || ripples.length > 0 || (portrait && lantern.strength > 0 && lantern.x >= 0)
       if (now - lastFrame < (busy ? MORPH_FRAME_INTERVAL : FRAME_INTERVAL))
         return
 
@@ -1413,6 +1474,11 @@ const { scene = 'clouds' } = Astro.props
     document.addEventListener('pointerdown', (event) => {
       const rect = root.getBoundingClientRect()
       lastPress = { x: event.clientX - rect.left, y: event.clientY - rect.top, time: performance.now() }
+      if (!reduceMotion && lastPress.x >= 0 && lastPress.y >= 0 && lastPress.x <= rect.width && lastPress.y <= rect.height) {
+        ripples.push({ ...lastPress })
+        if (ripples.length > 4)
+          ripples.shift()
+      }
     }, { passive: true, signal })
 
     if (finePointer) {
