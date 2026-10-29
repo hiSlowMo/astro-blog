@@ -87,7 +87,7 @@ const moreItems = [
 >
   <ul class="nav-list">
     {navItems.map(item => (
-      <li class="nav-primary-item">
+      <li class="nav-primary-item" inert={isMoreActive}>
         <a
           href={getLocalizedPath(item.href)}
           class={item.className}
@@ -111,7 +111,7 @@ const moreItems = [
             {currentUI.more}
           </span>
         </button>
-        <div class="nav-more-panel" aria-hidden={isMoreActive ? 'false' : 'true'}>
+        <div class="nav-more-panel" aria-hidden={isMoreActive ? 'false' : 'true'} inert={!isMoreActive}>
           <ul class="nav-more-list">
             {moreItems.map((item, index) => (
               <li style={`--nav-item-index:${index};`}>
@@ -148,6 +148,10 @@ const moreItems = [
 
 <script is:inline data-astro-rerun>
 (function () {
+  if (globalThis.__navMoreLifecycleBound)
+    return
+  globalThis.__navMoreLifecycleBound = true
+
   function initNavMoreToggle() {
     const nav = document.querySelector('nav[aria-label="Site Navigation"]')
     if (!nav || nav.dataset.navBound === '1')
@@ -155,6 +159,7 @@ const moreItems = [
 
     const trigger = nav.querySelector('[data-nav-more-trigger]')
     const panel = nav.querySelector('.nav-more-panel')
+    const primaryItems = nav.querySelectorAll('.nav-primary-item')
     if (!(trigger instanceof HTMLElement) || !(panel instanceof HTMLElement))
       return
 
@@ -165,6 +170,8 @@ const moreItems = [
       nav.dataset.navOpen = nextOpen ? '1' : '0'
       trigger.setAttribute('aria-expanded', nextOpen ? 'true' : 'false')
       panel.setAttribute('aria-hidden', nextOpen ? 'false' : 'true')
+      panel.toggleAttribute('inert', !nextOpen)
+      primaryItems.forEach(item => item.toggleAttribute('inert', nextOpen))
     }
 
     const controller = new AbortController()

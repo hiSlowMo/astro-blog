@@ -2,9 +2,10 @@
 import PostList from '@/components/PostList.astro'
 import { allLocales } from '@/config'
 import { getUsedCategoryFilters } from '@/data/post-categories'
-import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
+import { getLangRouteParam } from '@/i18n/lang'
 import Layout from '@/layouts/Layout.astro'
 import { getFeaturedPosts, getPinnedPosts, getPosts, getPostsByYear } from '@/utils/content'
+import { getPageInfo } from '@/utils/page'
 
 export async function getStaticPaths() {
   return allLocales.map(lang => ({
@@ -12,7 +13,7 @@ export async function getStaticPaths() {
   }))
 }
 
-const currentLang = getLangFromLocale(Astro.currentLocale)
+const { currentLang, getLocalizedPath } = getPageInfo(Astro.url.pathname)
 const pinnedPosts = await getPinnedPosts(currentLang)
 const featuredPosts = await getFeaturedPosts(currentLang)
 const postsByYear = await getPostsByYear(currentLang)
@@ -26,6 +27,11 @@ const visiblePostsByYear = new Map(
 ---
 
 <Layout>
+  <section class="home-intro" aria-label="关于 SlowMo">
+    <p>我是 SlowMo，一名软件工程专业的学生。这里记录计算机、排版美学，以及一些缓慢但认真的思考。</p>
+    <a class="home-intro-link" href={getLocalizedPath('/about/')}>更多关于我 →</a>
+  </section>
+
   <div data-posts-root>
     <section class="post-filter font-navbar">
       <div class="post-filter-list">
@@ -125,6 +131,37 @@ const visiblePostsByYear = new Map(
 </script>
 
 <style>
+  .home-intro {
+    max-width: 36rem;
+    margin-bottom: 2.25rem;
+  }
+
+  .home-intro p {
+    margin: 0;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.92);
+    font-size: 0.95rem;
+    line-height: 1.8;
+    text-wrap: pretty;
+  }
+
+  .home-intro-link {
+    display: inline-flex;
+    margin-top: 0.55rem;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.78);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color var(--motion-fast) ease;
+  }
+
+  .home-intro-link:hover {
+    color: oklch(var(--un-preset-theme-colors-primary));
+  }
+
+  .home-intro-link:focus-visible {
+    outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.45);
+    outline-offset: 3px;
+  }
+
   :root {
     --post-control-h: 1.85rem; /* 想更紧凑可改 1.75rem */
     --post-menu-open-duration: var(--motion-fast);

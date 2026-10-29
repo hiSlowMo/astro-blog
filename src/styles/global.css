@@ -108,6 +108,44 @@ h4:hover .heading-anchor-link svg:hover {
 .zoom-img {
   --at-apply: 'fixed z-1000 cursor-zoom-out transition-transform duration-300';
 }
+main img[data-zoom-ready='1'] {
+  cursor: zoom-in;
+}
+main img[data-zoom-ready='1']:focus-visible {
+  outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.55);
+  outline-offset: 4px;
+}
+.zoom-close {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  z-index: 1001;
+  display: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  padding: 0;
+  border: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.3);
+  border-radius: 999px;
+  background: oklch(var(--un-preset-theme-colors-background) / 0.92);
+  color: oklch(var(--un-preset-theme-colors-primary));
+  font: 1.5rem/1 var(--font-sans);
+  cursor: pointer;
+}
+.zoom-close:focus-visible {
+  outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.6);
+  outline-offset: 3px;
+}
+html.reduce-motion .zoom-overlay,
+html.reduce-motion .zoom-img {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .zoom-overlay,
+  .zoom-img {
+    transition: none;
+  }
+}
 
 /* Code Copy Button >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
 .code-copy-button {

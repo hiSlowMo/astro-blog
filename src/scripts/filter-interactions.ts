@@ -233,17 +233,70 @@ export function createDropdownController(dropdown: HTMLElement | null): Dropdown
 
   const controller = new AbortController()
   let isOpen = dropdown.dataset.open === '1'
+  const getOptions = () => Array.from(menu.querySelectorAll<HTMLElement>('[role="option"]'))
 
   const setOpen = (nextOpen: boolean) => {
     isOpen = nextOpen
     dropdown.dataset.open = nextOpen ? '1' : '0'
     trigger.setAttribute('aria-expanded', nextOpen ? 'true' : 'false')
     menu.setAttribute('aria-hidden', nextOpen ? 'false' : 'true')
+    menu.toggleAttribute('inert', !nextOpen)
+  }
+
+  const focusOption = (index: number) => {
+    const options = getOptions()
+    if (options.length === 0)
+      return
+
+    const normalizedIndex = (index + options.length) % options.length
+    options[normalizedIndex]?.focus()
   }
 
   trigger.addEventListener('click', (event) => {
     event.preventDefault()
     setOpen(!isOpen)
+  }, { signal: controller.signal })
+
+  trigger.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')
+      return
+
+    event.preventDefault()
+    setOpen(true)
+    const options = getOptions()
+    const selectedIndex = options.findIndex(option => option.getAttribute('aria-selected') === 'true')
+    focusOption(event.key === 'ArrowDown' ? Math.max(0, selectedIndex) : (selectedIndex < 0 ? options.length - 1 : selectedIndex))
+  }, { signal: controller.signal })
+
+  menu.addEventListener('keydown', (event) => {
+    const options = getOptions()
+    const currentIndex = options.indexOf(document.activeElement as HTMLElement)
+
+    if (event.key === 'Home') {
+      event.preventDefault()
+      focusOption(0)
+    }
+    else if (event.key === 'End') {
+      event.preventDefault()
+      focusOption(options.length - 1)
+    }
+    else if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      focusOption(currentIndex + 1)
+    }
+    else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      focusOption(currentIndex - 1)
+    }
+  }, { signal: controller.signal })
+
+  menu.addEventListener('click', (event) => {
+    const target = event.target
+    if (!(target instanceof Element) || !target.closest('[role="option"]'))
+      return
+
+    setOpen(false)
+    trigger.focus()
   }, { signal: controller.signal })
 
   document.addEventListener('click', (event) => {

@@ -132,11 +132,13 @@ function initPostFilters() {
       const match = matchesFilter(item, filter, activeFilterValues)
       item.classList.toggle('is-hidden', !match)
       item.setAttribute('aria-hidden', match ? 'false' : 'true')
+      item.toggleAttribute('inert', !match)
     })
 
     sections.forEach((section) => {
       const visibleItems = section.querySelectorAll('.post-item:not(.is-hidden)')
       section.classList.toggle('is-hidden', visibleItems.length === 0)
+      section.toggleAttribute('inert', visibleItems.length === 0)
     })
 
     reorderBySortKey()

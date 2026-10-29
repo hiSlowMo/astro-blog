@@ -35,6 +35,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
   data-search-modal
   data-pagefind-ignore
   aria-hidden="true"
+  inert
   data-auto-open={autoOpen ? '1' : '0'}
   data-not-ready={pagefindNotReady}
 >
@@ -44,8 +45,9 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     role="dialog"
     aria-modal="true"
     aria-label={currentUI.search ?? 'Search'}
+    tabindex="-1"
   >
-    <button class="search-modal__close visually-hidden" type="button" data-search-close>
+    <button class="search-modal__close visually-hidden" type="button" aria-label="关闭搜索" data-search-close>
       ×
     </button>
 
@@ -112,6 +114,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
   state.autoOpen = modal.getAttribute('data-auto-open') === '1'
 
   if (previousModal && previousModal !== modal) {
+    document.documentElement.classList.remove('search-modal-open')
     state.pagefindReady = false
     state.pagefindLoading = null
     if (state.resizeObserver) {
@@ -131,6 +134,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
         return
       modal.dataset.open = nextOpen ? '1' : '0'
       modal.setAttribute('aria-hidden', nextOpen ? 'false' : 'true')
+      modal.toggleAttribute('inert', !nextOpen)
       document.documentElement.classList.toggle('search-modal-open', nextOpen)
     }
 
@@ -289,8 +293,11 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
         dialog.style.height = ''
       state.lastDialogHeight = 0
 
-      if (state.lastActive && typeof state.lastActive.focus === 'function') {
-        state.lastActive.focus()
+      const focusTarget = state.lastActive?.isConnected
+        ? state.lastActive
+        : document.querySelector('[data-search-open]')
+      if (focusTarget && typeof focusTarget.focus === 'function') {
+        focusTarget.focus()
       }
     }
 
@@ -312,8 +319,40 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     }
 
     state.handleKeydown = (event) => {
-      if (event.key === 'Escape')
+      const modal = getModal()
+      if (!modal || modal.dataset.open !== '1')
+        return
+
+      if (event.key === 'Escape') {
+        event.preventDefault()
         state.closeModal()
+        return
+      }
+
+      if (event.key !== 'Tab')
+        return
+
+      const focusable = Array.from(modal.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )).filter(element => element.getClientRects().length > 0)
+      const first = focusable[0]
+      const last = focusable.at(-1)
+
+      if (!first || !last) {
+        event.preventDefault()
+        modal.querySelector('.search-modal__dialog')?.focus()
+        return
+      }
+
+      const activeElement = document.activeElement
+      if (event.shiftKey && (activeElement === first || !modal.contains(activeElement))) {
+        event.preventDefault()
+        last.focus()
+      }
+      else if (!event.shiftKey && (activeElement === last || !modal.contains(activeElement))) {
+        event.preventDefault()
+        first.focus()
+      }
     }
 
     state.handleSearchOpen = () => void state.openModal()
@@ -466,6 +505,28 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     clip: rect(0, 0, 0, 0) !important;
     white-space: nowrap !important;
     border: 0 !important;
+  }
+
+  .search-modal__close:focus-visible {
+    position: absolute !important;
+    top: 0.45rem;
+    right: 0.45rem;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    width: 2.2rem !important;
+    height: 2.2rem !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    border: 1px solid var(--search-modal-border) !important;
+    border-radius: 0.45rem;
+    background: var(--search-modal-bg);
+    color: var(--search-modal-text);
+    font-size: 1.35rem;
+    outline: 2px solid var(--search-modal-border-active);
+    outline-offset: 2px;
+    cursor: pointer;
   }
 
   /* ========================================================

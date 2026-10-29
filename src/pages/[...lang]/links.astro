@@ -98,6 +98,10 @@ const currentUI = ui[currentLang as keyof typeof ui] ?? {}
 
 <script is:inline data-astro-rerun>
   (function () {
+    if (globalThis.__linksCopyLifecycleBound)
+      return
+    globalThis.__linksCopyLifecycleBound = true
+
     function initCopyButtons() {
       document.querySelectorAll('.site-info-copy').forEach((button) => {
         if (button.dataset.copyBound === '1') {

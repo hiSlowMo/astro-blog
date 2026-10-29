@@ -19,20 +19,6 @@ const currentUI = ui[currentLang as keyof typeof ui] ?? {}
     <p>{currentUI.search ?? 'Search'}</p>
   </section>
 
-  <script is:inline data-astro-rerun>
-    (function () {
-      const open = () => document.dispatchEvent(new CustomEvent('search-modal-open'))
-
-      document.addEventListener('astro:page-load', open)
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', open)
-      }
-      else {
-        open()
-      }
-    })()
-  </script>
-
   <style is:global>
     .search-redirect {
       min-height: 40vh;

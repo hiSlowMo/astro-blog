@@ -130,12 +130,14 @@ function initArchiveInteractions() {
       const match = matchesFilter(item, filter, activeFilterValues)
       item.classList.toggle('is-hidden', !match)
       item.setAttribute('aria-hidden', match ? 'false' : 'true')
+      item.toggleAttribute('inert', !match)
     })
 
     years.forEach((year) => {
       year.classList.remove('is-active')
       const visibleItems = year.querySelectorAll('.archive-item:not(.is-hidden)')
       year.classList.toggle('is-hidden', visibleItems.length === 0)
+      year.toggleAttribute('inert', visibleItems.length === 0)
     })
 
     reorderBySortKey()
