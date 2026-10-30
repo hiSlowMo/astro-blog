@@ -2,6 +2,7 @@
 import { base } from '@/config'
 import { getLangFromLocale } from '@/i18n/lang'
 import { ui } from '@/i18n/ui'
+import searchQueryModule from '@/scripts/search-query.mjs?url'
 
 interface Props {
   autoOpen?: boolean
@@ -9,25 +10,15 @@ interface Props {
 
 const { autoOpen = false } = Astro.props
 const currentLang = getLangFromLocale(Astro.currentLocale)
-const currentUI = ui[currentLang as keyof typeof ui] ?? {}
-const pagefindBase = base ? `${base}/pagefind` : '/pagefind'
+const currentUI = ui[currentLang as keyof typeof ui]
+const pagefindBase = `${base}/pagefind`
 const isProd = import.meta.env.PROD
-
-function normalizePagefindText(text: string) {
-  return text
-    .replace(/\{COUNT\}/gi, '[COUNT]')
-    .replace(/\{SEARCH_TERM\}/gi, '[SEARCH_TERM]')
+const messages = {
+  loading: '正在搜索…',
+  empty: currentUI.searchNoResults,
+  count: '{COUNT} 条结果',
+  unavailable: '搜索暂时不可用，请稍后重试。',
 }
-
-const pagefindTranslations = {
-  placeholder: normalizePagefindText(currentUI.searchPlaceholder ?? '键入开始搜索'),
-  search_label: normalizePagefindText(currentUI.search ?? 'Search'),
-  clear_search: normalizePagefindText(currentUI.searchClear ?? '清除'),
-  zero_results: normalizePagefindText(currentUI.searchNoResults ?? '没有找到相关内容'),
-  one_result: normalizePagefindText(currentUI.searchOneResult ?? '[COUNT] 条结果'),
-  many_results: normalizePagefindText(currentUI.searchManyResults ?? '[COUNT] 条结果'),
-}
-const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好。'
 ---
 
 <div
@@ -36,712 +27,613 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
   data-pagefind-ignore
   aria-hidden="true"
   inert
-  data-auto-open={autoOpen ? '1' : '0'}
-  data-not-ready={pagefindNotReady}
 >
   <div class="search-modal__backdrop" data-search-close />
-  <div
-    class="search-modal__dialog"
-    role="dialog"
-    aria-modal="true"
-    aria-label={currentUI.search ?? 'Search'}
-    tabindex="-1"
-  >
-    <button class="search-modal__close visually-hidden" type="button" aria-label="关闭搜索" data-search-close>
-      ×
-    </button>
-
-    <div class="search-modal__content">
-      <div id="pagefind-modal" class="pagefind pagefind-modal">
-        <div class="pagefind-fallback-ui">
-          <input
-            id="pagefind-modal-fallback-input"
-            class="pagefind-fallback-input"
-            type="search"
-            placeholder={pagefindTranslations.placeholder}
-            disabled
-          />
-        </div>
-      </div>
+  <section class="search-modal__dialog" role="dialog" aria-modal="true" aria-label={currentUI.search} tabindex="-1">
+    <form class="search-modal__form" role="search">
+      <svg class="search-modal__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <circle cx="10.5" cy="10.5" r="7" />
+        <path d="m16 16 5 5" stroke-linecap="round" />
+      </svg>
+      <input
+        id="blog-search-input"
+        class="search-modal__input"
+        type="search"
+        aria-label={currentUI.search}
+        aria-controls="blog-search-results"
+        placeholder={currentUI.searchPlaceholder}
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        enterkeyhint="search"
+        disabled={!isProd}
+      />
+      <button class="search-modal__clear" type="button" aria-label={currentUI.searchClear} data-search-clear hidden>
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="m5 5 10 10M15 5 5 15" stroke-linecap="round" />
+        </svg>
+      </button>
+      <button class="search-modal__close" type="button" aria-label="关闭搜索" data-search-close><kbd>esc</kbd></button>
+    </form>
+    <div class="search-modal__results" data-search-results hidden>
+      <p class="search-modal__summary" role="status" aria-live="polite" data-search-status />
+      <ul id="blog-search-results" class="search-modal__list" />
     </div>
-  </div>
+  </section>
 </div>
 
-<script
-  type="module"
-  is:inline
-  data-astro-rerun
-  define:vars={{ pagefindBase, pagefindTranslations, isProd }}
->
+<script type="module" is:inline data-astro-rerun define:vars={{ pagefindBase, searchQueryModule, messages, isProd, autoOpen }}>
 (function () {
   const modal = document.querySelector('[data-search-modal]')
   if (!modal)
     return
+  globalThis.__blogSearchCleanup?.()
 
-  const state = globalThis.__searchModalState || {
-    bound: false,
-    modal: null,
-    lastActive: null,
-    pagefindReady: false,
-    pagefindLoading: null,
-    resizeObserver: null,
-    pendingResizeFrame: null,
-    lastDialogHeight: 0,
-    pagefindBase,
-    pagefindTranslations,
-    isProd,
-    notReadyText: '',
-    autoOpen: false,
-    setOpen: null,
-    ensurePagefind: null,
-    focusInput: null,
-    openModal: null,
-    closeModal: null,
-    handleClick: null,
-    handleKeydown: null,
-    handleSearchOpen: null,
-    handleSearchIntent: null,
-    syncDialogHeight: null,
-    scheduleDialogResize: null,
-  }
+  const controller = new AbortController()
+  const { signal } = controller
+  const dialog = modal.querySelector('.search-modal__dialog')
+  const input = modal.querySelector('input')
+  const resultsArea = modal.querySelector('[data-search-results]')
+  const list = modal.querySelector('.search-modal__list')
+  const status = modal.querySelector('[data-search-status]')
+  const clear = modal.querySelector('[data-search-clear]')
+  const cache = globalThis.__blogSearchCache ??= new Map()
+  const cacheKey = `${pagefindBase}:${document.documentElement.lang}`
+  let lastActive = null
+  let searchTimer
+  let requestId = 0
+  let results = []
+  let inactiveElements = []
+  let preloadTimer
 
-  const previousModal = state.modal
-  state.modal = modal
-  state.pagefindBase = pagefindBase
-  state.pagefindTranslations = pagefindTranslations
-  state.isProd = isProd
-  state.notReadyText = modal.getAttribute('data-not-ready') || 'Search index is not ready.'
-  state.autoOpen = modal.getAttribute('data-auto-open') === '1'
+  const isOpen = () => modal.dataset.open === '1'
 
-  if (previousModal && previousModal !== modal) {
-    document.documentElement.classList.remove('search-modal-open')
-    state.pagefindReady = false
-    state.pagefindLoading = null
-    if (state.resizeObserver) {
-      state.resizeObserver.disconnect()
-      state.resizeObserver = null
-    }
-  }
-
-  globalThis.__searchModalState = state
-
-  const getModal = () => state.modal
-
-  if (!state.bound) {
-    state.setOpen = (nextOpen) => {
-      const modal = getModal()
-      if (!modal)
-        return
-      modal.dataset.open = nextOpen ? '1' : '0'
-      modal.setAttribute('aria-hidden', nextOpen ? 'false' : 'true')
-      modal.toggleAttribute('inert', !nextOpen)
-      document.documentElement.classList.toggle('search-modal-open', nextOpen)
-    }
-
-    state.ensurePagefind = async () => {
-      if (!state.isProd || state.pagefindReady)
-        return
-      if (state.pagefindLoading)
-        return state.pagefindLoading
-
-      const modal = getModal()
-      if (!modal)
-        return
-      const container = modal.querySelector('#pagefind-modal')
-      if (!container)
-        return
-
-      const fallbackMarkup = container.innerHTML
-
-      state.pagefindLoading = (async () => {
-        try {
-          let link = document.querySelector('link[data-pagefind-ui]')
-          if (!link) {
-            link = document.createElement('link')
-            link.rel = 'stylesheet'
-            link.href = `${state.pagefindBase}/pagefind-ui.css`
-            link.dataset.pagefindUi = '1'
-            document.head.appendChild(link)
-          }
-
-          await import(`${state.pagefindBase}/pagefind-ui.js`)
-
-          const { PagefindUI } = globalThis
-          if (!PagefindUI)
-            throw new Error('PagefindUI is not available on globalThis')
-
-          container.innerHTML = ''
-          void new PagefindUI({
-            element: '#pagefind-modal',
-            showSubResults: true,
-            debounceTimeoutMs: 320,
-            excerptLength: 18,
-            resetStyles: false,
-            translations: state.pagefindTranslations,
-          })
-          state.pagefindReady = true
-        }
-        catch (error) {
-          if (!container.innerHTML) {
-            container.innerHTML = fallbackMarkup || `<p class="pagefind-fallback">${state.notReadyText}</p>`
-          }
-          console.warn('[Pagefind] Failed to load search assets:', error)
-        }
-        finally {
-          if (!state.pagefindReady) {
-            state.pagefindLoading = null
-          }
-        }
-      })()
-
-      return state.pagefindLoading
-    }
-
-    state.focusInput = () => {
-      const modal = getModal()
-      if (!modal)
-        return
-      const input
-        = modal.querySelector('.pagefind-ui__search-input')
-          || modal.querySelector('.pagefind-fallback-input')
-      if (input)
-        input.focus()
-    }
-
-    state.syncDialogHeight = () => {
-      const modal = getModal()
-      if (!modal || modal.dataset.open !== '1')
-        return
-      const dialog = modal.querySelector('.search-modal__dialog')
-      const innerContainer = modal.querySelector('#pagefind-modal')
-      if (!dialog || !innerContainer)
-        return
-
-      const modalStyle = getComputedStyle(modal)
-      const paddingTop = Number.parseFloat(modalStyle.paddingTop) || 0
-      const paddingBottom = Number.parseFloat(modalStyle.paddingBottom) || 0
-      const maxH = Math.max(0, modal.clientHeight - paddingTop - paddingBottom)
-      const targetH = Math.min(innerContainer.scrollHeight + 2, maxH)
-      if (Math.abs(targetH - state.lastDialogHeight) < 1)
-        return
-
-      state.lastDialogHeight = targetH
-      dialog.style.height = `${targetH}px`
-    }
-
-    state.scheduleDialogResize = () => {
-      if (state.pendingResizeFrame !== null)
-        return
-      state.pendingResizeFrame = requestAnimationFrame(() => {
-        state.pendingResizeFrame = null
-        state.syncDialogHeight()
+  async function ensureSearch() {
+    if (!isProd)
+      return null
+    if (!cache.has(cacheKey)) {
+      const pending = Promise.all([
+        import(`${pagefindBase}/pagefind.js`),
+        import(searchQueryModule),
+      ]).then(([pagefind, helpers]) => ({
+        search: helpers.createBlogSearch(pagefind),
+        getTerms: helpers.getSearchTerms,
+        highlight: helpers.highlightSearchText,
+      })).catch((error) => {
+        cache.delete(cacheKey)
+        throw error
       })
+      cache.set(cacheKey, pending)
     }
+    return cache.get(cacheKey)
+  }
 
-    state.openModal = async () => {
-      const modal = getModal()
-      if (!modal)
-        return
-      if (modal.dataset.open === '1')
-        return
-      state.lastActive = document.activeElement
+  function focusInput() {
+    if (isOpen())
+      (input.disabled ? dialog : input).focus({ preventScroll: true })
+  }
 
-      state.setOpen(true)
+  function openModal() {
+    if (isOpen())
+      return
+    lastActive = document.activeElement
+    modal.dataset.open = '1'
+    modal.setAttribute('aria-hidden', 'false')
+    modal.inert = false
+    document.documentElement.classList.add('search-modal-open')
+    inactiveElements = Array.from(document.body.children)
+      .filter(element => element !== modal && !element.contains(modal) && !element.inert)
+    inactiveElements.forEach(element => element.inert = true)
+    focusInput()
+    // Keep parsing/index setup outside the backdrop's first transition.
+    clearTimeout(preloadTimer)
+    preloadTimer = setTimeout(() => {
+      if (isOpen())
+        void ensureSearch()?.catch(() => {})
+    }, 320)
+  }
 
-      // === 核心动画逻辑：开启 ResizeObserver ===
-      const dialog = modal.querySelector('.search-modal__dialog')
-      const innerContainer = modal.querySelector('#pagefind-modal')
+  function closeModal() {
+    if (!isOpen())
+      return
+    clearTimeout(preloadTimer)
+    modal.dataset.open = '0'
+    modal.setAttribute('aria-hidden', 'true')
+    modal.inert = true
+    document.documentElement.classList.remove('search-modal-open')
+    inactiveElements.forEach(element => element.inert = false)
+    inactiveElements = []
+    if (lastActive?.isConnected)
+      lastActive.focus({ preventScroll: true })
+  }
 
-      if (dialog && innerContainer && typeof ResizeObserver !== 'undefined') {
-        if (state.resizeObserver) {
-          state.resizeObserver.disconnect()
-        }
-        state.resizeObserver = new ResizeObserver(() => {
-          if (modal.dataset.open !== '1')
-            return
-          state.scheduleDialogResize()
-        })
-        // 开始监听内容高度
-        state.resizeObserver.observe(innerContainer)
+  function appendHighlight(element, text, terms, highlight) {
+    for (const segment of highlight(text, terms)) {
+      if (segment.match) {
+        const mark = document.createElement('mark')
+        mark.textContent = segment.text
+        element.append(mark)
       }
-      state.scheduleDialogResize()
-
-      await state.ensurePagefind()
-      state.scheduleDialogResize()
-      requestAnimationFrame(() => state.focusInput())
-    }
-
-    state.closeModal = () => {
-      const modal = getModal()
-      if (!modal)
-        return
-      if (modal.dataset.open !== '1')
-        return
-      state.setOpen(false)
-
-      // 关闭时断开监听，并重置高度为初始状态 (单行搜索框的高度)
-      if (state.resizeObserver) {
-        state.resizeObserver.disconnect()
-        state.resizeObserver = null
-      }
-      if (state.pendingResizeFrame !== null) {
-        cancelAnimationFrame(state.pendingResizeFrame)
-        state.pendingResizeFrame = null
-      }
-      const dialog = modal.querySelector('.search-modal__dialog')
-      if (dialog)
-        dialog.style.height = ''
-      state.lastDialogHeight = 0
-
-      const focusTarget = state.lastActive?.isConnected
-        ? state.lastActive
-        : document.querySelector('[data-search-open]')
-      if (focusTarget && typeof focusTarget.focus === 'function') {
-        focusTarget.focus()
+      else {
+        element.append(document.createTextNode(segment.text))
       }
     }
+  }
 
-    state.handleClick = (event) => {
-      const target = event.target
-      if (!(target instanceof Element))
+  function renderResults(items, query, helpers) {
+    const fragment = document.createDocumentFragment()
+    const terms = helpers.getTerms(query)
+    for (const item of items) {
+      const li = document.createElement('li')
+      const link = document.createElement('a')
+      link.className = 'search-modal__result'
+      const url = new URL(item.url, location.origin)
+      if (url.origin !== location.origin)
+        continue
+      link.href = url.href
+      const title = document.createElement('span')
+      title.className = 'search-modal__result-title'
+      appendHighlight(title, item.title, terms, helpers.highlight)
+      const excerpt = document.createElement('p')
+      excerpt.className = 'search-modal__excerpt'
+      appendHighlight(excerpt, item.excerpt, terms, helpers.highlight)
+      link.append(title, excerpt)
+      if (item.tags) {
+        const tags = document.createElement('span')
+        tags.className = 'search-modal__tags'
+        tags.textContent = item.tags.split(' ').map(tag => `# ${tag}`).join('  ')
+        link.append(tags)
+      }
+      li.append(link)
+      fragment.append(li)
+    }
+    list.replaceChildren(fragment)
+    list.inert = false
+    status.textContent = items.length ? messages.count.replace('{COUNT}', items.length) : messages.empty
+  }
+
+  async function runSearch(query, id) {
+    try {
+      const helpers = await ensureSearch()
+      if (!helpers || id !== requestId || signal.aborted)
         return
+      const items = await helpers.search(query)
+      if (id !== requestId || signal.aborted)
+        return
+      results = items
+      renderResults(items, query, helpers)
+    }
+    catch (error) {
+      if (id === requestId && !signal.aborted) {
+        list.replaceChildren()
+        list.inert = false
+        status.textContent = messages.unavailable
+        console.warn('[Search] Failed to search:', error)
+      }
+    }
+    finally {
+      if (id === requestId)
+        resultsArea.removeAttribute('aria-busy')
+    }
+  }
 
-      const trigger = target.closest('[data-search-open]')
-      if (trigger) {
+  function queueSearch() {
+    clearTimeout(searchTimer)
+    const id = ++requestId
+    const query = input.value.trim()
+    clear.hidden = !input.value
+    results = []
+    list.inert = true
+    resultsArea.hidden = !query
+    if (!query) {
+      list.replaceChildren()
+      list.inert = false
+      status.textContent = ''
+      resultsArea.removeAttribute('aria-busy')
+      return
+    }
+    resultsArea.setAttribute('aria-busy', 'true')
+    status.textContent = messages.loading
+    searchTimer = setTimeout(() => void runSearch(query, id), 160)
+  }
+
+  input.addEventListener('input', (event) => {
+    if (!event.isComposing)
+      queueSearch()
+  }, { signal })
+  input.addEventListener('compositionend', queueSearch, { signal })
+  clear.addEventListener('click', () => {
+    input.value = ''
+    queueSearch()
+    focusInput()
+  }, { signal })
+  modal.querySelector('form').addEventListener('submit', (event) => {
+    event.preventDefault()
+    if (results.length)
+      list.querySelector('a')?.click()
+  }, { signal })
+
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element))
+      return
+    if (event.target.closest('[data-search-open]')) {
+      event.preventDefault()
+      openModal()
+    }
+    else if (event.target.closest('[data-search-close]')) {
+      closeModal()
+    }
+  }, { signal })
+
+  document.addEventListener('keydown', (event) => {
+    if (event.isComposing)
+      return
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault()
+      if (isOpen())
+        closeModal()
+      else
+        openModal()
+      return
+    }
+    if (!isOpen())
+      return
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      closeModal()
+      return
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      const links = Array.from(list.querySelectorAll('a'))
+      if (links.length) {
         event.preventDefault()
-        void state.openModal()
-        return
+        const current = links.indexOf(document.activeElement)
+        const next = current + (event.key === 'ArrowDown' ? 1 : -1)
+        if (next < 0)
+          focusInput()
+        else
+          links[Math.min(next, links.length - 1)].focus()
       }
-
-      if (target.closest('[data-search-close]')) {
-        state.closeModal()
-      }
+      return
     }
-
-    state.handleKeydown = (event) => {
-      const modal = getModal()
-      if (!modal || modal.dataset.open !== '1')
-        return
-
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        state.closeModal()
-        return
-      }
-
-      if (event.key !== 'Tab')
-        return
-
-      const focusable = Array.from(modal.querySelectorAll(
-        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      )).filter(element => element.getClientRects().length > 0)
-      const first = focusable[0]
-      const last = focusable.at(-1)
-
-      if (!first || !last) {
-        event.preventDefault()
-        modal.querySelector('.search-modal__dialog')?.focus()
-        return
-      }
-
-      const activeElement = document.activeElement
-      if (event.shiftKey && (activeElement === first || !modal.contains(activeElement))) {
+    if (event.key === 'Tab') {
+      const focusable = Array.from(modal.querySelectorAll('a[href], button:not([hidden]), input:not([disabled])'))
+        .filter(element => element.getClientRects().length > 0)
+      const first = focusable[0] ?? dialog
+      const last = focusable.at(-1) ?? dialog
+      if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
         event.preventDefault()
         last.focus()
       }
-      else if (!event.shiftKey && (activeElement === last || !modal.contains(activeElement))) {
+      else if (!event.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) {
         event.preventDefault()
         first.focus()
       }
     }
+  }, { capture: true, signal })
 
-    state.handleSearchOpen = () => void state.openModal()
-    state.handleSearchIntent = (event) => {
-      const target = event.target
-      if (!(target instanceof Element))
-        return
-      if (!target.closest('[data-search-open]'))
-        return
-
-      document.removeEventListener('pointerover', state.handleSearchIntent)
-      document.removeEventListener('focusin', state.handleSearchIntent)
-      void state.ensurePagefind()
-    }
-
-    document.addEventListener('click', state.handleClick)
-    document.addEventListener('keydown', state.handleKeydown)
-    document.addEventListener('search-modal-open', state.handleSearchOpen)
-    document.addEventListener('pointerover', state.handleSearchIntent, { passive: true })
-    document.addEventListener('focusin', state.handleSearchIntent)
-    window.addEventListener('resize', state.scheduleDialogResize, { passive: true })
-
-    state.bound = true
-  }
-
-  if (state.autoOpen) {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => void state.openModal(), { once: true })
-    }
-    else {
-      void state.openModal()
+  const preload = (event) => {
+    if (event.target instanceof Element && event.target.closest('[data-search-open]')) {
+      clearTimeout(preloadTimer)
+      preloadTimer = setTimeout(() => {
+        if (!signal.aborted)
+          void ensureSearch()?.catch(() => {})
+      }, 320)
     }
   }
+  document.addEventListener('pointerover', preload, { passive: true, signal })
+  document.addEventListener('focusin', preload, { signal })
+  document.addEventListener('search-modal-open', openModal, { signal })
+
+  globalThis.__blogSearchCleanup = () => {
+    closeModal()
+    clearTimeout(searchTimer)
+    clearTimeout(preloadTimer)
+    requestId++
+    controller.abort()
+  }
+  document.addEventListener('astro:before-swap', globalThis.__blogSearchCleanup, { once: true, signal })
+  if (autoOpen)
+    openModal()
 })()
 </script>
 
 <style is:global>
-  /* ========================================================
-     1. 全局遮罩与位置
-     ======================================================== */
   .search-modal {
-    --search-modal-v-pad: clamp(1rem, 4.8vh, 3rem);
-    --search-modal-bottom-pad: max(0.875rem, calc(0.875rem + env(safe-area-inset-bottom)));
-    --search-modal-rest-shift: clamp(-1.4rem, -2.8vh, -0.8rem);
-    --search-modal-bg: oklch(var(--un-preset-theme-colors-background) / 0.94);
-    --search-modal-text: oklch(var(--un-preset-theme-colors-primary) / 0.96);
-    --search-modal-muted: oklch(var(--un-preset-theme-colors-secondary) / 0.82);
-    --search-modal-border: oklch(var(--un-preset-theme-colors-secondary) / 0.3);
-    --search-modal-border-active: oklch(var(--un-preset-theme-colors-primary) / 0.45);
-    --search-modal-hover: oklch(var(--un-preset-theme-colors-secondary) / 0.1);
-    --search-modal-tag-bg: oklch(var(--un-preset-theme-colors-secondary) / 0.14);
-    --search-modal-tag-text: oklch(var(--un-preset-theme-colors-primary) / 0.74);
-    --search-modal-mark: oklch(var(--un-preset-theme-colors-primary));
-    --search-modal-backdrop: rgba(15, 23, 42, 0.24);
-    --search-modal-search-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="rgba(31,41,55,0.55)" stroke-width="1.8"><circle cx="9" cy="9" r="5.5" /><path d="M13 13l4 4" /></svg>');
+    --search-top: clamp(4.5rem, 20dvh, 11rem);
+    --search-bottom: max(1rem, env(safe-area-inset-bottom));
+    --search-input-height: 3.5rem;
+    --search-surface: rgba(250, 250, 252, 0.48);
+    --search-sheen: rgba(255, 255, 255, 0.32);
+    --search-reflection: rgba(255, 255, 255, 0.045);
+    --search-border: rgba(0, 0, 0, 0.075);
+    --search-edge-top: rgba(255, 255, 255, 0.72);
+    --search-edge-bottom: rgba(0, 0, 0, 0.045);
+    --search-text: oklch(var(--un-preset-theme-colors-primary));
+    --search-muted: oklch(var(--un-preset-theme-colors-secondary) / 0.9);
+    --search-hover: rgba(0, 0, 0, 0.055);
+    --search-shadow: 0 12px 32px rgba(0, 0, 0, 0.09), 0 2px 8px rgba(0, 0, 0, 0.04);
     position: fixed;
     inset: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: var(--search-modal-v-pad) 0.625rem var(--search-modal-bottom-pad);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--motion-base, 220ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1));
     z-index: 9999;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: var(--search-top) 1rem var(--search-bottom);
+    visibility: hidden;
+    pointer-events: none;
+    transition: visibility 0s linear var(--overlay-duration);
   }
 
-  :global(html.dark) .search-modal {
-    --search-modal-bg: #1c1e26;
-    --search-modal-text: rgba(244, 246, 255, 0.95);
-    --search-modal-muted: rgba(219, 223, 232, 0.64);
-    --search-modal-border: rgba(59, 130, 246, 0.5);
-    --search-modal-border-active: rgba(59, 130, 246, 0.95);
-    --search-modal-hover: rgba(255, 255, 255, 0.08);
-    --search-modal-tag-bg: rgba(255, 255, 255, 0.12);
-    --search-modal-tag-text: rgba(244, 246, 255, 0.82);
-    --search-modal-mark: #60a5fa;
-    --search-modal-backdrop: rgba(0, 0, 0, 0.42);
-    --search-modal-search-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.8"><circle cx="9" cy="9" r="5.5" /><path d="M13 13l4 4" /></svg>');
+  html.dark .search-modal {
+    --search-surface: rgba(17, 19, 21, 0.38);
+    --search-sheen: rgba(255, 255, 255, 0.045);
+    --search-reflection: rgba(255, 255, 255, 0.008);
+    --search-border: rgba(255, 255, 255, 0.075);
+    --search-edge-top: rgba(255, 255, 255, 0.17);
+    --search-edge-bottom: rgba(255, 255, 255, 0.035);
+    --search-hover: rgba(255, 255, 255, 0.045);
+    --search-shadow: 0 12px 32px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.14);
   }
 
   .search-modal[data-open='1'] {
-    opacity: 1;
+    visibility: visible;
     pointer-events: auto;
+    transition-delay: 0s;
   }
 
   .search-modal__backdrop {
     position: absolute;
     inset: 0;
-    background: var(--search-modal-backdrop);
-    backdrop-filter: blur(var(--motion-overlay-blur, 5px));
-    -webkit-backdrop-filter: blur(var(--motion-overlay-blur, 5px));
+    background: var(--overlay-backdrop-tint);
+    backdrop-filter: blur(var(--overlay-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--overlay-backdrop-blur));
+    opacity: 0;
+    transition: opacity var(--overlay-duration) var(--overlay-easing);
   }
 
-  /* ========================================================
-     2. 最外层弹窗：高度动画的承载者
-     ======================================================== */
+  .search-modal[data-open='1'] .search-modal__backdrop {
+    opacity: 1;
+  }
+
   .search-modal__dialog {
     position: relative;
-    width: min(48rem, 100%);
-    max-height: calc(100dvh - var(--search-modal-v-pad) - var(--search-modal-bottom-pad));
-    background: var(--search-modal-bg);
-    border: 1px solid var(--search-modal-border);
-    border-radius: 0.8rem;
-    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.48);
-    padding: 0;
-    z-index: 1;
-    contain: layout paint;
-
-    /* === 动画核心设定 === */
-    height: 3.8rem; /* 初始状态：仅输入框的高度 */
-    overflow: hidden; /* 防止内容突围 */
-    display: flex; /* 让内部可以正确滚动 */
+    display: flex;
     flex-direction: column;
-
-    /* 高级阻尼动画曲线，带来 Apple 级别的丝滑回弹感 */
-    transform: translateY(calc(var(--search-modal-rest-shift) - 8px)) scale(0.985);
-    transition: height var(--motion-slow, 300ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
-                transform var(--motion-base, 220ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
-                box-shadow var(--motion-fast, 160ms) ease;
-    will-change: transform;
+    width: min(34rem, 100%);
+    max-height: calc(100dvh - var(--search-top) - var(--search-bottom));
+    overflow: hidden;
+    color: var(--search-text);
+    background: linear-gradient(135deg, var(--search-sheen), transparent 42%, var(--search-reflection)), var(--search-surface);
+    border: 1px solid var(--search-border);
+    border-top-color: var(--search-edge-top);
+    border-bottom-color: var(--search-edge-bottom);
+    border-radius: 1.75rem;
+    box-shadow: inset 0 1px 0 var(--search-sheen), var(--search-shadow);
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+    outline: none;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition:
+      opacity var(--overlay-duration) var(--overlay-easing),
+      transform var(--overlay-duration) var(--overlay-easing);
   }
 
   .search-modal[data-open='1'] .search-modal__dialog {
-    transform: translateY(var(--search-modal-rest-shift)) scale(1); /* 打开时位移复原 */
-    will-change: height, transform;
+    opacity: 1;
+    transform: translateY(0);
   }
 
-  .search-modal__dialog:focus-within {
-    box-shadow: 0 0 0 1px var(--search-modal-border-active), 0 10px 40px rgba(0, 0, 0, 0.45);
-  }
-
-  /* 当内容超出外框高度限制时，允许滚动 */
-  .search-modal__content {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .visually-hidden {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
-  }
-
-  .search-modal__close:focus-visible {
-    position: absolute !important;
-    top: 0.45rem;
-    right: 0.45rem;
-    z-index: 20;
-    display: grid;
-    place-items: center;
-    width: 2.2rem !important;
-    height: 2.2rem !important;
-    margin: 0 !important;
-    overflow: visible !important;
-    clip: auto !important;
-    border: 1px solid var(--search-modal-border) !important;
-    border-radius: 0.45rem;
-    background: var(--search-modal-bg);
-    color: var(--search-modal-text);
-    font-size: 1.35rem;
-    outline: 2px solid var(--search-modal-border-active);
-    outline-offset: 2px;
-    cursor: pointer;
-  }
-
-  /* ========================================================
-     3. 输入框：纯透明隐形，高度固定
-     ======================================================== */
-  .search-modal .pagefind.pagefind-modal .pagefind-ui {
-    width: 100%;
-    font-family: inherit;
-    --pagefind-ui-text: var(--search-modal-text);
-    --pagefind-ui-primary: var(--search-modal-text);
-    --pagefind-ui-background: transparent;
-    --pagefind-ui-border: var(--search-modal-border);
-    --pagefind-ui-tag: var(--search-modal-tag-bg);
-  }
-
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__form {
+  .search-modal__form {
     position: relative;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__form::before {
-    display: none !important;
-  }
-
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-input,
-  .search-modal .pagefind-fallback-input {
-    width: 100%;
-    height: 3.8rem; /* 与外层初始高度一致 */
-    padding: 0 3rem;
-    font-size: 1rem;
-    color: var(--search-modal-text) !important;
-
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-
-    background-image: var(--search-modal-search-icon);
-    background-repeat: no-repeat;
-    background-position: 1.2rem center;
-    background-size: 1.1rem;
-  }
-
-  /* ========================================================
-     输入框右侧的清除按钮 (改成完美的叉号)
-     ======================================================== */
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-clear {
-    position: absolute !important;
-    right: 0.5rem !important; /* 紧贴右侧 */
-    top: 0 !important;
-    height: 3.8rem !important; /* 强制和输入框等高，不仅居中，还能扩大鼠标点击区域 */
-    width: 2.5rem !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background-color: transparent !important;
-    border: none !important;
-
-    /* 核心魔法：彻底隐藏 Pagefind 默认生成的“清除”或“Clear”文字 */
-    color: transparent !important;
-    font-size: 0 !important;
-    cursor: pointer;
-    z-index: 10; /* 确保它不会被输入框遮挡 */
-  }
-
-  /* 利用伪元素 (::after) 画一个居中的叉号 */
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-clear::after {
-    content: '×'; /* 使用标准的乘号字符作为关闭图标 */
     display: flex;
-    justify-content: center;
+    flex: none;
     align-items: center;
+    height: var(--search-input-height);
+    padding: 0 1.1rem;
+    gap: 0.8rem;
+  }
+
+  .search-modal__icon {
+    width: 1.35rem;
+    height: 1.35rem;
+    flex: none;
+    color: var(--search-muted);
+  }
+
+  .search-modal__input {
+    min-width: 0;
     width: 100%;
     height: 100%;
-    font-size: 1.6rem; /* 叉号的视觉大小 */
-    font-weight: 300; /* 让叉号看起来细致秀气一点 */
-    color: var(--search-modal-muted); /* 默认半透明灰色 */
-    transition: color 0.2s ease;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--search-text);
+    font: inherit;
+    font-size: 1.125rem;
+    font-weight: 400;
+    letter-spacing: -0.025em;
+    caret-color: var(--search-text);
+    -webkit-appearance: none;
   }
 
-  /* 鼠标悬停时，叉号变亮，增加交互感 */
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-clear:hover::after {
-    color: var(--search-modal-text);
+  .search-modal__input::placeholder {
+    color: var(--search-muted);
+    opacity: 0.85;
   }
 
-  /* ========================================================
-     4. 结果区域：自然撑开内部容器 (外部会自动追踪动画)
-     ======================================================== */
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__drawer:not(:empty) {
-    padding: 0.5rem 0.5rem 1rem 0.5rem;
-    border-top: 1px solid var(--search-modal-border);
+  .search-modal__input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
   }
 
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__message {
-    padding: 0.5rem 0.5rem 0.5rem 0.8rem;
-    font-size: 0.85rem;
-    color: var(--search-modal-muted);
+  .search-modal__clear,
+  .search-modal__close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    height: 1.75rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--search-muted);
+    cursor: pointer;
   }
 
-  /* ====== 为单个结果项加入由下向上的浮现动画 ====== */
-  @keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+  .search-modal__clear {
+    width: 1.5rem;
   }
 
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result {
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-    border-radius: 0.5rem;
-    padding: 0.8rem 1rem !important;
-    background: transparent !important;
-    margin-bottom: 0.2rem;
-
-    transition: background-color var(--motion-fast, 160ms) ease;
+  .search-modal__clear svg {
+    width: 1.1rem;
+    height: 1.1rem;
   }
 
-  /* 仅对前几项做进场动画，平衡“动效质感”和滚动流畅度 */
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result:nth-child(-n+4) {
-    animation: fadeSlideUp var(--motion-fast, 160ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+  .search-modal__close kbd {
+    padding: 0.1rem 0.3rem;
+    border: 1px solid var(--search-border);
+    border-radius: 0.3rem;
+    font-size: 0.65rem;
+    line-height: 1.2;
   }
 
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result:hover {
-    background: var(--search-modal-hover) !important;
+  .search-modal__clear:hover,
+  .search-modal__close:hover {
+    color: var(--search-text);
   }
 
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-title {
-    font-weight: normal;
-    font-size: 0.95rem;
-    margin-bottom: 0.3rem;
+  .search-modal button:focus-visible {
+    outline: 1px solid var(--search-muted);
+    outline-offset: 3px;
+    border-radius: 0.3rem;
   }
 
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-excerpt {
-    font-size: 0.85rem;
-    color: var(--search-modal-muted);
+  .search-modal__results {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    border-top: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.1);
+    padding: 0.4rem 0.55rem 0.55rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--search-border) transparent;
+  }
+
+  .search-modal__summary {
+    padding: 0.25rem 0.8rem 0.65rem;
+    color: var(--search-muted);
+    font-size: 0.75rem;
     line-height: 1.5;
   }
 
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-link {
+  .search-modal__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .search-modal__list li + li {
+    margin-top: 0.2rem;
+  }
+
+  .search-modal__result {
+    display: block;
+    padding: 0.7rem;
+    border-radius: 0.95rem;
     text-decoration: none;
-    color: var(--search-modal-text);
+    outline: none;
+    transition: background-color 120ms ease-out;
   }
 
-  .search-modal .pagefind.pagefind-modal .pagefind-ui mark {
-    background-color: transparent !important;
-    color: var(--search-modal-mark) !important;
-    font-weight: bold;
+  .search-modal__result:hover,
+  .search-modal__result:focus-visible {
+    background: var(--search-hover);
   }
 
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-tags {
-    margin-top: 0.75rem;
-    gap: 0.45rem;
+  .search-modal__result-title {
+    display: block;
+    color: var(--search-text);
+    font-size: 0.95rem;
+    line-height: 1.5;
   }
 
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-tag {
-    display: inline-flex;
-    max-width: min(100%, 24rem);
+  .search-modal__excerpt {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    border: 1px solid var(--search-modal-border);
-    border-radius: 999px;
-    color: var(--search-modal-tag-text);
-    background: var(--search-modal-tag-bg);
-    font-size: 0.78rem;
-    line-height: 1.15;
-    padding: 0.28rem 0.6rem;
+    margin-top: 0.35rem;
+    color: var(--search-muted);
+    font-size: 0.8rem;
+    line-height: 1.65;
   }
 
-  /* 滚动条 */
-  .search-modal__content::-webkit-scrollbar { width: 6px; }
-  .search-modal__content::-webkit-scrollbar-track { background: transparent; }
-  .search-modal__content::-webkit-scrollbar-thumb {
-    background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.35);
-    border-radius: 10px;
+  .search-modal mark {
+    background: transparent;
+    color: var(--search-text);
+    font-weight: 600;
   }
 
-  :global(html.search-modal-open),
-  :global(html.search-modal-open body) {
+  .search-modal__tags {
+    display: block;
+    margin-top: 0.45rem;
+    color: var(--search-muted);
+    font-size: 0.7rem;
+    line-height: 1.6;
+  }
+
+  .search-modal [hidden] {
+    display: none !important;
+  }
+
+  html.search-modal-open,
+  html.search-modal-open body {
     overflow: hidden;
-  }
-
-  :global(html.reduce-motion) .search-modal__dialog {
-    transition: none;
-  }
-
-  :global(html.reduce-motion) .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result {
-    animation: none;
   }
 
   @media (max-width: 767px) {
     .search-modal {
-      --search-modal-v-pad: max(0.85rem, calc(env(safe-area-inset-top) + 0.55rem));
-      --search-modal-bottom-pad: max(0.85rem, calc(env(safe-area-inset-bottom) + 0.85rem));
-      --search-modal-rest-shift: clamp(-0.9rem, -1.8vh, -0.35rem);
-      padding-inline: 0.45rem;
+      --search-top: max(4rem, calc(env(safe-area-inset-top) + 2rem));
+      --search-input-height: 3.25rem;
+      padding-inline: 0.85rem;
     }
 
     .search-modal__dialog {
-      border-radius: 0.7rem;
-      max-height: calc(100dvh - var(--search-modal-v-pad) - var(--search-modal-bottom-pad));
+      border-radius: 1.625rem;
     }
 
-    .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-input,
-    .search-modal .pagefind-fallback-input {
-      height: 3.4rem;
-      padding: 0 2.75rem;
-      background-position: 1rem center;
+    .search-modal__form {
+      padding-inline: 1rem;
+      gap: 0.65rem;
     }
 
-    .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-clear {
-      height: 3.4rem !important;
+    .search-modal__icon {
+      width: 1.25rem;
+      height: 1.25rem;
     }
 
-    .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result {
-      animation: none !important;
+    .search-modal__input {
+      font-size: 1rem;
+    }
+
+    .search-modal__close {
+      display: none;
+    }
+  }
+
+  html.reduce-motion .search-modal,
+  html.reduce-motion .search-modal__backdrop,
+  html.reduce-motion .search-modal__dialog {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .search-modal,
+    .search-modal__backdrop,
+    .search-modal__dialog,
+    .search-modal__result {
+      transition: none;
     }
   }
 </style>

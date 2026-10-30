@@ -23,13 +23,34 @@ const { Content } = aboutEntry ? await render(aboutEntry) : { Content: null }
   <!-- Decorative Line -->
   <div class="uno-decorative-line" />
   <!-- About Page Content -->
-  <div class="heti">
+  <div class="heti about-content">
     {Content && <Content />}
     <Signature mode="once-on-view" />
   </div>
 </Layout>
 
 <style is:global>
+  .about-content {
+    position: relative;
+  }
+
+  .about-content > .signature-wrapper {
+    position: absolute;
+    right: 0;
+    bottom: 4rem;
+    margin: 0;
+  }
+
+  @media (max-width: 767px) {
+    .about-content > .signature-wrapper {
+      top: calc(clamp(96px, 28vw, 150px) / 2 + 1.5rem);
+      right: 0.25rem;
+      bottom: auto;
+      width: 8.5rem;
+      transform: translateY(-50%);
+    }
+  }
+
   /* Slowly rotating line rings behind the avatar in about.md */
   .about-avatar {
     position: relative;

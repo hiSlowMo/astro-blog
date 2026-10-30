@@ -227,13 +227,15 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
   .toc-mobile-backdrop {
     position: fixed;
     inset: 0;
-    background: oklch(0 0 0 / 0.14);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: var(--overlay-backdrop-tint);
+    backdrop-filter: blur(var(--overlay-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--overlay-backdrop-blur));
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity var(--motion-fast, 160ms) ease, visibility 0s linear var(--motion-fast, 160ms);
+    transition:
+      opacity var(--overlay-duration) var(--overlay-easing),
+      visibility 0s linear var(--overlay-duration);
     z-index: 44;
   }
 
@@ -261,12 +263,12 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     visibility: hidden;
     pointer-events: none;
     overflow: hidden;
-    transform: translateX(calc(-100% - 1.15rem)) scale(0.985);
-    transform-origin: left center;
+    transform: translate(-0.75rem, 0.9rem) scale(0.96);
+    transform-origin: left bottom;
     transition:
-      opacity var(--motion-fast, 160ms) ease,
-      transform var(--motion-base, 220ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
-      visibility 0s linear var(--motion-base, 220ms);
+      opacity var(--overlay-duration) var(--overlay-easing),
+      transform var(--overlay-duration) var(--overlay-easing),
+      visibility 0s linear var(--overlay-duration);
     z-index: 47;
   }
 
@@ -543,6 +545,8 @@ function initMobileTocPanels() {
 
   const setOpen = (nextOpen: boolean) => {
     const isOpen = isNonDesktopViewport.matches && nextOpen
+    if (!isOpen && panel.contains(document.activeElement))
+      trigger.focus({ preventScroll: true })
     shell.dataset.open = isOpen ? '1' : '0'
     trigger.classList.toggle('is-active', isOpen)
     trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false')

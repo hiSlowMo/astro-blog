@@ -14,8 +14,8 @@ const label = getPostStatusLabel(status)
 {label && (
   <span
     class:list={[
-      'status-badge inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-solid align-middle leading-none font-navbar',
-      compact ? 'px-1.6 py-0.45 text-[0.71rem]' : 'px-2 py-0.55 text-[0.76rem]',
+      'status-badge inline-flex shrink-0 items-center whitespace-nowrap align-middle leading-none font-navbar',
+      compact && 'status-badge--compact',
       className,
     ]}
     data-status={status}
@@ -25,59 +25,57 @@ const label = getPostStatusLabel(status)
 )}
 
 <style>
+  /* 状态不是控件：一个小圆点 + 灰字，颜色只留在点上 */
   .status-badge {
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    border-color: transparent;
-    background-color: transparent;
-    color: inherit;
+    gap: 0.42em;
+    font-size: 0.76rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.62);
+  }
+
+  .status-badge--compact {
+    font-size: 0.71rem;
+  }
+
+  .status-badge::before {
+    flex: none;
+    width: 0.36rem;
+    height: 0.36rem;
+    border-radius: 50%;
+    background: var(--status-dot);
+    content: '';
   }
 
   .status-badge[data-status='idea'] {
-    border-color: rgb(217 119 6 / 0.28);
-    background-color: rgb(254 243 199 / 0.88);
-    color: rgb(146 64 14 / 0.9);
+    --status-dot: rgb(217 119 6 / 0.8);
   }
 
   .status-badge[data-status='ongoing'] {
-    border-color: rgb(2 132 199 / 0.28);
-    background-color: rgb(224 242 254 / 0.86);
-    color: rgb(7 89 133 / 0.88);
+    --status-dot: rgb(2 132 199 / 0.8);
   }
 
   .status-badge[data-status='paused'] {
-    border-color: rgb(113 113 122 / 0.24);
-    background-color: rgb(244 244 245 / 0.9);
-    color: rgb(63 63 70 / 0.82);
+    --status-dot: rgb(113 113 122 / 0.7);
   }
 
   .status-badge[data-status='completed'] {
-    border-color: rgb(5 150 105 / 0.26);
-    background-color: rgb(209 250 229 / 0.9);
-    color: rgb(4 120 87 / 0.9);
+    --status-dot: rgb(5 150 105 / 0.8);
   }
 
   :global(html.dark) .status-badge[data-status='idea'] {
-    border-color: rgb(251 191 36 / 0.18);
-    background-color: rgb(253 224 71 / 0.06);
-    color: rgb(254 249 195 / 0.72);
+    --status-dot: rgb(252 211 77 / 0.75);
   }
 
   :global(html.dark) .status-badge[data-status='ongoing'] {
-    border-color: rgb(56 189 248 / 0.18);
-    background-color: rgb(125 211 252 / 0.07);
-    color: rgb(224 242 254 / 0.78);
+    --status-dot: rgb(125 211 252 / 0.75);
   }
 
   :global(html.dark) .status-badge[data-status='paused'] {
-    border-color: rgb(161 161 170 / 0.18);
-    background-color: rgb(212 212 216 / 0.07);
-    color: rgb(244 244 245 / 0.74);
+    --status-dot: rgb(161 161 170 / 0.6);
   }
 
   :global(html.dark) .status-badge[data-status='completed'] {
-    border-color: rgb(52 211 153 / 0.18);
-    background-color: rgb(110 231 183 / 0.07);
-    color: rgb(209 250 229 / 0.76);
+    --status-dot: rgb(110 231 183 / 0.75);
   }
 </style>

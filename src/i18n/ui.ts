@@ -44,7 +44,7 @@ export const ui: Record<Language, Translation> = {
     momentsEmpty: '还没有说说，去写第一条吧。',
     momentsCount: '{COUNT} 条记录',
     more: '更多',
-    searchPlaceholder: '搜索文章、标签或内容吧~',
+    searchPlaceholder: '搜索文章、标签或内容',
     searchNoResults: '没有找到相关结果哦',
     searchClear: '清除',
     searchOneResult: '1 条结果',

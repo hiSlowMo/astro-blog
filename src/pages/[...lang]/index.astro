@@ -222,10 +222,10 @@ const visiblePostsByYear = new Map(
     gap: 0.3rem;
 
     padding: 0 0.5rem;
-    border-radius: 0.55rem;
 
-    /* 关键：透明边框占位，避免 hover 时高度变化导致“跳” */
+    /* 裸文字控件：透明边框只占位，避免 hover 时高度变化导致“跳” */
     border: 1px solid transparent;
+    border-radius: 0;
     background: transparent;
     color: inherit;
     cursor: pointer;
@@ -244,17 +244,18 @@ const visiblePostsByYear = new Map(
     inline-size: var(--post-sort-col-w);
   }
 
+  /* 悬停与展开只换文字色，不再长出一块底色 */
   .post-filter-plain:hover,
   .post-filter-dropdown[data-open='1'] .post-filter-trigger,
   .post-filter-trigger:hover {
     color: oklch(var(--un-preset-theme-colors-primary) / 0.9);
-    background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.08);
-    border-color: oklch(var(--un-preset-theme-colors-secondary) / 0.18);
+    background-color: transparent;
+    border-color: transparent;
   }
 
   .post-filter-plain:active,
   .post-filter-trigger:active {
-    transform: translateY(1px) scale(0.985);
+    color: oklch(var(--un-preset-theme-colors-primary) / 0.75);
   }
 
   .post-filter-icon {
@@ -488,11 +489,6 @@ const visiblePostsByYear = new Map(
       justify-content: center;
     }
 
-    .post-filter-plain:active,
-    .post-filter-trigger:active {
-      transform: none;
-    }
-
     .post-filter-icon,
     .post-filter-icon svg {
       width: 0.74rem;
@@ -519,14 +515,6 @@ const visiblePostsByYear = new Map(
     .post-filter-caret {
       margin-left: 0.04rem;
       opacity: 0.48;
-    }
-
-    .post-filter-plain:hover,
-    .post-filter-trigger:hover,
-    .post-filter-dropdown[data-open='1'] .post-filter-trigger {
-      color: oklch(var(--un-preset-theme-colors-primary) / 0.9);
-      background: transparent;
-      border-color: transparent;
     }
 
     .post-filter-menu {

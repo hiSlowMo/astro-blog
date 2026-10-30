@@ -8,6 +8,10 @@
   --motion-page-offset: 0.65rem;
   --motion-rise-offset: 1rem;
   --motion-overlay-blur: 5px;
+  --overlay-backdrop-blur: 8px;
+  --overlay-backdrop-tint: oklch(0 0 0 / 0.14);
+  --overlay-duration: 280ms;
+  --overlay-easing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @media (max-width: 768px) {

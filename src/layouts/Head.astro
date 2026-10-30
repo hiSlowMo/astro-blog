@@ -56,7 +56,6 @@ const pageImage = postSlug
 <meta name="theme-color" content={metaTheme} />
 
 <!-- Preload -->
-<link rel="preload" href={`${base}/fonts/EarlySummer-VF-Split/EarlySummer-VF-Subset.woff2`} as="font" type="font/woff2" crossorigin />
 {katexEnabled && <link rel="stylesheet" href={katexCSS} media="print" onload={`this.media='all'`} />}
 
 <!-- Site Links -->
@@ -197,22 +196,4 @@ const pageImage = postSlug
     data-website-id={umamiAnalyticsID}
   />
 )}
-<!-- 霞鹜文楷 -->
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-<link
-  rel="preload"
-  href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css"
-  as="style"
-  crossorigin
-/>
-<link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css"
-  media="print"
-  onload="this.setAttribute('media','all')"
-  crossorigin
-/>
-<noscript>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css" crossorigin />
-</noscript>
 </head>

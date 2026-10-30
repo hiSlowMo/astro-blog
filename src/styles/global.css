@@ -2,12 +2,13 @@
 @import "@fontsource-variable/noto-sans-sc";
 @import "@fontsource-variable/jetbrains-mono";
 :root {
-  --font-sans: "Inter Variable","Noto Sans SC Variable",system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+  --font-sans: "Inter Variable","PingFang SC","Noto Sans SC Variable",system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
   --font-mono: "JetBrains Mono Variable",ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
 }
 
 html, body {
   font-family: var(--font-sans);
+  /* 使用明确的常规字重，避免系统苹方将小于 400 的值匹配到细体。 */
   font-weight: 400;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -19,14 +20,14 @@ code, pre, kbd, samp {
 }
 
 h1, h2, h3, h4 {
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .font-time,
 .archive-date,
 .archive-tags,
 .archive-summary {
-  font-weight: 350;
+  font-weight: 400;
   opacity: 0.82;
 }
 

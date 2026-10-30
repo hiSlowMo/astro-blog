@@ -11,7 +11,7 @@ import { themeConfig } from './src/config.ts'
 
 const { light, dark } = themeConfig.color
 
-const fontSans = ['Inter Variable', 'Noto Sans SC Variable', 'LXGW WenKai Screen', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Noto Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', 'Arial', 'sans-serif']
+const fontSans = ['Inter Variable', 'PingFang SC', 'Noto Sans SC Variable', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Noto Sans', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', 'Arial', 'sans-serif']
 const fontMono = ['JetBrains Mono Variable', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace']
 // Metadata: digits and Latin from JetBrains Mono, CJK falls back to the sans stack
 const fontTime = ['JetBrains Mono Variable', ...fontSans]
