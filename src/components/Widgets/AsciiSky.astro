@@ -3,8 +3,8 @@ import portraitImage from '@/assets/portrait.png'
 import worldImage from '@/assets/world.png'
 
 // Decorative ASCII sky beside the reading column. It persists across navigations,
-// decodes into a different scene for each section of the site, and on wide screens
-// a portrait settles into it that takes on the texture of each scene
+// decodes into a different scene for each section of the site, and a portrait
+// settles into clear space that takes on the texture of each scene
 interface Props {
   scene?: 'clouds' | 'haze' | 'rain' | 'stars' | 'world' | 'contour' | 'fireflies'
 }
@@ -190,6 +190,9 @@ const { scene = 'clouds' } = Astro.props
   // The portrait looks for the largest clear square beside the text, within these sizes
   const PORTRAIT_MIN_ROWS = 13
   const PORTRAIT_MAX_ROWS = 20
+  const PORTRAIT_MOBILE_MIN_ROWS = 10
+  const PORTRAIT_MOBILE_MAX_ROWS = 13
+  const PORTRAIT_MOBILE_INK = 0.78
   const PORTRAIT_AVOID = '#site-header, #site-nav, #site-utility, #site-footer'
   // How long after the sky first settles before the portrait starts to condense
   const PORTRAIT_DELAY = 600
@@ -930,8 +933,17 @@ const { scene = 'clouds' } = Astro.props
       for (const rect of textRects())
         block(rect.left - skyRect.left - 12, rect.top - skyRect.top - 10, rect.right - skyRect.left + 12, rect.bottom - skyRect.top + 10)
       // Keep clear of where the panel dissolves in from the column and out toward the bottom
-      block(0, 0, 72, field.height)
-      block(field.width - 16, 0, field.width, field.height)
+      if (desktop.matches) {
+        block(0, 0, 72, field.height)
+      }
+      else {
+        // On phones the portrait belongs to the header band, never to the reading flow
+        const mainTop = document.querySelector('main')?.getBoundingClientRect().top
+        if (mainTop != null)
+          block(0, mainTop - skyRect.top - 10, field.width, field.height)
+      }
+      // A little more room at the right edge on phones, where that edge is the screen itself
+      block(field.width - (desktop.matches ? 16 : 28), 0, field.width, field.height)
       block(0, 0, field.width, 24)
       block(0, field.height * 0.8, field.width, field.height)
 
@@ -953,19 +965,26 @@ const { scene = 'clouds' } = Astro.props
       return sums[(row + rows) * stride + col + cols] - sums[row * stride + col + cols] - sums[(row + rows) * stride + col] + sums[row * stride + col]
     }
 
-    // The largest clear square of sky beside the text, nearest the middle of the column
+    // The largest clear square of sky beside the text or above the mobile reading flow
     const findPortraitBox = (): Box | null => {
       const { cols, rows, cellW, cellH } = field
-      if (!desktop.matches || !cols || !rows)
+      if (!cols || !rows)
         return null
 
       const sums = clearance()
       const header = document.querySelector('#site-header')?.getBoundingClientRect()
-      const target = {
-        x: header ? header.left + header.width / 2 - skyRect.left : field.width / 2,
-        y: field.height * 0.45,
-      }
-      for (let size = PORTRAIT_MAX_ROWS; size >= PORTRAIT_MIN_ROWS; size--) {
+      const target = desktop.matches
+        ? {
+            x: header ? header.left + header.width / 2 - skyRect.left : field.width / 2,
+            y: field.height * 0.45,
+          }
+        : {
+            x: field.width * 0.72,
+            y: Math.min(120, field.height * 0.3),
+          }
+      const minRows = desktop.matches ? PORTRAIT_MIN_ROWS : PORTRAIT_MOBILE_MIN_ROWS
+      const maxRows = desktop.matches ? PORTRAIT_MAX_ROWS : PORTRAIT_MOBILE_MAX_ROWS
+      for (let size = maxRows; size >= minRows; size--) {
         // Square on screen, as cells are about twice as tall as they are wide
         const width = Math.round(size * cellH / cellW)
         let best: Box | null = null
@@ -1019,7 +1038,7 @@ const { scene = 'clouds' } = Astro.props
 
       // Only if text has moved over the portrait does it disperse and find a new place
       portraitMissing = false
-      if (portrait && (!desktop.matches || clutter(clearance(), portrait)))
+      if (portrait && clutter(clearance(), portrait))
         portraitStale = true
     }
 
@@ -1121,7 +1140,7 @@ const { scene = 'clouds' } = Astro.props
           const wave = (morphProgress - waveAt[i]) / WAVE_SPAN
           const glint = ((col + row * 2) / (p.cols + p.rows * 2) - sheen) / 0.07
           let glyph = p.glyph[j]
-          let alpha = p.alpha[j] * breath * (1 + 0.5 * Math.exp(-glint * glint))
+          let alpha = p.alpha[j] * breath * (1 + 0.5 * Math.exp(-glint * glint)) * (desktop.matches ? 1 : PORTRAIT_MOBILE_INK)
           let tone = part === EYE ? 1 : 0
           if (part === HAIR) {
             textureHair(wave > 0 ? scene : previousScene, x, y, t)
@@ -1329,7 +1348,7 @@ const { scene = 'clouds' } = Astro.props
     const stepPortrait = (now: number) => {
       const elapsed = now - portraitClock
       portraitClock = now
-      const wanted = desktop.matches && !portraitStale && now >= portraitAfter
+      const wanted = !portraitStale && now >= portraitAfter
       if (wanted && !portrait && !portraitMissing)
         placePortrait()
 
@@ -1377,10 +1396,10 @@ const { scene = 'clouds' } = Astro.props
       rafId = 0
     }
 
-    // The portrait is fetched once the sky has settled on a wide screen
+    // The portrait is fetched once the sky has settled, on both wide and narrow screens
     const loadInk = () => {
       const source = root.dataset.portrait
-      if (inkRequested || !source || !desktop.matches)
+      if (inkRequested || !source)
         return
 
       inkRequested = true

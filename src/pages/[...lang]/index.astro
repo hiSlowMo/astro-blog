@@ -437,12 +437,11 @@ const visiblePostsByYear = new Map(
       position: relative;
     }
 
+    /* Below the intro and in line with it, never floating over it */
     .post-filter {
-      position: absolute;
-      top: -7.35rem;
-      right: 0;
-      inline-size: min(13.5rem, calc(100vw - 9.25rem));
-      margin-bottom: 0;
+      position: relative;
+      inline-size: auto;
+      margin: -0.75rem 0 1.25rem;
       z-index: 35;
     }
 
@@ -451,14 +450,14 @@ const visiblePostsByYear = new Map(
       align-items: center;
       flex-wrap: nowrap;
       position: relative;
-      width: 100%;
-      justify-content: flex-end;
-      gap: 0.64rem;
+      margin-inline: -0.45rem;
+      justify-content: flex-start;
+      gap: 1.1rem;
     }
 
     .post-filter-dropdown {
       position: relative;
-      flex: 1 1 auto;
+      flex: none;
       min-width: 0;
       inline-size: auto;
     }
@@ -466,7 +465,7 @@ const visiblePostsByYear = new Map(
     .post-filter-trigger,
     .post-filter-plain {
       height: auto;
-      padding: 0.08rem 0;
+      padding: 0.5rem 0.45rem;
       border: none;
       border-radius: 0;
       background: transparent;
