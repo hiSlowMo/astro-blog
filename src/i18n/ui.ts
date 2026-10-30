@@ -40,7 +40,7 @@ export const ui: Record<Language, Translation> = {
     archive: '归档',
     links: '友链',
     moments: '说说',
-    momentsIntro: '没长成文章的碎片想法，也值得留档。',
+    momentsIntro: '这里是没长成文章的碎片想法和没营养的话。',
     momentsEmpty: '还没有说说，去写第一条吧。',
     momentsCount: '{COUNT} 条记录',
     more: '更多',
