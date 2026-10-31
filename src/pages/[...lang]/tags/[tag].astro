@@ -1,8 +1,8 @@
 ---
-import PostList from '@/components/PostList.astro'
-import TagList from '@/components/TagList.astro'
+import StatusBadge from '@/components/StatusBadge.astro'
 import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
+import { getLocalizedPath, getPostPath } from '@/i18n/path'
 import Layout from '@/layouts/Layout.astro'
 import { getAllTags, getPostsByTag, getTagSupportedLangs } from '@/utils/content'
 
@@ -24,25 +24,172 @@ interface Props {
 const { tag } = Astro.props
 const currentLang = getLangFromLocale(Astro.currentLocale)
 const posts = await getPostsByTag(tag, currentLang)
-const allTags = await getAllTags(currentLang)
 const supportedLangs = await getTagSupportedLangs(tag)
 ---
 
 <Layout supportedLangs={supportedLangs}>
-  <!-- Decorative Line -->
-  <div class="uno-decorative-line" />
-  <!-- Tag List -->
-  <TagList
-    tags={allTags}
-    currentTag={tag}
-    lang={currentLang}
-  />
+  <header class="tag-detail-header">
+    <div class="tag-detail-heading">
+      <h1>{tag}</h1>
+      <span class="font-time">{posts.length} 篇</span>
+    </div>
+    <a class="tag-detail-all" href={getLocalizedPath('/tags/', currentLang)}>全部标签 <span aria-hidden="true">↗</span></a>
+  </header>
 
   <!-- Posts List -->
-  <div class="mt-10.5">
-    <PostList
-      posts={posts}
-      lang={currentLang}
-    />
-  </div>
+  <section class="tag-detail-posts" aria-label={`标签「${tag}」的文章`}>
+    <ul class="tag-post-list">
+      {posts.map((post) => {
+        const slug = post.data.abbrlink || post.id
+        const date = post.data.published.toISOString().split('T')[0]
+        return (
+          <li class="tag-post">
+            <time class="tag-post-date font-time" datetime={date}>{date}</time>
+            <div class="tag-post-title">
+              <a
+                href={getPostPath(slug, currentLang)}
+                transition:name={`post-${slug}${currentLang ? `-${currentLang}` : ''}`}
+                data-disable-theme-toggle-transition
+              >
+                {post.data.title}
+              </a>
+              {post.data.status && <StatusBadge status={post.data.status} compact />}
+            </div>
+            <span class="tag-post-reading font-time">{post.remarkPluginFrontmatter.minutes} 分钟</span>
+          </li>
+        )
+      })}
+    </ul>
+  </section>
 </Layout>
+
+<style>
+  .tag-detail-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
+  }
+
+  .tag-detail-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .tag-detail-heading h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.4;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+
+  .tag-detail-heading > span {
+    flex: none;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.85);
+    font-size: 0.875rem;
+  }
+
+  .tag-detail-all {
+    flex: none;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.9);
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: color var(--motion-fast) ease;
+  }
+
+  .tag-detail-all:hover {
+    color: oklch(var(--un-preset-theme-colors-primary));
+  }
+
+  .tag-detail-all:focus-visible {
+    outline: 2px solid oklch(var(--un-preset-theme-colors-accent) / 0.55);
+    outline-offset: 4px;
+  }
+
+  .tag-post-list {
+    display: grid;
+    gap: 1.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tag-post {
+    display: grid;
+    grid-template-columns: 6.25rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 0.9rem;
+  }
+
+  .tag-post-date,
+  .tag-post-reading {
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.85);
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+
+  .tag-post-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.65rem;
+    min-width: 0;
+  }
+
+  .tag-post-title a {
+    color: oklch(var(--un-preset-theme-colors-primary) / 0.86);
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    transition: color var(--motion-fast) ease;
+  }
+
+  .tag-post-title :global(.status-badge) {
+    font-size: 0.8125rem;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.85);
+  }
+
+  .tag-post-title a:hover {
+    color: oklch(var(--un-preset-theme-colors-primary));
+  }
+
+  .tag-post-title a:focus-visible {
+    outline: 2px solid oklch(var(--un-preset-theme-colors-accent) / 0.55);
+    outline-offset: 4px;
+  }
+
+  @media (max-width: 639px) {
+    .tag-post {
+      grid-template-columns: 6.25rem minmax(0, 1fr);
+      gap: 0.8rem;
+    }
+
+    .tag-post-date {
+      font-size: 0.875rem;
+    }
+
+    .tag-post-reading {
+      display: none;
+    }
+  }
+
+  :global(html.reduce-motion) .tag-detail-all,
+  :global(html.reduce-motion) .tag-post-title a {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tag-detail-all,
+    .tag-post-title a {
+      transition: none;
+    }
+  }
+</style>

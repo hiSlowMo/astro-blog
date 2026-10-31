@@ -1,42 +1,77 @@
 ---
 import GoBackIcon from '@/assets/icons/go-back.svg'
+import SearchIcon from '@/assets/icons/search-icon.svg'
+import { getPageInfo } from '@/utils/page'
+
+const { getLocalizedPath } = getPageInfo(Astro.url.pathname)
 ---
 
-<button
-  id="back-button"
-  class="hidden min-[1536px]:(absolute left--10 top-3.8 block aspect-square w-4.5 c-secondary/60 transition-colors ease-out hover:c-primary active:scale-90!)"
-  type="button"
-  aria-label="Go back"
->
-  <GoBackIcon
-    aria-hidden="true"
-    fill="currentColor"
-  />
-</button>
+<nav class="post-reading-bar" aria-label="文章导航" data-pagefind-ignore>
+  <a id="back-button" class="no-heti" href={getLocalizedPath('/')} aria-label="返回首页">
+    <GoBackIcon aria-hidden="true" fill="currentColor" />
+    <span>返回首页</span>
+  </a>
+  <button type="button" data-search-open aria-label="搜索文章">
+    <SearchIcon aria-hidden="true" fill="currentColor" />
+  </button>
+</nav>
 
-<!-- Go Back Script >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
-<script>
-function handleBackButtonClick(e: MouseEvent) {
-  if (!(e.target instanceof Element)) {
-    return
+<style>
+  .post-reading-bar {
+    display: none;
   }
 
-  if (!e.target.closest('#back-button')) {
-    return
-  }
+  @media (min-width: 768px) {
+    .post-reading-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 0 2.25rem;
+      color: oklch(var(--un-preset-theme-colors-secondary) / 0.9);
+      font: 400 0.95rem/1.5 var(--font-sans);
+    }
 
-  // Navigate back if history exists
-  if (window.history.length > 1) {
-    window.history.back()
-    return
-  }
+    .post-reading-bar :is(a, button) {
+      display: inline-flex;
+      min-width: 2.5rem;
+      min-height: 2.5rem;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color var(--motion-fast) ease;
+    }
 
-  // Fallback to homepage
-  const siteTitleLink = document.getElementById('site-title-link')
-  if (siteTitleLink) {
-    siteTitleLink.click()
-  }
-}
+    .post-reading-bar #back-button {
+      justify-content: flex-start;
+      animation: none;
+      opacity: 1;
+    }
 
-document.addEventListener('click', handleBackButtonClick)
-</script>
+    .post-reading-bar svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .post-reading-bar #back-button svg {
+      width: 0.85rem;
+      height: 1rem;
+    }
+
+    .post-reading-bar :is(a, button):hover {
+      color: oklch(var(--un-preset-theme-colors-primary));
+    }
+
+    .post-reading-bar :is(a, button):focus-visible {
+      outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.5);
+      outline-offset: 4px;
+      border-radius: 0.3rem;
+    }
+  }
+</style>

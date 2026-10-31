@@ -1,0 +1,140 @@
+/* Tablet and desktop article layout. Phones retain the existing flow. */
+@media (min-width: 768px) {
+  html[data-reading-layout='article'] .site-layout {
+    width: calc(100% - 7rem);
+    max-width: 44rem;
+    min-height: 0;
+    margin: 3.5rem auto 5rem;
+    padding: 0;
+  }
+
+  html[data-reading-layout='article'] #site-header,
+  html[data-reading-layout='article'] #site-nav,
+  html[data-reading-layout='article'] .ascii-sky {
+    display: none;
+  }
+
+  html[data-reading-layout='article'] #post-date,
+  html[data-reading-layout='article'] #post-content > *,
+  html[data-reading-layout='article'] #toc-desktop-icon,
+  html[data-reading-layout='article'] #toc-links-list > * {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  html[data-reading-layout='article'] #toc-container {
+    view-transition-name: reading-toc;
+  }
+
+  html[data-reading-layout='article'] #site-footer {
+    position: static;
+    width: auto;
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
+    font-size: 0.75rem;
+    line-height: 1.65;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.65);
+  }
+
+  html[data-reading-layout='article'] #site-utility {
+    right: 1.25rem;
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    width: auto;
+  }
+
+  html[data-reading-layout='article'] .toc-mobile-shell {
+    --toc-mobile-offset-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+
+  html:not([data-reading-layout]) #site-header {
+    view-transition-name: reading-sidebar-header;
+  }
+
+  html:not([data-reading-layout]) #site-nav {
+    view-transition-name: reading-sidebar-nav;
+  }
+
+  html:not([data-reading-layout]) #site-footer {
+    view-transition-name: reading-sidebar-footer;
+  }
+
+  html[data-reading-transition='enter']:not([data-theme-changing])::view-transition-new(root) {
+    animation: reading-enter 260ms var(--motion-ease-standard) both;
+  }
+
+  html[data-reading-transition='enter']::view-transition-old(reading-sidebar-header),
+  html[data-reading-transition='enter']::view-transition-old(reading-sidebar-nav),
+  html[data-reading-transition='enter']::view-transition-old(reading-sidebar-footer) {
+    animation: reading-sidebar-out 180ms ease-out both;
+  }
+
+  html[data-reading-transition='leave']::view-transition-new(reading-sidebar-header),
+  html[data-reading-transition='leave']::view-transition-new(reading-sidebar-nav),
+  html[data-reading-transition='leave']::view-transition-new(reading-sidebar-footer) {
+    animation: reading-sidebar-in 260ms var(--motion-ease-standard) both;
+  }
+
+  html[data-reading-transition]::view-transition-group(*) {
+    animation-duration: 260ms;
+    animation-timing-function: var(--motion-ease-standard);
+  }
+}
+
+@media (min-width: 1024px) {
+  html[data-reading-layout='article'] {
+    --reading-enter-offset: calc(max(5.75rem, 50vw - 34.25rem) - max(3.5rem, 50vw - 22rem));
+  }
+
+  html[data-reading-layout='article'] #site-utility {
+    right: max(1.25rem, calc(50vw - 27rem));
+    bottom: 2rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  html[data-reading-layout='article'] .floating-utility-button {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+@keyframes reading-enter {
+  from {
+    opacity: 0;
+    transform: translateX(var(--reading-enter-offset, -0.65rem));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes reading-sidebar-out {
+  to {
+    opacity: 0;
+    transform: translateX(0.8rem);
+  }
+}
+
+@keyframes reading-sidebar-in {
+  from {
+    opacity: 0;
+    transform: translateX(0.8rem);
+  }
+}
+
+html.reduce-motion[data-reading-transition]::view-transition-group(*),
+html.reduce-motion[data-reading-transition]::view-transition-old(*),
+html.reduce-motion[data-reading-transition]::view-transition-new(*) {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-reading-transition]::view-transition-group(*),
+  html[data-reading-transition]::view-transition-old(*),
+  html[data-reading-transition]::view-transition-new(*) {
+    animation: none !important;
+  }
+}

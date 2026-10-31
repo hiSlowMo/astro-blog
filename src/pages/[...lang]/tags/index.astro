@@ -3,7 +3,7 @@ import TagList from '@/components/TagList.astro'
 import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import Layout from '@/layouts/Layout.astro'
-import { getAllTags } from '@/utils/content'
+import { getAllTags, getPostsGroupByTags } from '@/utils/content'
 
 export async function getStaticPaths() {
   return allLocales.map(lang => ({
@@ -13,14 +13,62 @@ export async function getStaticPaths() {
 
 const currentLang = getLangFromLocale(Astro.currentLocale)
 const allTags = await getAllTags(currentLang)
+const postsByTag = await getPostsGroupByTags(currentLang)
+const tagCounts = Object.fromEntries(
+  [...postsByTag.entries()].map(([tag, posts]) => [tag, posts.length]),
+)
 ---
 
 <Layout>
-  <!-- Decorative Line -->
-  <div class="uno-decorative-line" />
-  <!-- Tag List -->
-  <TagList
-    tags={allTags}
-    lang={currentLang}
-  />
+  <section class="tag-overview" aria-labelledby="tag-overview-title">
+    <header class="tag-overview-header">
+      <div>
+        <h1 id="tag-overview-title">标签</h1>
+        <p>同一篇文字，也可以有不同的入口。</p>
+      </div>
+      <span class="font-time">{allTags.length} TOPICS</span>
+    </header>
+    <TagList
+      tags={allTags}
+      lang={currentLang}
+      counts={tagCounts}
+    />
+  </section>
 </Layout>
+
+<style>
+  .tag-overview {
+    max-width: 36rem;
+  }
+
+  .tag-overview-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2.25rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
+  }
+
+  .tag-overview-header h1 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  .tag-overview-header p {
+    margin: 0.65rem 0 0;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.85);
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .tag-overview-header > span {
+    flex: none;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.8);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+  }
+</style>

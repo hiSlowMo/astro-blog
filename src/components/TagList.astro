@@ -6,32 +6,100 @@ interface Props {
   tags: string[]
   currentTag?: string
   lang: Language
+  counts?: Record<string, number>
 }
 
-const { tags, currentTag = '', lang } = Astro.props
+const { tags, currentTag = '', lang, counts = {} } = Astro.props
 ---
 
-<div class="no-heti flex flex-wrap gap-x-3 gap-y-3.2">
+<nav class="tag-list no-heti" aria-label="文章标签">
   {tags.map(tag => (
     <a
       href={getTagPath(tag, lang)}
-      class:list={[
-        'relative inline-block border border-secondary/25 rounded-full px-3.2 py-0.7 ring-secondary/80',
-        'transition-[colors,box-shadow] ease-out hover:(border-secondary/80 c-primary font-medium ring-0.2)',
-        currentTag === tag
-          ? 'border-secondary/80 c-primary font-medium ring-0.2'
-          : 'ring-0',
-      ]}
+      class:list={['tag-list-link', currentTag === tag && 'is-current']}
+      aria-current={currentTag === tag ? 'page' : undefined}
+      aria-label={counts[tag] === undefined ? undefined : `${tag}，${counts[tag]} 篇文章`}
     >
-      <span class="absolute inset-0 flex items-center justify-center whitespace-nowrap transition-font-weight">
-        {tag}
-      </span>
-      <span
-        class="inline-block font-medium opacity-0"
-        aria-hidden="true"
-      >
-        {tag}
-      </span>
+      <span>{tag}</span>
+      {counts[tag] !== undefined && <sup class="font-time" aria-hidden="true">{counts[tag]}</sup>}
     </a>
   ))}
-</div>
+</nav>
+
+<style>
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 1.7rem;
+    row-gap: 1.05rem;
+  }
+
+  .tag-list-link {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0.28rem;
+    padding: 0.15rem 0;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.9);
+    font-size: 1rem;
+    line-height: 1.6;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: color var(--motion-fast) ease;
+  }
+
+  .tag-list-link sup {
+    position: relative;
+    top: -0.1rem;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.8);
+    font-size: 0.75rem;
+    line-height: 1;
+  }
+
+  .tag-list-link:hover,
+  .tag-list-link.is-current {
+    color: oklch(var(--un-preset-theme-colors-primary));
+  }
+
+  .tag-list-link.is-current {
+    color: oklch(var(--un-preset-theme-colors-accent));
+  }
+
+  .tag-list-link:hover sup,
+  .tag-list-link.is-current sup {
+    color: currentColor;
+    opacity: 0.65;
+  }
+
+  .tag-list-link:focus-visible {
+    outline: 2px solid oklch(var(--un-preset-theme-colors-accent) / 0.55);
+    outline-offset: 4px;
+    border-radius: 0.15rem;
+  }
+
+  @media (max-width: 639px) {
+    .tag-list {
+      column-gap: 1.25rem;
+    }
+  }
+
+  @media (pointer: coarse) {
+    .tag-list-link {
+      min-height: 2.75rem;
+      align-items: center;
+    }
+
+    .tag-list-link sup {
+      top: -0.35rem;
+    }
+  }
+
+  :global(html.reduce-motion) .tag-list-link {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tag-list-link {
+      transition: none;
+    }
+  }
+</style>

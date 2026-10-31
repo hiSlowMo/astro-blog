@@ -20,6 +20,7 @@ import '@/styles/global.css'
 import '@/styles/lqip.css'
 import '@/styles/markdown.css'
 import '@/styles/transition.css'
+import '@/styles/reading.css'
 
 interface Props {
   postTitle?: string
@@ -55,6 +56,7 @@ const MarginBottom = isPost && themeConfig.comment.enabled
 
 <html
   lang={Astro.currentLocale}
+  data-reading-layout={isPost ? 'article' : undefined}
   class:list={[
     fontStyle,
     isPost ? 'scroll-smooth' : '',
@@ -64,7 +66,7 @@ const MarginBottom = isPost && themeConfig.comment.enabled
   <body data-pagefind-ignore={isPost ? undefined : 'all'}>
     <AsciiSky scene={skyScene} />
     <div
-      class="mx-auto max-w-205.848 min-h-vh w-full min-h-dvh sm:(max-w-45rem px-10 py-10)"
+      class="site-layout mx-auto max-w-205.848 min-h-vh w-full min-h-dvh sm:(max-w-45rem px-10 py-10)"
       p="x-[min(6vw,1.35rem)] y-7"
       lg="mx-[max(5.75rem,calc(50vw-34.25rem))] my-20 max-w-[min(calc(75vw-16rem),44rem)] min-h-full p-0"
     >
@@ -87,3 +89,7 @@ const MarginBottom = isPost && themeConfig.comment.enabled
     <SearchModal autoOpen={isSearch} />
   </body>
 </html>
+
+<script>
+  import '@/scripts/reading-layout'
+</script>
