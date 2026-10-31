@@ -27,8 +27,16 @@ export const themeConfig: ThemeConfig = {
     birthYear: 2007,
     // status light under the site title, remove to hide it
     status: {
-      text: '办公中',
+      text: [
+        '办公中',
+        '整理思路',
+        '写点东西',
+        '看会儿代码',
+        '慢慢琢磨',
+        '发会儿呆',
+      ],
       tone: 'online', // online | away | offline
+      interval: 3200,
     },
   },
   // SITE INFORMATION >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END

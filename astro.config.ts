@@ -1,10 +1,8 @@
 import mdx from '@astrojs/mdx'
 import partytown from '@astrojs/partytown'
 import sitemap from '@astrojs/sitemap'
-import Compress from 'astro-compress'
 import { defineConfig } from 'astro/config'
 import rehypeKatex from 'rehype-katex'
-import rehypeMermaid from 'rehype-mermaid'
 import rehypeSlug from 'rehype-slug'
 import remarkDirective from 'remark-directive'
 import remarkMath from 'remark-math'
@@ -15,6 +13,7 @@ import { rehypeCodeCopyButton } from './src/plugins/rehype-code-copy-button.mjs'
 import { rehypeExternalLinks } from './src/plugins/rehype-external-links.mjs'
 import { rehypeHeadingAnchor } from './src/plugins/rehype-heading-anchor.mjs'
 import { rehypeImageProcessor } from './src/plugins/rehype-image-processor.mjs'
+import { rehypeMermaidSource } from './src/plugins/rehype-mermaid-source.mjs'
 import { rehypePagefindOptimize } from './src/plugins/rehype-pagefind-optimize.mjs'
 import { remarkContainerDirectives } from './src/plugins/remark-container-directives.mjs'
 import { remarkLeafDirectives } from './src/plugins/remark-leaf-directives.mjs'
@@ -53,13 +52,6 @@ export default defineConfig({
       },
     }),
     sitemap(),
-    Compress({
-      CSS: true,
-      HTML: true,
-      Image: false,
-      JavaScript: true,
-      SVG: false,
-    }),
   ],
   markdown: {
     remarkPlugins: [
@@ -71,7 +63,7 @@ export default defineConfig({
     ],
     rehypePlugins: [
       rehypeKatex,
-      [rehypeMermaid, { strategy: 'pre-mermaid' }],
+      rehypeMermaidSource,
       rehypeSlug,
       rehypeHeadingAnchor,
       rehypeImageProcessor,

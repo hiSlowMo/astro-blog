@@ -7,6 +7,7 @@ import PostDate from '@/components/PostDate.astro'
 import StatusBadge from '@/components/StatusBadge.astro'
 import TagList from '@/components/TagList.astro'
 import BackButton from '@/components/Widgets/BackButton.astro'
+import Mermaid from '@/components/Widgets/Mermaid.astro'
 import TOC from '@/components/Widgets/TOC.astro'
 import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
@@ -79,6 +80,7 @@ const currentLang = getLangFromLocale(Astro.currentLocale)
 const slug = post.data.abbrlink || post.id
 const description = getPostDescription(post, 'meta')
 const { Content, headings, remarkPluginFrontmatter } = await render(post)
+const hasMermaid = /^```mermaid(?:\s|$)/m.test(post.body ?? '')
 const tocHeadings = post.data.toc ? headings : []
 const updatedDate = getPostUpdatedAt(post)
 const coverURL = getPostCoverURL(post.data.cover)
@@ -197,6 +199,7 @@ const searchCategories = post.data.categories.join(' ')
       <div id="post-comments" data-pagefind-ignore>
         <Comment />
       </div>
+      {hasMermaid && <Mermaid />}
     </div>
   </article>
 </Layout>

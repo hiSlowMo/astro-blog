@@ -1,0 +1,43 @@
+<script>
+type MermaidApi = typeof import('mermaid').default
+
+let mermaidApi: MermaidApi | undefined
+let renderId = 0
+
+async function renderMermaidDiagrams() {
+  const currentRenderId = ++renderId
+  const diagrams = document.querySelectorAll<HTMLElement>('pre.mermaid')
+  if (diagrams.length === 0) {
+    return
+  }
+
+  const sources = new Map<HTMLElement, string>()
+  diagrams.forEach((element) => {
+    sources.set(element, element.dataset.mermaidCode ?? element.textContent?.trim() ?? '')
+    element.dataset.mermaidCode = sources.get(element) ?? ''
+  })
+
+  try {
+    mermaidApi ??= (await import('mermaid')).default
+    if (currentRenderId !== renderId) {
+      return
+    }
+
+    const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'default'
+    mermaidApi.initialize({ startOnLoad: false, theme })
+
+    sources.forEach((source, element) => {
+      element.innerHTML = source
+      element.removeAttribute('data-processed')
+    })
+
+    await mermaidApi.run({ nodes: diagrams })
+  }
+  catch (error) {
+    console.error('[Mermaid] Failed to render diagram:', error)
+  }
+}
+
+document.addEventListener('astro:page-load', renderMermaidDiagrams)
+document.addEventListener('theme-changed', renderMermaidDiagrams)
+</script>

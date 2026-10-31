@@ -9,6 +9,9 @@ const { title, subtitle, i18nTitle, status } = themeConfig.site
 const currentUI = ui[currentLang as keyof typeof ui] ?? {}
 const headerTitle = i18nTitle ? currentUI.title : title
 const headerSubtitle = i18nTitle ? currentUI.subtitle : subtitle
+const statusMessages = status
+  ? Array.isArray(status.text) ? status.text : [status.text]
+  : []
 
 const TitleTag = isPost ? 'h2' : 'h1'
 const SubtitleTag = isPost ? 'div' : 'h2'
@@ -67,12 +70,105 @@ const SubtitleTag = isPost ? 'div' : 'h2'
         isPost ? 'hidden lg:flex' : 'flex',
       ]}
       data-tone={status.tone ?? 'online'}
+      data-status-messages={JSON.stringify(statusMessages)}
+      data-status-interval={status.interval ?? 3200}
+      id="site-status"
     >
       <span class="site-status-dot" aria-hidden="true" />
-      {status.text}
+      <span class="site-status-text" aria-live="off">{statusMessages[0]}</span>
     </p>
   )}
 </header>
+
+<script>
+const statusTimers = new WeakMap<HTMLElement, number>()
+const statusSwapTimers = new WeakMap<HTMLElement, number>()
+
+function clearStatusTimers(status: HTMLElement) {
+  const timer = statusTimers.get(status)
+  const swapTimer = statusSwapTimers.get(status)
+
+  if (timer) {
+    window.clearTimeout(timer)
+    statusTimers.delete(status)
+  }
+
+  if (swapTimer) {
+    window.clearTimeout(swapTimer)
+    statusSwapTimers.delete(status)
+  }
+}
+
+function initRotatingStatus() {
+  const status = document.querySelector<HTMLElement>('#site-status')
+  const text = status?.querySelector<HTMLElement>('.site-status-text')
+  if (!status || !text) {
+    return
+  }
+
+  clearStatusTimers(status)
+
+  let messages: string[] = []
+  try {
+    messages = JSON.parse(status.dataset.statusMessages ?? '[]')
+  }
+  catch {
+    return
+  }
+
+  if (messages.length < 2) {
+    return
+  }
+
+  const interval = Math.min(
+    10_000,
+    Math.max(1_800, Number(status.dataset.statusInterval) || 3200),
+  )
+  const swapDuration = 180
+  let index = 0
+  const currentStatus = status
+  const currentText = text
+
+  function scheduleNext() {
+    statusTimers.set(currentStatus, window.setTimeout(rotate, interval))
+  }
+
+  function rotate() {
+    const reduceMotion = document.documentElement.classList.contains('reduce-motion')
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (reduceMotion || document.visibilityState === 'hidden') {
+      scheduleNext()
+      return
+    }
+
+    index = (index + 1) % messages.length
+    currentText.classList.add('is-leaving')
+
+    statusSwapTimers.set(currentStatus, window.setTimeout(() => {
+      currentText.textContent = messages[index] ?? messages[0]
+      currentText.classList.remove('is-leaving')
+      currentText.classList.add('is-entering')
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => currentText.classList.remove('is-entering'))
+      })
+
+      scheduleNext()
+    }, swapDuration))
+  }
+
+  scheduleNext()
+}
+
+document.addEventListener('astro:before-swap', () => {
+  const status = document.querySelector<HTMLElement>('#site-status')
+  if (status) {
+    clearStatusTimers(status)
+  }
+})
+document.addEventListener('astro:page-load', initRotatingStatus)
+</script>
 
 <style>
   .site-status {
@@ -113,6 +209,26 @@ const SubtitleTag = isPost ? 'div' : 'h2'
     animation: site-status-breathe 3.2s ease-in-out infinite;
   }
 
+  .site-status-text {
+    display: inline-block;
+    transform-origin: left center;
+    transition:
+      opacity 180ms ease,
+      transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
+      filter 180ms ease;
+  }
+  .site-status-text.is-leaving {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(-0.32em);
+  }
+  .site-status-text.is-entering {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(0.32em);
+    transition: none;
+  }
+
   @keyframes site-status-ping {
     75%,
     100% {
@@ -128,14 +244,22 @@ const SubtitleTag = isPost ? 'div' : 'h2'
   }
 
   :global(html.reduce-motion) .site-status-dot,
-  :global(html.reduce-motion) .site-status-dot::after {
+  :global(html.reduce-motion) .site-status-dot::after,
+  :global(html.reduce-motion) .site-status-text {
     animation: none;
+    filter: none;
+    transform: none;
+    transition: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .site-status-dot,
-    .site-status-dot::after {
+    .site-status-dot::after,
+    .site-status-text {
       animation: none;
+      filter: none;
+      transform: none;
+      transition: none;
     }
   }
 </style>

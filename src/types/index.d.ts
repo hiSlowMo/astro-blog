@@ -20,8 +20,9 @@ export interface ThemeConfig {
     startDate: string
     birthYear?: number
     status?: {
-      text: string
+      text: string | string[]
       tone?: 'online' | 'away' | 'offline'
+      interval?: number
     }
   }
   color: {
