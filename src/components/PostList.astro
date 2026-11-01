@@ -72,6 +72,8 @@ const isHome = isHomePage(Astro.url.pathname)
         >
           <PostDate
             date={post.data.published}
+            updatedDate={post.data.updated}
+            sortable
             minutes={post.remarkPluginFrontmatter.minutes}
           />
         </div>
@@ -80,6 +82,8 @@ const isHome = isHomePage(Astro.url.pathname)
         <div class="hidden whitespace-nowrap text-3.65 font-time lg:block">
           <PostDate
             date={post.data.published}
+            updatedDate={post.data.updated}
+            sortable
             minutes={post.remarkPluginFrontmatter.minutes}
           />
         </div>

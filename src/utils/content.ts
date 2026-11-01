@@ -4,6 +4,7 @@ import type { Post } from '@/types'
 import { getCollection, render } from 'astro:content'
 import { base, defaultLocale } from '@/config'
 import { memoize } from '@/utils/cache'
+import { groupPostsByYear } from '@/utils/post-groups.mjs'
 
 const metaCache = new Map<string, { minutes: number }>()
 const postStatusLabelMap = {
@@ -194,30 +195,8 @@ export const getFeaturedPosts = memoize(_getFeaturedPosts)
  * @param lang The language code to filter by, defaults to site's default language
  * @returns Map of posts grouped by year (descending), sorted by date within each year
  */
-async function _getPostsByYear(lang?: Language): Promise<Map<number, Post[]>> {
-  const posts = await getRegularPosts(lang)
-  const yearMap = new Map<number, Post[]>()
-
-  posts.forEach((post: Post) => {
-    const year = post.data.published.getFullYear()
-    let yearPosts = yearMap.get(year)
-    if (!yearPosts) {
-      yearPosts = []
-      yearMap.set(year, yearPosts)
-    }
-    yearPosts.push(post)
-  })
-
-  // Sort posts within each year by date
-  yearMap.forEach((yearPosts) => {
-    yearPosts.sort((a, b) => {
-      const aDate = a.data.published
-      const bDate = b.data.published
-      return bDate.getMonth() - aDate.getMonth() || bDate.getDate() - aDate.getDate()
-    })
-  })
-
-  return new Map([...yearMap.entries()].sort((a, b) => b[0] - a[0]))
+async function _getPostsByYear(lang?: Language, { includePinned = false } = {}): Promise<Map<number, Post[]>> {
+  return groupPostsByYear(await getPosts(lang), { includePinned })
 }
 
 export const getPostsByYear = memoize(_getPostsByYear)

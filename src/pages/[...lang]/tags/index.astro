@@ -2,6 +2,7 @@
 import TagList from '@/components/TagList.astro'
 import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
+import { ui } from '@/i18n/ui'
 import Layout from '@/layouts/Layout.astro'
 import { getAllTags, getPostsGroupByTags } from '@/utils/content'
 
@@ -19,7 +20,7 @@ const tagCounts = Object.fromEntries(
 )
 ---
 
-<Layout>
+<Layout pageTitle={ui[currentLang].tags} pageDescription={`按主题浏览 SlowMo 的文章，共 ${allTags.length} 个标签。`}>
   <section class="tag-overview" aria-labelledby="tag-overview-title">
     <header class="tag-overview-header">
       <div>

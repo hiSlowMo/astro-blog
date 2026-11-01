@@ -14,7 +14,7 @@ const currentLang = getLangFromLocale(Astro.currentLocale)
 const currentUI = ui[currentLang as keyof typeof ui] ?? {}
 ---
 
-<Layout>
+<Layout pageTitle={currentUI.search} pageDescription="搜索 SlowMo 的文章、标签与正文内容。">
   <section class="search-redirect" data-pagefind-ignore>
     <p>{currentUI.search ?? 'Search'}</p>
   </section>

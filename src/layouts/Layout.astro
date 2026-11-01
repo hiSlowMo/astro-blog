@@ -15,7 +15,6 @@ import { themeConfig } from '@/config'
 import Head from '@/layouts/Head.astro'
 import { getPageInfo } from '@/utils/page'
 import '@/styles/extension.css'
-import '@/styles/font.css'
 import '@/styles/global.css'
 import '@/styles/lqip.css'
 import '@/styles/markdown.css'
@@ -23,6 +22,8 @@ import '@/styles/transition.css'
 import '@/styles/reading.css'
 
 interface Props {
+  pageTitle?: string
+  pageDescription?: string
   postTitle?: string
   postDescription?: string
   postSlug?: string
@@ -31,6 +32,8 @@ interface Props {
 }
 
 const {
+  pageTitle,
+  pageDescription,
   postTitle,
   postDescription,
   postSlug,
@@ -62,7 +65,7 @@ const MarginBottom = isPost && themeConfig.comment.enabled
     isPost ? 'scroll-smooth' : '',
   ]}
 >
-  <Head {postTitle} {postDescription} {postSlug} />
+  <Head {pageTitle} {pageDescription} {postTitle} {postDescription} {postSlug} />
   <body data-pagefind-ignore={isPost ? undefined : 'all'}>
     <AsciiSky scene={skyScene} />
     <div

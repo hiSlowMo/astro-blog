@@ -15,7 +15,7 @@ const year = Number(startYear) === currentYear
 const currentLang = getLangFromPath(Astro.url.pathname)
 const socialLinks = links.map(({ name, url }) => {
   const isRSS = url === '/atom.xml' || url === '/rss.xml'
-  const isEmail = /^[\w.-]+@[\w.-]+\.[a-z]{2,}$/i.test(url)
+  const isEmail = /^mailto:/i.test(url) || /^[\w.+-]+@[\w.-]+\.[a-z]{2,}$/i.test(url)
 
   if (isRSS) {
     const localizedPath = getLocalizedPath(url, currentLang)
@@ -32,7 +32,7 @@ const socialLinks = links.map(({ name, url }) => {
   }
 
   if (isEmail) {
-    const href = `mailto:${url}`
+    const href = /^mailto:/i.test(url) ? url : `mailto:${url}`
     return {
       name,
       href,
@@ -63,49 +63,143 @@ const uptimeDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60
   class="text-3 leading-1.25em font-navbar"
   lg="uno-desktop-column bottom-20 text-3.5"
 >
-  <p>
-    {socialLinks.map((link, index) => (
-      <>
-        <a class="highlight-hover py-0.8 transition-colors after:bottom-0.35em hover:c-primary" {...link}>{link.name}</a>
-        {index < socialLinks.length - 1 && '/'}
-      </>
-    ))}
-  </p>
+  <div class="footer-default">
+    <p>
+      {socialLinks.map(({ name, ...link }, index) => (
+        <>
+          <a class="highlight-hover py-0.8 transition-colors after:bottom-0.35em hover:c-primary" {...link}>{name}</a>
+          {index < socialLinks.length - 1 && '/'}
+        </>
+      ))}
+    </p>
 
-  <p>
-    © {year} {author}
-  </p>
+    <p>
+      © {year} {author}
+    </p>
 
-  <!-- Segments never break internally, and tighter mono spaces keep the stats to three lines -->
-  <p class="footer-stats [word-spacing:-0.2em] font-time">
-    <span class="whitespace-nowrap">运行 <span data-uptime-days data-start-date={themeConfig.site.startDate}>{uptimeDays}</span> 天 ·</span>
-    <span class="whitespace-nowrap">文章 {stats.posts} 篇 ·</span>
-    <span class="whitespace-nowrap">中文 {stats.totalCJKChars} 字 ·</span>
-    <span class="whitespace-nowrap">英文 {stats.totalEnglishWords} 词 ·</span>
-    <span class="whitespace-nowrap">统计更新 {statsDate}</span>
-  </p>
+    <!-- Segments never break internally, and tighter mono spaces keep the stats to three lines -->
+    <p class="footer-stats [word-spacing:-0.2em] font-time" title="中文按字、英文和数字按词；不含代码、网址及图片信息">
+      <span class="whitespace-nowrap">运行 <span data-uptime-days data-start-date={themeConfig.site.startDate}>{uptimeDays}</span> 天 ·</span>
+      <span class="whitespace-nowrap">文章 {stats.posts} 篇 ·</span>
+      <span class="whitespace-nowrap">中文 {stats.totalCJKChars} 字 ·</span>
+      <span class="whitespace-nowrap">英文 {stats.totalEnglishWords} 词 ·</span>
+      <span class="whitespace-nowrap">统计更新 {statsDate}</span>
+    </p>
 
+    <p>
+      Powered by
+      <a
+        class="highlight-hover py-0.8 transition-colors after:bottom-0.35em hover:c-primary"
+        href="https://astro.build/"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-umami-event="outbound-link-click"
+        data-umami-event-url="https://astro.build/"
+      >Astro</a>
+      and
+      <a
+        class="highlight-hover py-0.8 transition-colors after:bottom-0.35em hover:c-primary"
+        href="https://github.com/radishzzz/astro-theme-retypeset"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-umami-event="outbound-link-click"
+        data-umami-event-url="https://github.com/radishzzz/astro-theme-retypeset"
+      >Retypeset</a>
+    </p>
+  </div>
 
-  <p>
-    Powered by
-    <a
-      class="highlight-hover py-0.8 transition-colors after:bottom-0.35em hover:c-primary"
-      href="https://astro.build/"
-      target="_blank"
-      rel="noopener noreferrer"
-      data-umami-event="outbound-link-click"
-      data-umami-event-url="https://astro.build/"
-    >Astro</a>
-    and
-    <a
-      class="highlight-hover py-0.8 transition-colors after:bottom-0.35em hover:c-primary"
-      href="https://github.com/radishzzz/astro-theme-retypeset"
-      target="_blank"
-      rel="noopener noreferrer"
-      data-umami-event="outbound-link-click"
-      data-umami-event-url="https://github.com/radishzzz/astro-theme-retypeset"
-    >Retypeset</a>
-  </p>
+  <div class="footer-reading font-time">
+    <div class="footer-reading__left">
+      <span>© {year} {author}</span>
+      <span class="footer-reading__sep" aria-hidden="true">|</span>
+      <a
+        class="footer-reading__icon-group"
+        href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="CC BY-NC-SA 4.0 License"
+        title="CC BY-NC-SA 4.0"
+      >
+        <!-- CC -->
+        <svg viewBox="0 0 24 24" class="footer-reading__icon" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M10.5 9.75a2.5 2.5 0 1 0 0 4.5M15.75 9.75a2.5 2.5 0 1 0 0 4.5" />
+        </svg>
+        <!-- BY -->
+        <svg viewBox="0 0 24 24" class="footer-reading__icon" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="8" r="1.5" />
+          <path d="M9.5 11.5h5M12 11.5v5.5M10.5 17h3" />
+        </svg>
+        <!-- NC -->
+        <svg viewBox="0 0 24 24" class="footer-reading__icon" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M14 9.5c-.5-.6-1.2-.9-2-.9-1.4 0-2.3.7-2.3 1.7 0 2.2 4.6 1.2 4.6 3.5 0 1-.9 1.7-2.3 1.7-.9 0-1.7-.3-2.2-1M12 7.4v9.2M5.8 5.8l12.4 12.4" />
+        </svg>
+        <!-- ND / SA -->
+        <svg viewBox="0 0 24 24" class="footer-reading__icon" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M8.5 10.25h7M8.5 13.75h7" />
+        </svg>
+      </a>
+      <span class="footer-reading__dot" aria-hidden="true">·</span>
+      <span
+        class="footer-reading__status"
+        title={`运行 ${uptimeDays} 天 · 文章 ${stats.posts} 篇 · 中文 ${stats.totalCJKChars} 字 · 统计更新 ${statsDate}`}
+        aria-label={`运行 ${uptimeDays} 天`}
+      >
+        <svg viewBox="0 0 24 24" class="footer-reading__icon" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12h4l2.4-6 4.2 12 2.4-6H21" />
+        </svg>
+      </span>
+      <span class="footer-reading__dot" aria-hidden="true">·</span>
+      <a
+        class="footer-reading__icon-link"
+        href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="版权与许可协议"
+        title="版权与许可协议"
+      >
+        <svg viewBox="0 0 24 24" class="footer-reading__icon" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v18M8 21h8M5 7h14M6 7l-3 6h6l-3-6ZM18 7l-3 6h6l-3-6Z" />
+        </svg>
+      </a>
+    </div>
+
+    <div class="footer-reading__right">
+      <span>Powered by</span>
+      <a
+        class="footer-reading__icon-link"
+        href="https://astro.build/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Astro"
+        title="Astro"
+        data-umami-event="outbound-link-click"
+        data-umami-event-url="https://astro.build/"
+      >
+        <svg viewBox="0 0 24 24" class="footer-reading__icon" aria-hidden="true" fill="currentColor">
+          <path d="M8.36 15.27c-.96-.88-1.24-2.73-.84-4.07.7.85 1.67 1.12 2.67 1.27 1.55.23 3.07.14 4.5-.55.17-.08.32-.2.5-.32.14.43.18.88.12 1.33-.12.97-.6 1.72-1.38 2.29-.8.58-1.66 1.07-2.49 1.61-.81.53-1.22 1.25-1.08 2.23.02.1.04.2.08.35-.73-.31-1.28-.78-1.6-1.51-.31-.71-.31-1.44.03-2.15.17-.36.38-.49-.51-.48ZM12.01 2.5l6.84 16.76c-.9-.4-1.83-.68-2.82-.74l-2.72-6.77a.47.47 0 0 0-.88 0l-2.69 6.76c-.99.06-1.93.34-2.84.75L12.01 2.5Z" />
+        </svg>
+      </a>
+      <span class="footer-reading__dot" aria-hidden="true">·</span>
+      <a
+        class="footer-reading__icon-link"
+        href="https://github.com/radishzzz/astro-theme-retypeset"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="GitHub"
+        title="astro-theme-retypeset"
+        data-umami-event="outbound-link-click"
+        data-umami-event-url="https://github.com/radishzzz/astro-theme-retypeset"
+      >
+        <svg viewBox="0 0 24 24" class="footer-reading__icon" aria-hidden="true" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.54 2.87 8.39 6.84 9.75.5.09.68-.22.68-.49 0-.24-.01-.88-.01-1.72-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.63.07-.63 1 .07 1.53 1.05 1.53 1.05.9 1.57 2.35 1.12 2.92.85.09-.67.35-1.12.63-1.38-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.36 9.36 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.48-.01 2.82 0 .27.18.59.69.49A10.27 10.27 0 0 0 22 12.26C22 6.58 17.52 2 12 2Z" />
+        </svg>
+      </a>
+    </div>
+  </div>
 </footer>
 <script>
   const BLOG_TIME_ZONE = 'Asia/Shanghai'
@@ -175,3 +269,57 @@ const uptimeDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60
     document.documentElement.dataset.footerUptimeTimer = '1'
   }
 </script>
+
+<style>
+  .footer-reading {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: oklch(var(--un-preset-theme-colors-primary) / 0.86);
+  }
+
+  .footer-reading__left,
+  .footer-reading__right {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .footer-reading__sep,
+  .footer-reading__dot {
+    opacity: 0.65;
+  }
+
+  .footer-reading__icon-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.22rem;
+    color: inherit;
+    text-decoration: none;
+    transition: opacity var(--motion-fast, 160ms) ease;
+  }
+
+  .footer-reading__icon-link,
+  .footer-reading__status {
+    display: inline-flex;
+    align-items: center;
+    color: inherit;
+    text-decoration: none;
+    transition: opacity var(--motion-fast, 160ms) ease;
+  }
+
+  .footer-reading__icon-group:hover,
+  .footer-reading__icon-link:hover {
+    opacity: 0.7;
+  }
+
+  .footer-reading__icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    display: block;
+  }
+</style>

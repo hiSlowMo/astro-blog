@@ -1,0 +1,686 @@
+/* A reading-focused skin for the official Giscus editor and reply thread. */
+html, body {
+  background: var(--comment-page) !important;
+}
+
+body {
+  font-family: "Inter Variable", "PingFang SC", "Noto Sans SC Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html main {
+  --color-fg-default: var(--comment-text);
+  --color-fg-muted: var(--comment-muted);
+  --color-fg-subtle: var(--comment-muted);
+  --color-text-primary: var(--comment-text);
+  --color-text-secondary: var(--comment-muted);
+  --color-text-tertiary: var(--comment-muted);
+  --color-border-default: var(--comment-line);
+  --color-border-primary: var(--comment-line);
+  --color-border-muted: var(--comment-line);
+  --color-canvas-default: transparent;
+  --color-canvas-subtle: transparent;
+  --color-canvas-inset: transparent;
+  --color-canvas-overlay: var(--comment-surface);
+  --color-btn-text: var(--comment-text);
+  --color-btn-bg: transparent;
+  --color-btn-hover-bg: var(--comment-wash);
+  --color-btn-primary-text: var(--comment-text);
+  --color-btn-primary-bg: transparent;
+  --color-btn-primary-hover-bg: transparent;
+  --color-btn-primary-border: transparent;
+  --color-btn-primary-disabled-bg: transparent;
+  --color-btn-primary-disabled-text: var(--comment-muted);
+  background: transparent;
+}
+
+.gsc-main {
+  gap: 1.75rem;
+}
+
+.gsc-reactions {
+  display: none !important;
+}
+
+/* Order: 1. Comment Box at top, 2. Header row (count + sort), 3. Comment timeline */
+.gsc-comments {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.65rem;
+}
+
+.gsc-comments > .gsc-comment-box {
+  order: 1 !important;
+}
+
+.gsc-comments > .gsc-header {
+  order: 2 !important;
+  margin-top: 0.15rem;
+}
+
+.gsc-comments > .gsc-timeline {
+  order: 3 !important;
+}
+
+.gsc-timeline {
+  gap: 1.85rem;
+}
+
+.gsc-left-header em,
+.gsc-tl-line,
+.gsc-comment-replies-count {
+  display: none !important;
+}
+
+/* Header: comment counts & oldest/newest sort */
+.gsc-header {
+  gap: 1rem;
+  align-items: center;
+}
+
+.gsc-comments-count,
+.gsc-replies-count,
+.gsc-comments-count-separator {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--comment-text);
+  text-decoration: none !important;
+}
+
+.gsc-comments-count a {
+  text-decoration: none !important;
+  color: var(--comment-text) !important;
+}
+
+.gsc-right-header {
+  background: transparent !important;
+  border: none !important;
+  gap: 0.35rem;
+}
+
+.BtnGroup-item,
+.BtnGroup-item.BtnGroup-item--selected {
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.BtnGroup-item .btn {
+  min-height: 2rem;
+  padding: 0.2rem 0.5rem;
+  color: var(--comment-muted);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+.BtnGroup-item--selected .btn {
+  color: var(--comment-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.35em;
+}
+
+/* Top-level Comment & Nested Reply Containers */
+.gsc-comment > div,
+.gsc-reply > div:not(.gsc-tl-line) {
+  position: relative;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Top-level comment vertical trunk line (below 36px avatar, center at 18px) */
+.gsc-comment > div::before {
+  content: '';
+  position: absolute;
+  left: 17.5px;
+  top: 2.65rem;
+  bottom: 0.15rem;
+  width: 1px;
+  background: var(--comment-line);
+  pointer-events: none;
+}
+
+/* Reply is a 2-column flex row in Giscus DOM:
+   Child 1 = .gsc-reply-author-avatar (must stay top-aligned, flex: none)
+   Child 2 = right column wrapper containing header + content + reactions */
+.gsc-reply > div:not(.gsc-tl-line) {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 0.75rem !important;
+}
+
+.gsc-reply > div:not(.gsc-tl-line) > :first-child {
+  flex: none !important;
+  align-self: flex-start !important;
+  margin: 0 !important;
+}
+
+.gsc-reply > div:not(.gsc-tl-line) > :last-child {
+  margin-left: 0 !important;
+  min-width: 0 !important;
+  flex: 1 1 0% !important;
+}
+
+/* Reply vertical line (below 36px avatar, center at 18px) */
+.gsc-reply > div:not(.gsc-tl-line)::before {
+  content: '';
+  position: absolute;
+  left: 17.5px;
+  top: 2.65rem;
+  bottom: 0;
+  width: 1px;
+  background: var(--comment-line);
+  pointer-events: none;
+}
+
+.gsc-comment-header {
+  min-height: 2.25rem;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.gsc-reply-header {
+  min-height: 1.5rem;
+  padding: 0.1rem 0 0 !important;
+  margin: 0 !important;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.gsc-comment-author,
+.gsc-reply-author {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.45rem;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* Top-level avatar link wraps both <img> and author <span> */
+.gsc-comment-author-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  color: var(--comment-text) !important;
+  text-decoration: none !important;
+  flex: none;
+}
+
+/* Reply avatar wrapper only wraps <img>; keep it block & top-aligned */
+.gsc-reply-author-avatar {
+  display: block !important;
+  align-self: flex-start !important;
+  flex: none !important;
+  margin: 0 !important;
+  text-decoration: none !important;
+}
+
+.gsc-reply-author > a:first-child {
+  font-weight: 600;
+  color: var(--comment-text) !important;
+  text-decoration: none !important;
+}
+
+.gsc-comment-author-avatar img,
+.gsc-reply-author-avatar img {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  margin-right: 0 !important;
+  display: block;
+  flex: none;
+}
+
+.gsc-comment-author a:has(time),
+.gsc-reply-author a:has(time) {
+  color: var(--comment-muted) !important;
+  font-size: 0.85rem;
+  font-weight: 400;
+  text-decoration: none !important;
+}
+
+.gsc-comment-author a:has(time)::before,
+.gsc-reply-author a:has(time)::before {
+  content: '· ';
+}
+
+/* Monochrome author badge (e.g. 所有者 / Owner) */
+.gsc-comment-header .border,
+.gsc-reply-header .border,
+.gsc-comment-author span.border,
+.gsc-reply-author span.border {
+  border: 1px solid var(--comment-line) !important;
+  border-radius: 3px !important;
+  color: var(--comment-muted) !important;
+  background: transparent !important;
+  font-size: 0.75rem !important;
+  padding: 0.06rem 0.4rem !important;
+}
+
+/* Top-level comment content & footer indent past 36px avatar + 12px gap (3rem) */
+.gsc-comment-content {
+  margin: 0.35rem 0 0 3rem !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.gsc-comment-footer {
+  margin: 0.5rem 0 0 3rem !important;
+  padding: 0 !important;
+  min-height: 1.75rem;
+}
+
+/* Reply content & reactions are already inside the right flex column, so margin-left is 0 */
+.gsc-reply-content {
+  margin: 0.35rem 0 0 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.gsc-reply-footer,
+.gsc-reply-reactions {
+  margin: 0.45rem 0 0 0 !important;
+  padding: 0 !important;
+  min-height: 1.75rem;
+}
+
+.markdown {
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.78;
+  color: var(--comment-text);
+  overflow-wrap: anywhere;
+}
+
+.markdown p {
+  margin: 0 0 0.65em;
+}
+
+.markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.gsc-comment-reactions {
+  margin-left: 0 !important;
+}
+
+.gsc-upvote-button:disabled {
+  display: none !important;
+}
+
+.gsc-social-reaction-summary-item,
+.gsc-direct-reaction-button {
+  border-color: var(--comment-line) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Nested Replies Container:
+   Left edge at 1.875rem (30px) so the 36px reply avatar sits just to the right of
+   the parent vertical line (17.5px) and its center (30 + 18 = 48px = 3rem) aligns
+   directly with the parent comment's text column (3rem), matching ttio.cc */
+.gsc-replies {
+  position: relative;
+  margin: 1.2rem 0 0 1.875rem !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.gsc-reply {
+  padding: 0 !important;
+  font-size: 1rem;
+}
+
+/* Compact Reply Trigger (↩ 回复) */
+.gsc-reply-box {
+  margin: 0.55rem 0 0 3rem !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.gsc-reply-box > button {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  width: auto !important;
+  min-height: 1.75rem !important;
+  padding: 0.15rem 0.3rem !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--comment-muted) !important;
+  font-size: 0.875rem !important;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.gsc-reply-box > button::before {
+  content: '';
+  display: inline-block;
+  width: 1.05rem;
+  height: 1.05rem;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M9 14 4 9l5-5'/%3E%3Cpath fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M20 20v-7a4 4 0 0 0-4-4H4'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.gsc-reply-box > button:hover {
+  color: var(--comment-text) !important;
+}
+
+/* Corner-Bracket Comment Box (┌ ┐ └ ┘ -> Full 1px rectangle on hover / focus-within) */
+.gsc-comment-box {
+  position: relative;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0.8rem 1.1rem 0.65rem !important;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+}
+
+.gsc-comment-box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  --corner-stroke: var(--comment-focus);
+  background-image:
+    linear-gradient(var(--corner-stroke), var(--corner-stroke)),
+    linear-gradient(var(--corner-stroke), var(--corner-stroke)),
+    linear-gradient(var(--corner-stroke), var(--corner-stroke)),
+    linear-gradient(var(--corner-stroke), var(--corner-stroke)),
+    linear-gradient(var(--corner-stroke), var(--corner-stroke)),
+    linear-gradient(var(--corner-stroke), var(--corner-stroke)),
+    linear-gradient(var(--corner-stroke), var(--corner-stroke)),
+    linear-gradient(var(--corner-stroke), var(--corner-stroke));
+  background-position:
+    0 0,
+    0 0,
+    100% 0,
+    100% 0,
+    0 100%,
+    0 100%,
+    100% 100%,
+    100% 100%;
+  background-size:
+    10px 1px,
+    1px 10px,
+    10px 1px,
+    1px 10px,
+    10px 1px,
+    1px 10px,
+    10px 1px,
+    1px 10px;
+  background-repeat: no-repeat;
+  transition: background-size 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.gsc-comment-box:hover::before,
+.gsc-comment-box:focus-within::before {
+  background-size:
+    50% 1px,
+    1px 50%,
+    50% 1px,
+    1px 50%,
+    50% 1px,
+    1px 50%,
+    50% 1px,
+    1px 50%;
+}
+
+.gsc-comment-box-tabs,
+.gsc-comment-box-tabs > div,
+.gsc-comment-box-tabs button {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.gsc-comment-box-tabs {
+  grid-row: 2;
+  grid-column: 1;
+  justify-content: flex-start;
+  padding: 0 !important;
+}
+
+.gsc-comment-box-tabs > div {
+  margin: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.gsc-comment-box-tabs button {
+  min-height: 1.9rem;
+  min-width: 1.9rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0;
+  color: var(--comment-muted);
+  text-decoration: none !important;
+  transition: color 150ms ease;
+}
+
+.gsc-comment-box-tabs button::before {
+  content: '';
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='m16 3 5 5M4 20l4-1L21 6l-5-5L3 14l-1 8 8-2M3 14l5 5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.gsc-comment-box-tabs button:nth-child(2)::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z'/%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='M14 3v5h5'/%3E%3Ccircle cx='11.5' cy='13.5' r='2.2' fill='none' stroke='black' stroke-width='1.7'/%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' d='m13.2 15.2 1.8 1.8'/%3E%3C/svg%3E");
+}
+
+.gsc-comment-box-tabs .color-text-primary,
+.gsc-comment-box-tabs button:hover {
+  color: var(--comment-text) !important;
+  text-decoration: none !important;
+}
+
+.gsc-comment-box-md-toolbar {
+  display: none !important;
+}
+
+.gsc-comment-box-main {
+  position: relative;
+  grid-row: 1;
+  grid-column: 1 / -1;
+  margin: 0.1rem 0 !important;
+}
+
+.gsc-comment-box-write,
+.gsc-comment-box-write:focus-within,
+.gsc-comment-box-textarea,
+.gsc-comment-box-textarea-extras,
+.gsc-comment-box-preview {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.gsc-comment-box-textarea {
+  min-height: 86px !important;
+  padding: 0.35rem 0.5rem 0.35rem 2.1rem !important;
+  resize: none !important;
+  font: inherit;
+  font-size: 1rem !important;
+  line-height: 1.7;
+  color: var(--comment-text);
+}
+
+.gsc-comment-box-textarea::placeholder {
+  color: var(--comment-muted);
+  opacity: 0.82;
+}
+
+.gsc-comment-box-textarea-extras {
+  position: absolute;
+  top: 0.56rem;
+  left: 0.15rem;
+  padding: 0 !important;
+  opacity: 0.78;
+  transform: scale(1.16);
+  transform-origin: left center;
+}
+
+.gsc-comment-box-preview {
+  min-height: 86px !important;
+  padding: 0.35rem 0.5rem !important;
+}
+
+.gsc-comment-box-bottom {
+  grid-row: 2;
+  grid-column: 2;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.75rem !important;
+}
+
+.gsc-comment-box-bottom .link-secondary,
+.gsc-comment-box-bottom > button {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  font-size: 0.9rem !important;
+  line-height: 1 !important;
+  color: var(--comment-muted) !important;
+  text-decoration: none !important;
+}
+
+.gsc-comment-box-bottom .link-secondary svg,
+.gsc-comment-box-bottom > button svg {
+  width: 1.15rem !important;
+  height: 1.15rem !important;
+}
+
+.gsc-comment-box-bottom .link-secondary:hover,
+.gsc-comment-box-bottom > button:hover {
+  color: var(--comment-text) !important;
+}
+
+.gsc-comment-box-buttons {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.55rem !important;
+}
+
+.gsc-comment-box-buttons .btn {
+  min-height: 2rem !important;
+  padding: 0.25rem 0.65rem !important;
+  border-radius: 0 !important;
+  border: 1px solid var(--comment-line) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--comment-text) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+
+.gsc-comment-box-buttons button[type='submit'],
+.gsc-comment-box-buttons .btn-primary,
+.gsc-comment-box-buttons .btn-primary:disabled,
+.gsc-comment-box-buttons .btn-primary:hover {
+  min-width: 1.9rem !important;
+  min-height: 1.9rem !important;
+  width: 1.9rem !important;
+  height: 1.9rem !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  font-size: 0 !important;
+  color: var(--comment-text) !important;
+}
+
+.gsc-comment-box-buttons .btn-primary:disabled {
+  color: var(--comment-muted) !important;
+  opacity: 0.6;
+}
+
+.gsc-comment-box-buttons button[type='submit']::before {
+  content: '';
+  display: block;
+  width: 1.28rem;
+  height: 1.28rem;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='M21 3 3 10.5l7.5 3L14 21l7-18ZM10.5 13.5 21 3'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.gsc-comment-box-is-reply {
+  margin: 0.85rem 0 0 3rem !important;
+  width: calc(100% - 3rem) !important;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-accent-fg);
+  outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  .gsc-comment-content,
+  .gsc-comment-footer,
+  .gsc-reply-box {
+    margin-left: 2.5rem !important;
+  }
+
+  .gsc-replies {
+    margin-left: 1.4rem !important;
+  }
+
+  .gsc-comment-box {
+    padding-inline: 0.75rem !important;
+  }
+
+  .gsc-comment-box-is-reply {
+    margin-left: 2.5rem !important;
+    width: calc(100% - 2.5rem) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gsc-comment-box::before {
+    transition: none;
+  }
+}

@@ -1,0 +1,37 @@
+---
+import type { DateFormat } from '@/utils/date'
+import { themeConfig } from '@/config'
+import { ui } from '@/i18n/ui'
+import { formatPostDate } from '@/utils/date'
+import { getPageInfo } from '@/utils/page'
+
+interface Props {
+  date: Date
+  updatedDate?: Date
+  format?: DateFormat
+  class?: string
+}
+
+const { date, updatedDate, format = themeConfig.global.dateFormat, class: className } = Astro.props
+const { currentLang } = getPageInfo(Astro.url.pathname)
+const createdISO = date.toISOString().split('T')[0]
+const updatedISO = (updatedDate ?? date).toISOString().split('T')[0]
+const createdTitle = `创建于 ${createdISO}`
+const updatedTitle = updatedDate
+  ? ui[currentLang].updatedAt.replace('{DATE}', updatedISO)
+  : `${createdTitle}（暂无更新）`
+---
+
+<time
+  class={className}
+  datetime={createdISO}
+  title={createdTitle}
+  aria-label={createdTitle}
+  data-sort-date
+  data-created-label={formatPostDate(date, format)}
+  data-updated-label={formatPostDate(updatedDate ?? date, format)}
+  data-created-datetime={createdISO}
+  data-updated-datetime={updatedISO}
+  data-created-title={createdTitle}
+  data-updated-title={updatedTitle}
+>{formatPostDate(date, format)}</time>

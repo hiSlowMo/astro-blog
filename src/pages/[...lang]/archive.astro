@@ -1,11 +1,14 @@
 ---
+import SortableDate from '@/components/SortableDate.astro'
 import StatusBadge from '@/components/StatusBadge.astro'
 import { allLocales, themeConfig } from '@/config'
 import { getUsedCategoryFilters } from '@/data/post-categories'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { getPostPath, getTagPath } from '@/i18n/path'
+import { ui } from '@/i18n/ui'
 import Layout from '@/layouts/Layout.astro'
 import { getPostsByYear } from '@/utils/content'
+import { countMarkdownWords } from '@/utils/markdown-content.mjs'
 
 export async function getStaticPaths() {
   return allLocales.map(lang => ({
@@ -14,40 +17,22 @@ export async function getStaticPaths() {
 }
 
 const currentLang = getLangFromLocale(Astro.currentLocale)
-const postsByYear = await getPostsByYear(currentLang)
+const postsByYear = await getPostsByYear(currentLang, { includePinned: true })
+const currentUI = ui[currentLang]
 
 const allPosts = Array.from(postsByYear.values()).flat()
 const categoryFilters = getUsedCategoryFilters(allPosts)
 const totalPosts = allPosts.length
-const totalWords = allPosts.reduce((sum, post) => sum + countWords(post.body ?? ''), 0)
+const totalWords = allPosts.reduce((sum, post) => sum + countMarkdownWords(post.body ?? '').total, 0)
 
 const { birthYear } = themeConfig.site
-
-function formatMonthDay(date: Date) {
-  return date.toLocaleDateString('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-  })
-}
-
-function countWords(text: string) {
-  return text
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/`[^`]*`/g, '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-    .replace(/\[[^\]]*\]\([^)]*\)/g, '')
-    .replace(/[\\#>*_~\-]/g, '')
-    .replace(/\s+/g, '')
-    .length
-}
 
 function formatWordCount(count: number) {
   if (count >= 10000) {
     const value = Math.round((count / 10000) * 100) / 100
-    return `${value}万字`
+    return `${value}万字词`
   }
-  return `${count}字`
+  return `${count}字词`
 }
 
 function getAgeForYear(year: number) {
@@ -60,7 +45,7 @@ function getAgeForYear(year: number) {
 }
 ---
 
-<Layout>
+<Layout pageTitle={currentUI.archive} pageDescription="按年份浏览 SlowMo 的全部公开文章，记录学习、技术实践与生活思考。">
   <div data-archive-root>
     <section class="archive-toolbar font-navbar">
       <div class="archive-toolbar-left">
@@ -130,7 +115,7 @@ function getAgeForYear(year: number) {
         </button>
       </div>
 
-      <div class="archive-summary">
+      <div class="archive-summary" data-total-words={totalWords} title="中文按字、英文和数字按词；不含代码、网址及图片信息">
         <span>{formatWordCount(totalWords)}</span>
         <span class="archive-summary-divider">·</span>
         <span>{totalPosts} 篇</span>
@@ -139,7 +124,7 @@ function getAgeForYear(year: number) {
 
     <div class="archive-years">
       {[...postsByYear.entries()].map(([year, posts]) => {
-        const yearWords = posts.reduce((sum, post) => sum + countWords(post.body ?? ''), 0)
+        const yearWords = posts.reduce((sum, post) => sum + countMarkdownWords(post.body ?? '').total, 0)
         const yearStats = `${formatWordCount(yearWords)} · ${posts.length}篇`
         const yearAge = getAgeForYear(year)
 
@@ -166,9 +151,7 @@ function getAgeForYear(year: number) {
                     data-created={post.data.published.valueOf()}
                     data-updated={(post.data.updated ?? post.data.published).valueOf()}
                   >
-                    <time class="archive-date font-time" datetime={post.data.published.toISOString().split('T')[0]}>
-                      {formatMonthDay(post.data.published)}
-                    </time>
+                    <SortableDate class="archive-date font-time" date={post.data.published} updatedDate={post.data.updated} format="MM/DD" />
 
                     <div class="archive-title-wrap">
                       <a class="archive-title" href={getPostPath(slug, currentLang)}>

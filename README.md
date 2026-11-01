@@ -90,6 +90,14 @@ git push
 
 支持标准 Markdown、表格、代码块、脚注、KaTeX 公式、Mermaid 图表与 MDX。
 
+上方小字注释可直接写原生 HTML Ruby，不需要额外的 Markdown 插件：
+
+```html
+不像『<ruby>月がきれい<rp>（</rp><rt>月色真美</rt><rp>）</rp></ruby>』，
+```
+
+`ruby` 内先写正文，`rt` 内写上方注释；`rp` 是不支持 Ruby 的阅读器中显示的括号。
+
 ```md
 ![图片说明](https://img.theslowmo.com/2026/10/example.webp "width=78%")
 ```
@@ -119,11 +127,16 @@ git push
 - `scripts/new-post.ts`：普通文章模板。
 - `scripts/new-moment.ts`：说说模板。
 - `src/generated/stats.json`：构建时自动更新，不用手动改。
+- 字数统计：归档和页脚共用规则，中文按字、英文和数字按词；保留链接文字，不计代码、网址及图片信息。归档的“字词”是两者之和。
+- 评论组件：只构建 `src/config.ts` 中已启用且已配置的服务；备用组件保留，切换配置后重新构建即可。
+- Giscus 保留官方登录、Markdown 预览和回复流程，外观源文件位于 `src/styles/giscus/`，构建为 `/giscus/theme-dark.css` 和 `/giscus/theme-light.css`；GitHub Discussions 的回复为一层子回复，不支持任意层级嵌套。
 - `pnpm format-posts`：整理所有内容的 Markdown 空格与标点。
 - `pnpm check`：Astro 类型检查。
+- `pnpm check:content-utils`：归档置顶、字数统计和 RSS 内容转换回归检查。
+- `pnpm check:comments`：评论懒加载、故障重试、主题同步与页面切换回归检查；先启动 `pnpm dev`，或用 `BLOG_TEST_URL` 指定生产预览地址。测试模拟 Giscus 请求，不会发布评论。
 - `pnpm lint`：ESLint 检查。
 
-本地图片可放在文章旁的 `_images/` 目录。字体维护资料位于 `assets/fonts/font-subset-list/`，不会随站点部署。
+本地图片可放在文章旁的 `_images/` 目录。字体维护资料位于 `assets/fonts/font-subset-list/`，OG 图片生成字体位于 `assets/fonts/og/`，均不会作为公开静态资源部署。
 
 ## 致谢
 

@@ -1,4 +1,5 @@
 import { animateExitTransition, animateTextSwap, clearTransitionState, createDropdownController, runFlipTransition } from '@/scripts/filter-interactions'
+import { syncSortDates } from '@/scripts/sort-dates'
 
 type ArchiveSortKey = 'created' | 'updated'
 type ArchiveRoot = HTMLElement & {
@@ -56,6 +57,7 @@ function initArchiveInteractions() {
   }
 
   const syncSortLabel = () => {
+    syncSortDates(root, currentSortKey)
     if (!sortLabel) {
       return
     }

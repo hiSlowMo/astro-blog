@@ -1,4 +1,5 @@
 import { animateExitTransition, animateTextSwap, clearTransitionState, createDropdownController, runFlipTransition } from '@/scripts/filter-interactions'
+import { syncSortDates } from '@/scripts/sort-dates'
 
 type PostSortKey = 'created' | 'updated'
 type PostFilterRoot = HTMLElement & {
@@ -54,6 +55,7 @@ function initPostFilters() {
   }
 
   const syncSortLabel = () => {
+    syncSortDates(root, currentSortKey)
     if (!sortLabel) {
       return
     }

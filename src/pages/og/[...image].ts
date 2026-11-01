@@ -107,8 +107,8 @@ export const { getStaticPaths, GET } = await OGImageRoute({
         },
       },
       fonts: [
-        './public/fonts/NotoSansSC-Bold.otf',
-        './public/fonts/NotoSansSC-Regular.otf',
+        './assets/fonts/og/NotoSansSC-Bold.otf',
+        './assets/fonts/og/NotoSansSC-Regular.otf',
       ],
       bgGradient: hasCover ? [[28, 30, 38]] : [[242, 241, 245]],
       ...(hasCover

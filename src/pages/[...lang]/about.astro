@@ -3,6 +3,7 @@ import { getCollection, render } from 'astro:content'
 import Signature from '@/components/Widgets/Signature.astro'
 import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
+import { ui } from '@/i18n/ui'
 import Layout from '@/layouts/Layout.astro'
 
 export async function getStaticPaths() {
@@ -19,7 +20,7 @@ const aboutEntry = allAboutEntries.find(entry => entry.data.lang === currentLang
 const { Content } = aboutEntry ? await render(aboutEntry) : { Content: null }
 ---
 
-<Layout enableContentEnhancements>
+<Layout pageTitle={ui[currentLang].about} pageDescription="关于 SlowMo：一名软件工程专业的学生，记录计算机、排版美学与日常思考。" enableContentEnhancements>
   <!-- Decorative Line -->
   <div class="uno-decorative-line" />
   <!-- About Page Content -->

@@ -27,7 +27,7 @@ const posts = await getPostsByTag(tag, currentLang)
 const supportedLangs = await getTagSupportedLangs(tag)
 ---
 
-<Layout supportedLangs={supportedLangs}>
+<Layout pageTitle={`标签：${tag}`} pageDescription={`浏览「${tag}」相关的 ${posts.length} 篇文章，来自 SlowMo's 办事处。`} supportedLangs={supportedLangs}>
   <header class="tag-detail-header">
     <div class="tag-detail-heading">
       <h1>{tag}</h1>

@@ -286,3 +286,18 @@ html.dark .heti :where(u) {
 .heti :where(q:is(:lang(zh), :lang(ja), :lang(ko))) {
   quotes: "「" "」" "『" "』";
 }
+
+/* Ruby annotations: native HTML works inside Markdown and MDX. */
+.heti ruby {
+  ruby-position: over;
+  ruby-align: space-around;
+}
+.heti rt {
+  font-family: inherit;
+  font-size: 0.56em;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  color: oklch(var(--un-preset-theme-colors-secondary));
+  text-align: center;
+}

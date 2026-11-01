@@ -1,6 +1,7 @@
 ---
-import { base, defaultLocale, themeConfig } from '@/config'
+import { defaultLocale, themeConfig } from '@/config'
 import { giscusLocaleMap } from '@/i18n/config'
+import { getLangFromPath } from '@/i18n/lang'
 
 const {
   repo = '',
@@ -14,16 +15,7 @@ const {
   inputPosition = 'bottom',
 } = themeConfig.comment.giscus ?? {}
 
-
-const currentPath = Astro.url.pathname
-
-// Determine language
-const pathWithoutBase = base && currentPath.startsWith(base)
-  ? currentPath.slice(base.length)
-  : currentPath
-const matchedLang = Object.keys(giscusLocaleMap).find(code => pathWithoutBase.startsWith(`/${code}/`))
-const lang = (matchedLang ?? defaultLocale) as keyof typeof giscusLocaleMap
-
+const currentLang = getLangFromPath(Astro.url.pathname) || defaultLocale
 const giscusConfig = {
   repo,
   repoId,
@@ -34,118 +26,184 @@ const giscusConfig = {
   reactionsEnabled,
   emitMetadata,
   inputPosition,
-  lang: giscusLocaleMap[lang],
+  lang: giscusLocaleMap[currentLang as keyof typeof giscusLocaleMap],
 }
 ---
 
-<div
-  id="giscus"
-  class="giscus mt-16"
-  data-config={JSON.stringify(giscusConfig)}
-/>
+<section class="no-heti thought-comments mt-16" aria-label="评论与回复">
+  <div id="giscus" class="giscus" data-config={JSON.stringify(giscusConfig)}>
+  </div>
+  <div class="thought-comments-feedback">
+    <p class="thought-comments-status" data-giscus-status role="status">正在加载评论…</p>
+    <button class="thought-comments-retry" data-giscus-retry type="button" hidden>重新加载</button>
+  </div>
+</section>
 
-<!-- Giscus Script >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 <script>
 import { base } from '@/config'
 
-let giscusContainer: HTMLElement | null = null
-let giscusObserver: IntersectionObserver | null = null
-let giscusLoaded = false
+let observer: IntersectionObserver | undefined
+let controller: AbortController | undefined
+let loadController: AbortController | undefined
+let activeContainer: HTMLElement | null = null
 
 function getThemeUrl() {
-  const isDark = document.documentElement.classList.contains('dark')
-  return new URL(
-    isDark ? `${base}/giscus/theme-dark.css` : `${base}/giscus/theme-light.css`,
-    location.origin,
-  ).href
+  const mode = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  const suffix = import.meta.env.DEV ? '/' : ''
+  return new URL(`${base}/giscus/theme-${mode}.css${suffix}?v=20261101-6`, location.origin).href
 }
 
 function updateGiscusTheme() {
-  if (!giscusContainer || !giscusContainer.dataset.config) {
-    return
-  }
-
-  const giscusWindow = giscusContainer.querySelector<HTMLIFrameElement>('iframe.giscus-frame')?.contentWindow
-  if (!giscusWindow) {
-    return
-  }
-
-  try {
-    giscusWindow.postMessage(
-      { giscus: { setConfig: { theme: getThemeUrl() } } },
-      'https://giscus.app',
-    )
-  }
-  catch (error) {
-    console.error('[Giscus] Failed to update theme:', error)
-  }
+  activeContainer?.querySelector<HTMLIFrameElement>('iframe.giscus-frame')?.contentWindow?.postMessage(
+    { giscus: { setConfig: { theme: getThemeUrl() } } },
+    'https://giscus.app',
+  )
 }
 
-function setupGiscus() {
-  giscusContainer = document.getElementById('giscus')
-  if (!giscusContainer || !giscusContainer.dataset.config || giscusLoaded) {
+function loadGiscus(container: HTMLElement) {
+  if (!container.dataset.config || container.dataset.loading === '1' || container.querySelector('iframe.giscus-frame'))
     return
+
+  const status = container.parentElement?.querySelector<HTMLElement>('[data-giscus-status]')
+  const retry = container.parentElement?.querySelector<HTMLButtonElement>('[data-giscus-retry]')
+  if (status) {
+    status.hidden = false
+    status.textContent = '正在加载评论…'
   }
+  if (retry)
+    retry.hidden = true
 
-  giscusContainer.innerHTML = ''
+  loadController?.abort()
+  loadController = new AbortController()
+  const { signal } = loadController
+  const timeout = window.setTimeout(showFailure, 20000)
+  signal.addEventListener('abort', () => window.clearTimeout(timeout), { once: true })
 
-  try {
-    const config = JSON.parse(giscusContainer.dataset.config)
-    const { category, ...restConfig } = config
-
-    const dataAttributes: Record<string, string> = {
-      ...restConfig,
-      ...(category && { category }),
-      theme: getThemeUrl(),
+  function showFailure() {
+    loadController?.abort()
+    delete container.dataset.loading
+    container.replaceChildren()
+    if (status) {
+      status.hidden = false
+      status.textContent = '评论暂时无法载入。'
     }
-
-    const script = document.createElement('script')
-    script.crossOrigin = 'anonymous'
-    script.async = true
-    Object.assign(script.dataset, dataAttributes)
-    script.src = 'https://giscus.app/client.js'
-    giscusContainer.appendChild(script)
-    giscusLoaded = true
-  }
-  catch (error) {
-    console.error('[Giscus] Failed to initialize:', error)
-  }
-}
-
-function lazySetupGiscus() {
-  giscusContainer = document.getElementById('giscus')
-  if (!giscusContainer || !giscusContainer.dataset.config) {
-    return
+    if (retry)
+      retry.hidden = false
   }
 
-  if (typeof IntersectionObserver === 'undefined') {
-    setupGiscus()
-    return
-  }
+  // An iframe's load event also fires for network error pages. Only a message
+  // from the actual widget confirms that its JavaScript is running.
+  window.addEventListener('message', (event) => {
+    const frame = container.querySelector<HTMLIFrameElement>('iframe.giscus-frame')
+    if (event.origin !== 'https://giscus.app' || !frame || event.source !== frame.contentWindow)
+      return
 
-  giscusObserver?.disconnect()
-  giscusObserver = new IntersectionObserver((entries) => {
-    if (entries.some(entry => entry.isIntersecting)) {
-      setupGiscus()
-      giscusObserver?.disconnect()
-      giscusObserver = null
+    const message = event.data?.giscus
+    if (typeof message?.error === 'string'
+      && !/Discussion not found|Bad credentials|Invalid state value|State has expired/.test(message.error)) {
+      showFailure()
+      return
     }
-  }, { rootMargin: '320px 0px' })
+    if (Number(message?.resizeHeight) > 0) {
+      window.clearTimeout(timeout)
+      delete container.dataset.loading
+      frame.title = '评论与回复'
+      if (status)
+        status.hidden = true
+    }
+  }, { signal })
 
-  giscusObserver.observe(giscusContainer)
+  container.dataset.loading = '1'
+  container.querySelector('script')?.remove()
+  const script = document.createElement('script')
+  const source = new URL('https://giscus.app/client.js')
+  // A timed-out script request can remain in flight after its element is
+  // removed. Give retries a fresh URL so they cannot reuse that hung request.
+  if (container.dataset.attempted === '1')
+    source.searchParams.set('retry', String(Date.now()))
+  container.dataset.attempted = '1'
+  script.src = source.href
+  script.async = true
+  script.crossOrigin = 'anonymous'
+  Object.assign(script.dataset, JSON.parse(container.dataset.config), { theme: getThemeUrl() })
+
+  script.addEventListener('error', showFailure, { once: true, signal })
+
+  script.addEventListener('load', () => {
+    const frame = container.querySelector<HTMLIFrameElement>('iframe.giscus-frame')
+    if (frame) {
+      frame.title = '评论与回复'
+      frame.addEventListener('load', updateGiscusTheme, { once: true, signal })
+    }
+  }, { once: true, signal })
+  container.appendChild(script)
 }
 
 function cleanupGiscus() {
-  giscusObserver?.disconnect()
-  giscusObserver = null
-  giscusLoaded = false
-  if (giscusContainer) {
-    giscusContainer.innerHTML = ''
-    giscusContainer = null
-  }
+  observer?.disconnect()
+  observer = undefined
+  controller?.abort()
+  controller = undefined
+  loadController?.abort()
+  loadController = undefined
+  activeContainer = null
 }
 
-document.addEventListener('astro:page-load', lazySetupGiscus)
+function setupGiscus() {
+  const container = document.getElementById('giscus')
+  if (!container || !container.dataset.config || container === activeContainer)
+    return
+
+  cleanupGiscus()
+  activeContainer = container
+  controller = new AbortController()
+  container.parentElement?.querySelector('[data-giscus-retry]')?.addEventListener('click', () => loadGiscus(container), { signal: controller.signal })
+  document.addEventListener('theme-changed', updateGiscusTheme, { signal: controller.signal })
+
+  if (!('IntersectionObserver' in window)) {
+    loadGiscus(container)
+    return
+  }
+  observer = new IntersectionObserver((entries) => {
+    if (entries.some(entry => entry.isIntersecting)) {
+      observer?.disconnect()
+      loadGiscus(container)
+    }
+  }, { rootMargin: '320px 0px' })
+  observer.observe(container)
+}
+
+document.addEventListener('astro:page-load', setupGiscus)
 document.addEventListener('astro:before-swap', cleanupGiscus)
-document.addEventListener('theme-changed', updateGiscusTheme)
+if (document.readyState === 'loading')
+  document.addEventListener('DOMContentLoaded', setupGiscus, { once: true })
+else
+  setupGiscus()
 </script>
+
+<style>
+  .thought-comments {
+    font-family: var(--font-sans);
+    scroll-margin-top: 4rem;
+  }
+
+  .thought-comments-status,
+  .thought-comments-retry {
+    color: oklch(var(--un-preset-theme-colors-secondary));
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  .thought-comments-retry {
+    margin-top: 0.75rem;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+  }
+
+  .giscus :global(iframe.giscus-frame) {
+    width: 100%;
+    border: none;
+    color-scheme: normal;
+  }
+</style>

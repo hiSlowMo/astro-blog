@@ -1,75 +1,34 @@
 ---
-import type { ThemeConfig } from '@/types'
+import SortableDate from '@/components/SortableDate.astro'
 import { themeConfig } from '@/config'
 import { ui } from '@/i18n/ui'
+import { formatPostDate } from '@/utils/date'
 import { getPageInfo } from '@/utils/page'
-
-type DateFormat = ThemeConfig['global']['dateFormat']
 
 interface Props {
   date: Date
   updatedDate?: Date
   minutes: number
+  sortable?: boolean
 }
 
-const { date, updatedDate, minutes } = Astro.props
+const { date, updatedDate, minutes, sortable = false } = Astro.props
 const { dateFormat: format } = themeConfig.global
 const { currentLang, isPost } = getPageInfo(Astro.url.pathname)
 const currentUI = ui[currentLang as keyof typeof ui] ?? {}
 const timeSpacingClass = isPost ? 'ml-1.75' : 'ml-1.5'
 
 // 同一天内的修订不算“更新”
-const showUpdated = updatedDate
-  && formatDate(updatedDate, 'YYYY-MM-DD') !== formatDate(date, 'YYYY-MM-DD')
+const showUpdated = !sortable && updatedDate
+  && formatPostDate(updatedDate, 'YYYY-MM-DD') !== formatPostDate(date, 'YYYY-MM-DD')
 const readingLabel = currentUI.readingMinutes?.replace('{COUNT}', String(minutes)) ?? `${minutes} min`
 
-function formatDate(date: Date, format: DateFormat) {
-  if (format === 'YYYY-MM-DD') {
-    return date.toISOString().split('T')[0]
-  }
-
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: format === 'MMM D YYYY' || format === 'D MMM YYYY' ? 'short' : '2-digit',
-    day: format === 'MMM D YYYY' || format === 'D MMM YYYY' ? 'numeric' : '2-digit',
-  }
-
-  switch (format) {
-    // US date format: 04-13-2025
-    case 'MM-DD-YYYY':
-      return date.toLocaleDateString('en-US', options).replace(/\//g, '-')
-
-    // European date format: 13-04-2025
-    case 'DD-MM-YYYY':
-      return date.toLocaleDateString('en-GB', options).replace(/\//g, '-')
-
-    // US month text format: Apr 13 2025
-    case 'MMM D YYYY':
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      }).replace(',', '')
-
-    // British month text format: 13 Apr 2025
-    case 'D MMM YYYY':
-      return date.toLocaleDateString('en-GB', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      }).replace(',', '')
-
-    // Default to ISO format
-    default:
-      return date.toISOString().split('T')[0]
-  }
-}
 ---
 
 <!-- published date -->
-<time datetime={date.toISOString().split('T')[0]}>
-  {formatDate(date, format)}
-</time>
+{sortable
+  ? <SortableDate {date} {updatedDate} {format} />
+  : <time datetime={date.toISOString().split('T')[0]}>{formatPostDate(date, format)}</time>}
 
 <!-- updated date -->
 {showUpdated && updatedDate && (
@@ -77,7 +36,7 @@ function formatDate(date: Date, format: DateFormat) {
     datetime={updatedDate.toISOString().split('T')[0]}
     class={timeSpacingClass}
   >
-    {currentUI.updatedAt?.replace('{DATE}', formatDate(updatedDate, format)) ?? `updated ${formatDate(updatedDate, format)}`}
+    {currentUI.updatedAt?.replace('{DATE}', formatPostDate(updatedDate, format)) ?? `updated ${formatPostDate(updatedDate, format)}`}
   </time>
 )}
 

@@ -39,6 +39,7 @@ async function setupTweetEmbeds() {
 
 // Initialize all media embeds
 async function setupMediaEmbeds() {
+  setupGalleryScrolling()
   await Promise.allSettled([
     setupYouTubeEmbeds(),
     setupTweetEmbeds(),
@@ -47,14 +48,17 @@ async function setupMediaEmbeds() {
 
 // Handle horizontal scrolling for gallery
 function handleGalleryWheel(e: WheelEvent) {
-  const container = (e.target as Element)?.closest('.gallery-container') as HTMLElement
-  if (!container) {
+  const container = e.currentTarget as HTMLElement
+  if (e.ctrlKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) {
     return
   }
 
   // Convert vertical scroll to horizontal
   const previousScrollLeft = container.scrollLeft
-  container.scrollLeft += e.deltaY
+  const unit = e.deltaMode === WheelEvent.DOM_DELTA_LINE
+    ? 16
+    : e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? container.clientWidth : 1
+  container.scrollLeft += e.deltaY * unit
   if (container.scrollLeft === previousScrollLeft) {
     return
   }
@@ -63,6 +67,26 @@ function handleGalleryWheel(e: WheelEvent) {
   e.preventDefault()
 }
 
+let galleryController: AbortController | undefined
+
+function cleanupGalleryScrolling() {
+  galleryController?.abort()
+  galleryController = undefined
+}
+
+function setupGalleryScrolling() {
+  cleanupGalleryScrolling()
+  const galleries = document.querySelectorAll<HTMLElement>('.gallery-container')
+  if (!galleries.length)
+    return
+
+  galleryController = new AbortController()
+  galleries.forEach(container => container.addEventListener('wheel', handleGalleryWheel, {
+    passive: false,
+    signal: galleryController!.signal,
+  }))
+}
+
 document.addEventListener('astro:page-load', setupMediaEmbeds)
-document.addEventListener('wheel', handleGalleryWheel, { passive: false })
+document.addEventListener('astro:before-swap', cleanupGalleryScrolling)
 </script>

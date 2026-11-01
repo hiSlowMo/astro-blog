@@ -1,5 +1,7 @@
 ---
 import type { TocPanelProps } from '@/components/Widgets/toc-shared'
+import { buildTocTree } from '@/components/Widgets/toc-shared'
+import TocTreeList from '@/components/Widgets/TocTreeList.astro'
 
 const {
   filteredHeadings,
@@ -11,6 +13,7 @@ const {
 
 const mobileDefaultTab = hasToc ? 'toc' : 'series'
 const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentUI.series
+const tocTree = buildTocTree(filteredHeadings)
 ---
 
 <div
@@ -105,29 +108,11 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
           aria-labelledby={hasToc && hasSeries ? 'toc-mobile-tab-toc' : undefined}
           aria-hidden={mobileDefaultTab === 'toc' ? 'false' : 'true'}
         >
-          <ul class="toc-mobile-links-list">
-            {filteredHeadings.map(heading => (
-              <li
-                class:list={{
-                  'ml-0': heading.depth === 2,
-                  'ml-4': heading.depth === 3,
-                  'ml-8': heading.depth === 4,
-                }}
-              >
-                <a
-                  href={`#${heading.slug}`}
-                  class:list={[
-                    'toc-mobile-link',
-                    { 'no-heti toc-links-h2': heading.depth === 2 },
-                    { 'no-heti toc-links-h3': heading.depth === 3 },
-                    { 'no-heti toc-links-h4': heading.depth === 4 },
-                  ]}
-                >
-                  {heading.text}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <TocTreeList
+            nodes={tocTree}
+            isRoot
+            linkClass="toc-mobile-link"
+          />
         </nav>
       )}
 
@@ -282,8 +267,9 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
 
   .toc-mobile-panel__title {
     margin: 0;
-    font-size: 0.94rem;
-    font-weight: 650;
+    font-family: "Songti SC", "STSong", "Noto Serif SC", Georgia, serif;
+    font-size: 1.25rem;
+    font-weight: 700;
     letter-spacing: 0.01em;
     color: oklch(var(--un-preset-theme-colors-primary) / 0.95);
   }

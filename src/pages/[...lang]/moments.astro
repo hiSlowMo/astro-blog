@@ -30,51 +30,235 @@ const renderedMoments = await Promise.all(
 )
 
 function formatMomentDate(date: Date) {
-  return new Intl.DateTimeFormat('zh-CN', {
+  const parts = new Intl.DateTimeFormat('en-CA', {
     year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
     timeZone: 'Asia/Shanghai',
-  }).format(date)
+  }).formatToParts(date)
+
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? ''
+  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}`
 }
 ---
 
-<Layout>
+<Layout
+  pageTitle={currentUI.moments}
+  pageDescription={currentUI.momentsIntro}
+  enableContentEnhancements
+>
   <div class="uno-decorative-line" />
-  <p class="mt-4 text-3.6 c-secondary">{currentUI.momentsIntro}</p>
+
+  <div class="moments-header">
+    <p class="moments-intro">{currentUI.momentsIntro}</p>
+    {moments.length > 0 && (
+      <p class="moments-count font-time">
+        {currentUI.momentsCount.replace('{COUNT}', String(moments.length))}
+      </p>
+    )}
+  </div>
+
   {moments.length === 0
     ? (
         <p class="mt-6 c-secondary">{currentUI.momentsEmpty}</p>
       )
     : (
-        <>
-          <p class="mt-2 text-3.2 c-secondary op-70">
-            {currentUI.momentsCount.replace('{COUNT}', String(moments.length))}
-          </p>
-          <ul class="mt-8 space-y-8">
-            {renderedMoments.map(({ moment, Content }) => (
-              <li class="moment-item border-l-2 border-secondary/15 pl-5 transition-colors hover:border-secondary/40">
-                <time
-                  class="block text-3.2 c-secondary font-mono op-80"
-                  datetime={moment.data.published.toISOString()}
-                >
+        <ul class="moments-list">
+          {renderedMoments.map(({ moment, Content }) => (
+            <li id={`moment-${moment.id}`} class="moment-card">
+              <div class="heti moment-content">
+                <Content />
+              </div>
+
+              <div class="moment-footer font-time">
+                {moment.data.tags && moment.data.tags.length > 0 && (
+                  <div class="moment-tags">
+                    {moment.data.tags.map((tag: string) => (
+                      <span class="moment-tag">#{tag}</span>
+                    ))}
+                  </div>
+                )}
+                <time class="moment-time" datetime={moment.data.published.toISOString()}>
                   {formatMomentDate(moment.data.published)}
                 </time>
-                <div class="heti mt-2 text-3.8">
-                  <Content />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
-</Layout>
 
-<style>
-.moment-item :global(p) {
-  margin: 0.4em 0;
-}
-</style>
+  <style is:inline>
+    .moments-header {
+      margin-top: 1rem;
+      padding-bottom: 0.9rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.5rem 1rem;
+      border-bottom: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.16);
+    }
+
+    .moments-intro {
+      font-size: 1rem;
+      line-height: 1.65;
+      color: oklch(var(--un-preset-theme-colors-secondary) / 0.9);
+    }
+
+    .moments-count {
+      flex-shrink: 0;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      color: oklch(var(--un-preset-theme-colors-secondary) / 0.78);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .moments-list {
+      margin-top: 1.85rem;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1.65rem;
+    }
+
+    .moment-card {
+      position: relative;
+      padding: 1.15rem 1.35rem 0.95rem;
+      background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.028);
+      scroll-margin-top: 4rem;
+      transition: background-color 180ms ease;
+    }
+
+    .moment-card:hover {
+      background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.045);
+    }
+
+    /* Corner brackets (┌ ┐ └ ┘) at rest -> full 1px frame on hover / focus-within */
+    .moment-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      --corner-color: oklch(var(--un-preset-theme-colors-secondary) / 0.55);
+      background-image:
+        linear-gradient(var(--corner-color), var(--corner-color)),
+        linear-gradient(var(--corner-color), var(--corner-color)),
+        linear-gradient(var(--corner-color), var(--corner-color)),
+        linear-gradient(var(--corner-color), var(--corner-color)),
+        linear-gradient(var(--corner-color), var(--corner-color)),
+        linear-gradient(var(--corner-color), var(--corner-color)),
+        linear-gradient(var(--corner-color), var(--corner-color)),
+        linear-gradient(var(--corner-color), var(--corner-color));
+      background-position:
+        0 0,
+        0 0,
+        100% 0,
+        100% 0,
+        0 100%,
+        0 100%,
+        100% 100%,
+        100% 100%;
+      background-size:
+        10px 1px,
+        1px 10px,
+        10px 1px,
+        1px 10px,
+        10px 1px,
+        1px 10px,
+        10px 1px,
+        1px 10px;
+      background-repeat: no-repeat;
+      transition:
+        background-size 220ms var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
+        opacity 180ms ease;
+    }
+
+    .moment-card:hover::before,
+    .moment-card:focus-within::before {
+      --corner-color: oklch(var(--un-preset-theme-colors-primary) / 0.72);
+      background-size:
+        50% 1px,
+        1px 50%,
+        50% 1px,
+        1px 50%,
+        50% 1px,
+        1px 50%,
+        50% 1px,
+        1px 50%;
+    }
+
+    .moment-content {
+      font-size: 1.0625rem;
+      line-height: 1.8;
+      color: oklch(var(--un-preset-theme-colors-primary));
+    }
+
+    .moment-content p {
+      margin: 0.35em 0;
+      line-height: 1.8;
+      color: oklch(var(--un-preset-theme-colors-primary) / 0.94);
+    }
+
+    .moment-content p:first-child {
+      margin-top: 0;
+    }
+
+    .moment-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .moment-footer {
+      margin-top: 0.7rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.5rem 0.85rem;
+      font-size: 0.875rem;
+      line-height: 1.4;
+      color: oklch(var(--un-preset-theme-colors-secondary) / 0.78);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+
+    .moment-tags {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .moment-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .moment-time::before {
+      content: '—';
+      opacity: 0.55;
+    }
+
+    @media (max-width: 640px) {
+      .moment-card {
+        padding: 0.95rem 1.05rem 0.85rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .moment-card,
+      .moment-card::before {
+        transition: none;
+      }
+    }
+
+    html.reduce-motion .moment-card,
+    html.reduce-motion .moment-card::before {
+      transition: none;
+    }
+  </style>
+</Layout>

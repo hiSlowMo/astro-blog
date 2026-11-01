@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { parse as parseYaml } from 'yaml'
+import { countMarkdownWords } from '../utils/markdown-content.mjs'
 
 const postsDir = path.resolve('src/content/posts')
 const outDir = path.resolve('src/generated')
@@ -18,32 +20,11 @@ function walk(dir) {
   return files
 }
 
-function stripFrontmatter(md) {
-  // remove leading --- ... --- frontmatter
-  if (md.startsWith('---')) {
-    const idx = md.indexOf('\n---', 3)
-    if (idx !== -1)
-      return md.slice(idx + 4)
-  }
-  return md
-}
-
-// 与站点保持一致：草稿和私密文章不计入公开统计
-function isPublicPost(md) {
-  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(md)
-  if (!match)
-    return true
-  const frontmatter = match[1]
-  const isDraft = /^draft:\s*true\s*$/m.test(frontmatter)
-  const isPrivate = /^visibility:\s*['"]?private['"]?\s*$/m.test(frontmatter)
-  return !isDraft && !isPrivate
-}
-
-function countCJKAndWords(text) {
-  // 简单：中文按字符算；英文按单词算
-  const cjk = (text.match(/[\u4E00-\u9FFF]/g) || []).length
-  const enWords = (text.match(/[a-z0-9]+(?:'[a-z0-9]+)?/gi) || []).length
-  return { cjk, enWords }
+function parsePost(md) {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(md)
+  return match
+    ? { data: parseYaml(match[1]) ?? {}, body: md.slice(match[0].length) }
+    : { data: {}, body: md }
 }
 
 if (!fs.existsSync(postsDir)) {
@@ -59,11 +40,11 @@ let totalEnWords = 0
 
 for (const file of mdFiles) {
   const raw = fs.readFileSync(file, 'utf8')
-  if (!isPublicPost(raw))
+  const { data, body } = parsePost(raw)
+  if (data.draft || data.visibility === 'private')
     continue
   totalPosts++
-  const body = stripFrontmatter(raw)
-  const { cjk, enWords } = countCJKAndWords(body)
+  const { cjk, enWords } = countMarkdownWords(body)
   totalCJK += cjk
   totalEnWords += enWords
 }
@@ -73,6 +54,7 @@ const stats = {
   posts: totalPosts,
   totalCJKChars: totalCJK,
   totalEnglishWords: totalEnWords,
+  totalWords: totalCJK + totalEnWords,
   updatedAt: now.toISOString(),
   updatedAtLocal: now.toLocaleDateString('zh-CN', {
     year: 'numeric',

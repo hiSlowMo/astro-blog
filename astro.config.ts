@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import mdx from '@astrojs/mdx'
 import partytown from '@astrojs/partytown'
 import sitemap from '@astrojs/sitemap'
@@ -24,6 +25,20 @@ const { imageHostURL } = themeConfig.preload ?? {}
 const imageConfig = imageHostURL
   ? { image: { domains: [imageHostURL], remotePatterns: [{ protocol: 'https' }] } }
   : {}
+
+// Exclude inactive providers before Astro/Vite collect their client scripts and assets.
+// Changing src/config.ts enables the original component again on the next build.
+const commentProviders = {
+  Giscus: themeConfig.comment.giscus?.repo,
+  Twikoo: themeConfig.comment.twikoo?.envId,
+  Waline: themeConfig.comment.waline?.serverURL,
+}
+const inactiveCommentAliases = Object.entries(commentProviders)
+  .filter(([, setting]) => !themeConfig.comment.enabled || !setting?.trim())
+  .map(([name]) => ({
+    find: `@/components/Comment/${name}.astro`,
+    replacement: fileURLToPath(new URL('./src/components/Comment/Disabled.astro', import.meta.url)),
+  }))
 
 export default defineConfig({
   site,
@@ -84,18 +99,12 @@ export default defineConfig({
     },
   },
   vite: {
-    plugins: [
-      {
-        name: 'prefix-font-urls-with-base',
-        transform(code, id) {
-          if (!id.split('?')[0].endsWith('src/styles/font.css')) {
-            return null
-          }
-
-          return code.replace(/url\(\s*(['"]?)\/fonts\//g, `url($1${base}/fonts/`)
-        },
-      },
-    ],
+    resolve: { alias: inactiveCommentAliases },
+  },
+  // Astro uses server.headers for both dev and preview; Vite preview hooks
+  // from the user config are not loaded by `astro preview`.
+  server: {
+    headers: { 'Access-Control-Allow-Origin': 'https://giscus.app' },
   },
   devToolbar: {
     enabled: false,

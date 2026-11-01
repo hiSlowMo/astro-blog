@@ -15,7 +15,7 @@ const currentLang = getLangFromLocale(Astro.currentLocale)
 const currentUI = ui[currentLang as keyof typeof ui] ?? {}
 ---
 
-<Layout>
+<Layout pageTitle={currentUI.links} pageDescription="SlowMo 的朋友们、常用网站及友链申请方式。">
   <div class="uno-decorative-line" />
 
   <!-- Friend Links -->

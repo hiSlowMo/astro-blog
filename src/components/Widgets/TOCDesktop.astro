@@ -1,6 +1,7 @@
 ---
 import type { TocPanelProps } from '@/components/Widgets/toc-shared'
-import TocIcon from '@/assets/icons/toc-icon.svg'
+import { buildTocTree } from '@/components/Widgets/toc-shared'
+import TocTreeList from '@/components/Widgets/TocTreeList.astro'
 
 const {
   filteredHeadings,
@@ -9,65 +10,45 @@ const {
   hasToc,
   hasSeries,
 } = Astro.props as TocPanelProps
+
+const tocTree = buildTocTree(filteredHeadings)
 ---
 
 <aside
   id="toc-container"
-  class="mb-6 hidden bg-secondary/5 min-[1100px]:(fixed top-44.5 block max-w-[min(calc(50vw-25rem),13rem)] border-none bg-secondary/0)"
+  data-has-series={hasSeries ? '1' : '0'}
+  class="mb-6 hidden bg-secondary/5 min-[1100px]:(fixed top-32 block max-w-[min(calc(50vw-23.5rem),15.2rem)] border-none bg-secondary/0)"
 >
   {hasToc && (
     <>
-      <input
-        type="checkbox"
-        id="toc-toggle"
-        hidden
-      />
-      <div class="relative h-12 w-full">
-        <label
-          for="toc-toggle"
-          class="toc-toggle-label absolute inset-0 flex cursor-pointer items-center min-[1100px]:(static flex c-secondary/60 transition-colors ease-out hover:c-primary)"
+      <div class="toc-heading-row">
+        <button
+          type="button"
+          class="toc-toggle-label"
+          data-toc-disclosure
+          aria-controls="toc-accordion-wrapper"
+          aria-expanded="true"
+          aria-label="收起目录"
         >
-          <span id="toc-mobile-text">
+          <span id="toc-desktop-title">
             {currentUI.toc}
           </span>
-
-          <TocIcon
-            id="toc-desktop-icon"
-            aria-hidden="true"
-            class="ml-4 hidden aspect-square w-4.2 min-[1100px]:(mt-4 block origin-center active:scale-90!)"
-            fill="currentColor"
-          />
-        </label>
+        </button>
       </div>
 
-      <div id="toc-accordion-wrapper">
-        <nav
-          id="toc-accordion-content"
-          aria-label="Table of Contents"
-        >
-          <ul id="toc-links-list">
-            {filteredHeadings.map(heading => (
-              <li
-                class:list={{
-                  'ml-0': heading.depth === 2,
-                  'ml-4': heading.depth === 3,
-                  'ml-8': heading.depth === 4,
-                }}
-              >
-                <a
-                  href={`#${heading.slug}`}
-                  class:list={[
-                    { 'no-heti toc-links-h2': heading.depth === 2 },
-                    { 'no-heti toc-links-h3': heading.depth === 3 },
-                    { 'no-heti toc-links-h4': heading.depth === 4 },
-                  ]}
-                >
-                  {heading.text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      <div id="toc-accordion-wrapper" class="toc-disclosure-body" data-open="1">
+        <div class="toc-disclosure-clip">
+          <nav
+            id="toc-accordion-content"
+            aria-label="Table of Contents"
+          >
+            <TocTreeList
+              id="toc-links-list"
+              nodes={tocTree}
+              isRoot
+            />
+          </nav>
+        </div>
       </div>
     </>
   )}
@@ -80,49 +61,39 @@ const {
         hasToc ? 'post-series--with-toc' : 'post-series--standalone',
       ]}
     >
-      <input
-        type="checkbox"
-        id="series-toggle"
-        hidden
-      />
-      <div class="relative h-12 w-full">
-        <label
-          for="series-toggle"
-          class="post-series-toggle-label absolute inset-0 flex cursor-pointer items-center"
+      <div class="toc-heading-row">
+        <button
+          type="button"
+          data-toc-disclosure
+          aria-controls="series-accordion-wrapper"
+          aria-expanded="true"
+          aria-label="收起系列文章"
+          class="toc-toggle-label"
         >
-          <span id="series-mobile-text">
-            {currentUI.series}
-          </span>
-          <span id="series-desktop-trigger">
-            <TocIcon
-              id="series-desktop-icon"
-              aria-hidden="true"
-              class="aspect-square w-4.2 origin-center active:scale-90!"
-              fill="currentColor"
-            />
-            <span class="post-series-heading">{currentUI.series}</span>
-          </span>
-        </label>
+          <span class="post-series-heading">{currentUI.series}</span>
+        </button>
       </div>
-      <div id="series-accordion-wrapper">
-        <div id="series-accordion-content">
-          <ol id="series-links-list" class="post-series-list">
-            {seriesItems.map(item => (
-              <li>
-                <a
-                  href={item.href}
-                  class:list={[
-                    'post-series-link',
-                    item.isCurrent ? 'is-current' : '',
-                  ]}
-                  aria-current={item.isCurrent ? 'page' : undefined}
-                >
-                  <span class="post-series-date font-time">{item.date}</span>
-                  <span class="post-series-name">{item.title}</span>
-                </a>
-              </li>
-            ))}
-          </ol>
+      <div id="series-accordion-wrapper" class="toc-disclosure-body" data-open="1">
+        <div class="toc-disclosure-clip">
+          <div id="series-accordion-content">
+            <ol id="series-links-list" class="no-heti series-tree">
+              {seriesItems.map(item => (
+                <li class="series-tree-item">
+                  <a
+                    href={item.href}
+                    title={`${item.date} · ${item.title}`}
+                    class:list={[
+                      'no-heti series-tree-link',
+                      item.isCurrent ? 'is-current' : '',
+                    ]}
+                    aria-current={item.isCurrent ? 'page' : undefined}
+                  >
+                    {item.title}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       </div>
     </section>
@@ -140,46 +111,57 @@ const {
     }
   }
 
-  #toc-mobile-text {
-    --at-apply: 'ml-4 font-semibold min-[1100px]:hidden';
+  .toc-heading-row {
+    margin-bottom: 0.15rem;
   }
 
-  #series-mobile-text {
-    --at-apply: 'ml-4 text-sm font-semibold min-[1100px]:hidden';
+  .toc-toggle-label {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.85rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: oklch(var(--un-preset-theme-colors-primary));
+    cursor: pointer;
+    transition: opacity var(--motion-fast, 160ms) ease;
   }
 
-  #toc-links-list {
-    --at-apply: 'mb-2.5 mt-1 list-none pl-0 min-[1100px]:(mb-1 space-y-1) space-y-1.1';
-    scroll-target-group: auto;
+  .toc-toggle-label:hover {
+    opacity: 0.82;
   }
 
-  #series-links-list {
-    --at-apply: 'm-0 list-none p-0';
+  .toc-toggle-label:focus-visible {
+    outline: 2px solid oklch(var(--un-preset-theme-colors-accent));
+    outline-offset: 3px;
   }
 
-  a:target-current {
-    color: oklch(var(--un-preset-theme-colors-primary) / 0.94);
-    font-weight: 500;
-  }
-
-  .toc-links-h2,
-  .toc-links-h3,
-  .toc-links-h4 {
-    --at-apply: 'text-balance text-sm font-normal no-underline after:bottom-0.15em min-[1100px]:(text-3.2 c-secondary/80 hover:c-primary hover:font-medium)';
-    transition: color var(--motion-fast, 160ms) ease-out, font-weight var(--motion-fast, 160ms) ease-out;
-  }
-
-  #toc-toggle:checked ~ #toc-accordion-wrapper #toc-accordion-content {
-    --at-apply: 'overflow-y-auto min-[1100px]:overflow-hidden';
+  #toc-desktop-title,
+  .post-series-heading {
+    font-family: var(--font-sans);
+    font-size: 1.22rem;
+    line-height: 1.4;
+    font-weight: 700;
+    letter-spacing: 0.02em;
   }
 
   #toc-accordion-content {
-    --at-apply: 'max-h-59 overflow-hidden pl-4 pr-6 min-[1100px]:(max-h-[calc(100vh-27.5rem)] overflow-y-auto scrollbar-hidden pl-4 pr-4)';
+    max-height: calc(100vh - 12rem);
+    padding: 0 0.25rem 0 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0.15) transparent;
   }
 
-  #toc-accordion-content::-webkit-scrollbar {
+  @media (min-width: 1100px) {
+    #toc-container[data-has-series='1'] #toc-accordion-content {
+      max-height: calc(48vh - 4.5rem);
+    }
+  }
+
+  #toc-accordion-content::-webkit-scrollbar,
+  #series-accordion-content::-webkit-scrollbar {
     --at-apply: 'hidden';
   }
 
@@ -188,101 +170,120 @@ const {
   }
 
   .post-series--with-toc {
-    border-top: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
-    margin-top: 0.8rem;
-    padding-top: 0.95rem;
+    margin-top: 1.1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.14);
   }
 
   .post-series--standalone {
     --at-apply: 'pt-0';
   }
 
-  .post-series-toggle-label {
-    --at-apply: 'c-secondary/72 transition-colors ease-out hover:c-primary';
-  }
-
-  #series-desktop-trigger {
-    --at-apply: 'ml-4 hidden items-center gap-2.4 min-[1100px]:flex';
-  }
-
-  #series-toggle:checked ~ #series-accordion-wrapper #series-accordion-content {
-    --at-apply: 'overflow-y-auto min-[1100px]:overflow-hidden';
-  }
-
   #series-accordion-content {
-    --at-apply: 'max-h-72 overflow-hidden px-4 min-[1100px]:(max-h-[calc(100vh-32rem)] overflow-y-auto scrollbar-hidden px-4 pb-0)';
+    max-height: calc(38vh - 4.5rem);
+    padding: 0 0.25rem 0 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0.15) transparent;
   }
 
-  #series-accordion-content::-webkit-scrollbar {
-    --at-apply: 'hidden';
+  .series-tree {
+    list-style: none !important;
+    margin: 0.2rem 0 0 !important;
+    padding: 0 0 0 0.25rem !important;
+    font-family: var(--font-sans);
   }
 
-  .post-series-heading {
-    --at-apply: 'text-sm font-semibold';
+  .series-tree-item {
+    position: relative;
+    margin: 0 !important;
+    padding: 0.2rem 0 0.2rem 0.75rem !important;
+    list-style: none !important;
+    line-height: 1.45;
   }
 
-  .post-series-list {
-    --at-apply: 'space-y-3 min-[1100px]:(space-y-2.8)';
+  .series-tree-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.48);
+    pointer-events: none;
   }
 
-  .post-series-link {
-    --at-apply: 'block no-underline c-secondary/82';
-    transition: color var(--motion-fast, 160ms) ease;
+  .series-tree-item:first-child::before {
+    top: -0.22rem;
   }
 
-  .post-series-link:hover,
-  .post-series-link.is-current {
-    color: oklch(var(--un-preset-theme-colors-primary) / 0.92);
+  .series-tree-item:last-child::before {
+    bottom: auto;
+    height: 0.92rem;
   }
 
-  .post-series-date {
-    --at-apply: 'mb-1 block text-xs op-74';
+  .series-tree-item:first-child:last-child::before {
+    height: 1.14rem;
   }
 
-  .post-series-name {
-    --at-apply: 'block text-sm leading-6';
-    text-wrap: pretty;
+  .series-tree-item::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.92rem;
+    width: 0.5rem;
+    height: 1px;
+    background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.48);
+    pointer-events: none;
   }
 
-  #toc-accordion-wrapper {
-    --at-apply: 'grid rows-[0fr]';
-    transition: grid-template-rows var(--motion-slow, 300ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1));
+  .series-tree-link {
+    display: block;
+    max-width: 100%;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-decoration: none !important;
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    font-weight: 400;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.58);
+    transition:
+      color var(--motion-fast, 160ms) ease-out,
+      font-weight var(--motion-fast, 160ms) ease-out;
   }
 
-  #toc-accordion-wrapper > *,
-  #series-accordion-wrapper > * {
+  .series-tree-link::after {
+    display: none !important;
+  }
+
+  .series-tree-link:hover {
+    color: oklch(var(--un-preset-theme-colors-primary) / 0.9);
+  }
+
+  .series-tree-link.is-current {
+    color: oklch(var(--un-preset-theme-colors-primary));
+    font-weight: 700;
+  }
+
+  .toc-disclosure-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition: grid-template-rows 260ms var(--motion-ease-standard), visibility 0s;
+  }
+
+  .toc-disclosure-body[data-open='0'] {
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition: grid-template-rows 260ms var(--motion-ease-standard), visibility 0s linear 260ms;
+  }
+
+  .toc-disclosure-clip {
     min-height: 0;
-  }
-
-  #toc-toggle:checked ~ #toc-accordion-wrapper {
-    --at-apply: 'rows-[1fr]';
-  }
-
-  #toc-accordion-wrapper {
-    --at-apply: 'min-[1100px]:rows-[1fr]';
-  }
-
-  #toc-toggle:checked ~ #toc-accordion-wrapper {
-    --at-apply: 'min-[1100px]:rows-[0fr]';
-  }
-
-  #series-accordion-wrapper {
-    --at-apply: 'grid rows-[0fr]';
-    transition: grid-template-rows var(--motion-slow, 300ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1));
-  }
-
-  #series-toggle:checked ~ #series-accordion-wrapper {
-    --at-apply: 'rows-[1fr]';
-  }
-
-  #series-accordion-wrapper {
-    --at-apply: 'min-[1100px]:rows-[1fr]';
-  }
-
-  #series-toggle:checked ~ #series-accordion-wrapper {
-    --at-apply: 'min-[1100px]:rows-[0fr]';
+    overflow: hidden;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -302,47 +303,171 @@ const {
 const isDesktopToc = window.matchMedia('(min-width: 1100px)')
 
 let ticking = false
-let lastLink: Element | null = null
+let lastFirstActiveSlug = ''
+let headingEntries: Array<{ slug: string, depth: number, el: HTMLElement }> = []
+let linksBySlug = new Map<string, HTMLAnchorElement[]>()
+let disclosureController: AbortController | undefined
 
-function scrollToActiveLink() {
-  const tocList = document.getElementById('toc-links-list')
-  if (!tocList) {
+function setupDisclosures() {
+  disclosureController?.abort()
+  disclosureController = new AbortController()
+  document.querySelectorAll<HTMLButtonElement>('#toc-container [data-toc-disclosure]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const panel = document.getElementById(button.getAttribute('aria-controls') || '')
+      if (!panel)
+        return
+      const open = panel.dataset.open !== '1'
+      panel.dataset.open = open ? '1' : '0'
+      button.setAttribute('aria-expanded', String(open))
+      button.setAttribute('aria-label', `${open ? '收起' : '展开'}${button.textContent?.trim()}`)
+      panel.setAttribute('aria-hidden', String(!open))
+      panel.inert = !open
+    }, { signal: disclosureController!.signal })
+  })
+}
+
+function collectTocEntries() {
+  headingEntries = []
+  linksBySlug = new Map()
+
+  const allTocLinks = document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')
+  const seenSlugs = new Set<string>()
+
+  allTocLinks.forEach((link) => {
+    const slug = link.dataset.tocSlug
+    if (!slug)
+      return
+
+    const list = linksBySlug.get(slug) ?? []
+    list.push(link)
+    linksBySlug.set(slug, list)
+
+    if (!seenSlugs.has(slug)) {
+      seenSlugs.add(slug)
+      const headingEl = document.getElementById(slug)
+      if (headingEl) {
+        const depth = Number(link.dataset.tocDepth) || 2
+        headingEntries.push({ slug, depth, el: headingEl })
+      }
+    }
+  })
+}
+
+function updateActiveTocLinks() {
+  if (headingEntries.length === 0) {
     ticking = false
     return
   }
 
-  const activeLink = tocList.querySelector('a:target-current')
-  if (activeLink && activeLink !== lastLink) {
-    activeLink.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    lastLink = activeLink
+  const viewportTop = 48
+  const viewportBottom = window.innerHeight - 48
+  const postContent = document.getElementById('post-content')
+  const contentBottom = postContent
+    ? postContent.getBoundingClientRect().bottom
+    : document.documentElement.getBoundingClientRect().bottom
+
+  const activeSlugs = new Set<string>()
+  let fallbackIndex = -1
+
+  for (let i = 0; i < headingEntries.length; i++) {
+    const current = headingEntries[i]
+    let nextSameOrShallower: { slug: string, depth: number, el: HTMLElement } | undefined
+    for (let j = i + 1; j < headingEntries.length; j++) {
+      if (headingEntries[j].depth <= current.depth) {
+        nextSameOrShallower = headingEntries[j]
+        break
+      }
+    }
+
+    const top = current.el.getBoundingClientRect().top
+    const bottom = nextSameOrShallower
+      ? nextSameOrShallower.el.getBoundingClientRect().top
+      : contentBottom
+
+    if (top <= viewportTop + 24) {
+      fallbackIndex = i
+    }
+
+    if (bottom > viewportTop && top < viewportBottom) {
+      activeSlugs.add(current.slug)
+    }
+  }
+
+  if (activeSlugs.size === 0 && fallbackIndex >= 0) {
+    const fallback = headingEntries[fallbackIndex]
+    activeSlugs.add(fallback.slug)
+    let targetDepth = fallback.depth
+    for (let k = fallbackIndex - 1; k >= 0; k--) {
+      if (headingEntries[k].depth < targetDepth) {
+        activeSlugs.add(headingEntries[k].slug)
+        targetDepth = headingEntries[k].depth
+      }
+    }
+  }
+
+  let firstActiveLink: HTMLAnchorElement | null = null
+  let firstActiveSlug = ''
+
+  for (const [slug, links] of linksBySlug.entries()) {
+    const isActive = activeSlugs.has(slug)
+    for (const link of links) {
+      link.classList.toggle('is-active', isActive)
+      if (isActive)
+        link.setAttribute('aria-current', 'location')
+      else
+        link.removeAttribute('aria-current')
+      if (isActive && !firstActiveLink && link.closest('#toc-links-list')) {
+        firstActiveLink = link
+        firstActiveSlug = slug
+      }
+    }
+  }
+
+  if (isDesktopToc.matches && firstActiveLink && firstActiveSlug !== lastFirstActiveSlug) {
+    const nav = firstActiveLink.closest<HTMLElement>('#toc-accordion-content')
+    if (nav) {
+      const linkRect = firstActiveLink.getBoundingClientRect()
+      const navRect = nav.getBoundingClientRect()
+      if (linkRect.top < navRect.top || linkRect.bottom > navRect.bottom)
+        nav.scrollTop += linkRect.top - navRect.top - nav.clientHeight / 2 + linkRect.height / 2
+    }
+    lastFirstActiveSlug = firstActiveSlug
   }
 
   ticking = false
 }
 
 function handleScroll() {
-  if (!ticking && isDesktopToc.matches) {
-    window.requestAnimationFrame(scrollToActiveLink)
+  if (!ticking) {
+    window.requestAnimationFrame(updateActiveTocLinks)
     ticking = true
   }
 }
 
 function setupAutoScroll() {
+  setupDisclosures()
   ticking = false
-  lastLink = null
+  lastFirstActiveSlug = ''
+  collectTocEntries()
 
-  const tocList = document.getElementById('toc-links-list')
-  if (!tocList || !CSS.supports('selector(:target-current)')) {
+  if (headingEntries.length === 0) {
     return
   }
 
+  updateActiveTocLinks()
   document.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('resize', handleScroll, { passive: true })
 }
 
 function cleanupAutoScroll() {
+  disclosureController?.abort()
+  disclosureController = undefined
   document.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', handleScroll)
   ticking = false
-  lastLink = null
+  lastFirstActiveSlug = ''
+  headingEntries = []
+  linksBySlug.clear()
 }
 
 document.addEventListener('astro:page-load', setupAutoScroll)
