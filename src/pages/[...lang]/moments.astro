@@ -69,7 +69,7 @@ function formatMomentDate(date: Date) {
         <ul class="moments-list">
           {renderedMoments.map(({ moment, Content }) => (
             <li id={`moment-${moment.id}`} class="moment-card">
-              <div class="heti moment-content">
+              <div class="no-heti moment-content">
                 <Content />
               </div>
 
@@ -92,8 +92,8 @@ function formatMomentDate(date: Date) {
 
   <style is:inline>
     .moments-header {
-      margin-top: 1rem;
-      padding-bottom: 0.9rem;
+      margin-top: 0.8rem;
+      padding-bottom: 0.75rem;
       display: flex;
       flex-wrap: wrap;
       align-items: baseline;
@@ -103,32 +103,32 @@ function formatMomentDate(date: Date) {
     }
 
     .moments-intro {
-      font-size: 1rem;
-      line-height: 1.65;
-      color: oklch(var(--un-preset-theme-colors-secondary) / 0.9);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: oklch(var(--un-preset-theme-colors-secondary) / 0.88);
     }
 
     .moments-count {
       flex-shrink: 0;
-      font-size: 0.9375rem;
+      font-size: 0.8125rem;
       line-height: 1.5;
-      color: oklch(var(--un-preset-theme-colors-secondary) / 0.78);
+      color: oklch(var(--un-preset-theme-colors-secondary) / 0.72);
       font-variant-numeric: tabular-nums;
     }
 
     .moments-list {
-      margin-top: 1.85rem;
+      margin-top: 1.35rem;
       padding: 0;
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 1.65rem;
+      gap: 1.15rem;
     }
 
     .moment-card {
       position: relative;
-      padding: 1.15rem 1.35rem 0.95rem;
-      background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.028);
+      padding: 0.85rem 1.15rem 0.75rem;
+      background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.025);
       scroll-margin-top: 4rem;
       transition: background-color 180ms ease;
     }
@@ -143,7 +143,7 @@ function formatMomentDate(date: Date) {
       position: absolute;
       inset: 0;
       pointer-events: none;
-      --corner-color: oklch(var(--un-preset-theme-colors-secondary) / 0.55);
+      --corner-color: oklch(var(--un-preset-theme-colors-secondary) / 0.48);
       background-image:
         linear-gradient(var(--corner-color), var(--corner-color)),
         linear-gradient(var(--corner-color), var(--corner-color)),
@@ -163,14 +163,14 @@ function formatMomentDate(date: Date) {
         100% 100%,
         100% 100%;
       background-size:
-        10px 1px,
-        1px 10px,
-        10px 1px,
-        1px 10px,
-        10px 1px,
-        1px 10px,
-        10px 1px,
-        1px 10px;
+        8px 1px,
+        1px 8px,
+        8px 1px,
+        1px 8px,
+        8px 1px,
+        1px 8px,
+        8px 1px,
+        1px 8px;
       background-repeat: no-repeat;
       transition:
         background-size 220ms var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
@@ -179,7 +179,7 @@ function formatMomentDate(date: Date) {
 
     .moment-card:hover::before,
     .moment-card:focus-within::before {
-      --corner-color: oklch(var(--un-preset-theme-colors-primary) / 0.72);
+      --corner-color: oklch(var(--un-preset-theme-colors-primary) / 0.65);
       background-size:
         50% 1px,
         1px 50%,
@@ -192,15 +192,22 @@ function formatMomentDate(date: Date) {
     }
 
     .moment-content {
-      font-size: 1.0625rem;
-      line-height: 1.8;
-      color: oklch(var(--un-preset-theme-colors-primary));
+      font-size: 0.9375rem;
+      line-height: 1.72;
+      color: oklch(var(--un-preset-theme-colors-primary) / 0.95);
+      text-align: left !important;
+      text-justify: none !important;
+      letter-spacing: normal !important;
     }
 
     .moment-content p {
-      margin: 0.35em 0;
-      line-height: 1.8;
-      color: oklch(var(--un-preset-theme-colors-primary) / 0.94);
+      margin: 0.3em 0;
+      line-height: 1.72;
+      color: oklch(var(--un-preset-theme-colors-primary) / 0.95);
+      text-align: left !important;
+      text-justify: none !important;
+      letter-spacing: normal !important;
+      word-break: break-word;
     }
 
     .moment-content p:first-child {
@@ -212,15 +219,15 @@ function formatMomentDate(date: Date) {
     }
 
     .moment-footer {
-      margin-top: 0.7rem;
+      margin-top: 0.55rem;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: flex-end;
-      gap: 0.5rem 0.85rem;
-      font-size: 0.875rem;
+      gap: 0.4rem 0.75rem;
+      font-size: 0.8125rem;
       line-height: 1.4;
-      color: oklch(var(--un-preset-theme-colors-secondary) / 0.78);
+      color: oklch(var(--un-preset-theme-colors-secondary) / 0.72);
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.02em;
     }
@@ -229,23 +236,33 @@ function formatMomentDate(date: Date) {
       display: inline-flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.45rem;
+      gap: 0.4rem;
+    }
+
+    .moment-tag {
+      opacity: 0.85;
     }
 
     .moment-time {
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.3rem;
     }
 
     .moment-time::before {
       content: '—';
-      opacity: 0.55;
+      opacity: 0.5;
     }
 
     @media (max-width: 640px) {
       .moment-card {
-        padding: 0.95rem 1.05rem 0.85rem;
+        padding: 0.75rem 0.88rem 0.65rem;
+      }
+      .moment-content {
+        font-size: 0.9rem;
+      }
+      .moments-list {
+        gap: 0.95rem;
       }
     }
 
