@@ -1,0 +1,193 @@
+# 手机写作后台：https://app.pagescms.org
+# 字段与 src/content.config.ts 保持一致，保存后由 GitHub / Vercel 发布。
+media:
+  - name: uploads
+    label: 图片
+    input: public/uploads
+    output: /uploads
+    extensions: [jpg, jpeg, png, webp, gif, avif]
+    rename: random
+
+content:
+  - name: moments
+    label: 说说
+    type: collection
+    path: src/content/moments
+    format: yaml-frontmatter
+    subfolders: false
+    filename:
+      template: "{year}-{month}-{day}-{hour}{minute}{second}.md"
+      field: false
+    view:
+      primary: body
+      fields: [body, published, draft]
+      sort: [published]
+      search: [body]
+      default:
+        sort: published
+        order: desc
+    fields:
+      - name: body
+        label: 这一刻想说的话
+        type: text
+        required: true
+        description: 支持 Markdown，可直接输入文字或粘贴图片链接。
+      - name: published
+        label: 发布时间
+        type: date
+        required: true
+        description: 自动填写当前时间，通常不需要修改。
+        options:
+          time: true
+          format: "yyyy-MM-dd'T'HH:mm:ssXXX"
+      - name: draft
+        label: 暂存为草稿
+        type: boolean
+        default: false
+        description: 开启后保存到仓库，但不在博客中显示；关闭并保存即可发布。
+      - name: tags
+        label: 标签
+        type: string
+        list: true
+    commit:
+      templates:
+        create: "发布说说：{filename}"
+        update: "更新说说：{filename}"
+        delete: "删除说说：{filename}"
+
+  - name: posts
+    label: 文章
+    type: collection
+    path: src/content/posts
+    format: yaml-frontmatter
+    subfolders: true
+    exclude: ["_images/**"]
+    # 使用时间命名，避免后台将纯中文标题转成空的 slug。
+    filename:
+      template: "{year}-{month}-{day}-{hour}{minute}{second}.md"
+      field: create
+    # 文件名决定文章链接及评论归属，编辑标题时不应同时改名。
+    operations:
+      rename: false
+    view:
+      primary: title
+      fields: [title, published, draft]
+      sort: [published, title]
+      search: [title, description, body, tags]
+      default:
+        sort: published
+        order: desc
+    fields:
+      - name: title
+        label: 标题
+        type: string
+        required: true
+      - name: body
+        label: 正文
+        type: text
+        required: true
+        description: 使用 Markdown 写作，原样保留 Ruby 注释、提示块、公式和图片宽度等写法。
+      - name: draft
+        label: 暂存为草稿
+        type: boolean
+        default: true
+        description: 新文章默认保存为草稿，准备上线时关闭此开关并保存。
+      - name: published
+        label: 发布时间
+        type: date
+        required: true
+        options:
+          time: true
+          format: "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+      - name: description
+        label: 摘要
+        type: text
+        description: 可留空，由博客从正文提取。
+      - name: tags
+        label: 标签
+        type: string
+        list: true
+      - name: categories
+        label: 分类
+        type: string
+        list: true
+      - name: cover
+        label: 封面地址
+        type: string
+        description: 可使用图床地址，或从左侧“图片”上传后复制 /uploads/ 开头的地址。
+      - name: status
+        label: 文章状态
+        type: select
+        options:
+          values:
+            - name: idea
+              label: 想法
+            - name: ongoing
+              label: 进行中
+            - name: paused
+              label: 暂停
+            - name: completed
+              label: 已完成
+      - name: updated
+        label: 更新时间
+        type: date
+        default: ""
+        options:
+          time: true
+          format: "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+      - name: series
+        label: 系列
+        type: string
+      - name: featured
+        label: 首页精选
+        type: boolean
+        default: false
+      - name: pin
+        label: 置顶优先级
+        type: number
+        default: 0
+        description: 0 表示不置顶，1–99 越大越靠前。
+        options:
+          min: 0
+          max: 99
+      - name: toc
+        label: 显示目录
+        type: boolean
+        default: true
+      - name: visibility
+        label: 可见性
+        type: select
+        default: public
+        options:
+          values:
+            - name: public
+              label: 公开
+            - name: private
+              label: 隐藏
+      - name: abbrlink
+        label: 自定义链接
+        type: string
+        description: 通常留空。已有文章请保留原值，修改会改变文章链接及评论归属。
+        pattern:
+          regex: "^[a-z0-9-]*$"
+          message: 只能填写小写字母、数字和连字符。
+      - name: lang
+        type: string
+        hidden: true
+        default: ""
+    commit:
+      templates:
+        create: "新建文章：{filename}"
+        update: "更新文章：{filename}"
+        delete: "删除文章：{filename}"
+
+settings:
+  content:
+    merge: true
+  commit:
+    identity: user
+    templates:
+      create: "新增内容：{path}"
+      update: "更新内容：{path}"
+      delete: "删除内容：{path}"
+      rename: "重命名内容：{oldPath} -> {newPath}"
