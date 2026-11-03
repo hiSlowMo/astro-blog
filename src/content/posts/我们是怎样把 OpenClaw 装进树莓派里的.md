@@ -1,6 +1,6 @@
 ---
 title: 我们是怎样把 OpenClaw 装进树莓派里的
-published: 2026-03-09T05:10:00.000Z
+published: 2026-03-09T13:10:00.000+08:00
 description: '把 OpenClaw 部署到树莓派上的那几天，我一边折腾配置，一边把 SlowMi 慢慢接进自己的日常。'
 updated: ''
 tags:

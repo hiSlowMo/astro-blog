@@ -1,6 +1,6 @@
 ---
 title: 部署 Hermes：从树莓派到博客的 AI 自动化之旅
-published: 2026-05-17T14:00:00.000Z
+published: 2026-05-17T22:00:00.000+08:00
 description: 这次我把 Hermes 部署到博客项目，结合之前 OpenClaw 在树莓派的经验，实现了文章自动推送功能。
 updated: ''
 tags:

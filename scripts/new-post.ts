@@ -26,9 +26,13 @@ if (existsSync(fullPath)) {
 mkdirSync(dirname(fullPath), { recursive: true })
 
 // Prepare file content
+// Match Pages CMS's Beijing wall-clock format regardless of the machine timezone.
+const published = new Date(Date.now() + 8 * 60 * 60 * 1000)
+  .toISOString()
+  .replace('Z', '+08:00')
 const content = `---
 title: ${baseName}
-published: ${new Date().toISOString()}
+published: ${published}
 description: ''
 updated: ''
 tags:

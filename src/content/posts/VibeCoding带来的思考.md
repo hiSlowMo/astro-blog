@@ -1,6 +1,6 @@
 ---
 title: VibeCoding带来的思考
-published: 2026-04-04T04:07:53.126Z
+published: 2026-04-04T12:07:53.126+08:00
 description: '连续多天的 VibeCoding，让我重新理解了 AI、Prompt、代码与呈现之间的关系。'
 updated: ''
 tags:

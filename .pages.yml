@@ -1,5 +1,7 @@
 # 手机写作后台：https://app.pagescms.org
 # 字段与 src/content.config.ts 保持一致，保存后由 GitHub / Vercel 发布。
+# date 字段在服务端读写，时区后缀必须是字面量，避免服务器 UTC 导致偏移。
+# 所有内容时间统一保存为 +08:00；格式中的 '+08:00' 不可改成 XXX。
 media:
   - name: uploads
     label: 图片
@@ -33,13 +35,13 @@ content:
         required: true
         description: 支持 Markdown，可直接输入文字或粘贴图片链接。
       - name: published
-        label: 发布时间
+        label: 发布时间（北京时间）
         type: date
         required: true
         description: 自动填写当前时间，通常不需要修改。
         options:
           time: true
-          format: "yyyy-MM-dd'T'HH:mm:ssXXX"
+          format: "yyyy-MM-dd'T'HH:mm:ss'+08:00'"
       - name: draft
         label: 暂存为草稿
         type: boolean
@@ -93,12 +95,12 @@ content:
         default: true
         description: 新文章默认保存为草稿，准备上线时关闭此开关并保存。
       - name: published
-        label: 发布时间
+        label: 发布时间（北京时间）
         type: date
         required: true
         options:
           time: true
-          format: "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+          format: "yyyy-MM-dd'T'HH:mm:ss.SSS'+08:00'"
       - name: description
         label: 摘要
         type: text
@@ -129,12 +131,12 @@ content:
             - name: completed
               label: 已完成
       - name: updated
-        label: 更新时间
+        label: 更新时间（北京时间）
         type: date
         default: ""
         options:
           time: true
-          format: "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+          format: "yyyy-MM-dd'T'HH:mm:ss.SSS'+08:00'"
       - name: series
         label: 系列
         type: string
