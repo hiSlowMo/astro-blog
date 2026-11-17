@@ -15,7 +15,7 @@
       ]
     },
     {
-      "source": "/:section(about|archive|moments|tags|links|search|posts)/:path*",
+      "source": "/:section(about|archive|moments|tags|links|search|posts)/:path*/",
       "headers": [
         {
           "key": "Cache-Control",

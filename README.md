@@ -162,6 +162,8 @@ git push
 
 `vercel.json` 为公开页面设置浏览器 30 秒、Cloudflare 60 秒缓存，过期后必须重新验证，不使用过期内容后台刷新的策略。Vercel 部署 Ready 后，已缓存的旧页面最多保留约 60 秒；已经打开的页面需要刷新或重新导航才能显示新内容。带哈希的 CSS、JS 和字体仍使用平台默认长期缓存。
 
+页面响应头规则的 `source` 必须保留末尾 `/`，与 Astro 的 `trailingSlash: 'always'` 一致；Vercel 对有无尾斜杠的路径分别匹配。
+
 Cloudflare 规则源文件为 `config/cloudflare-blog-cache-rule.json`。它只匹配 `www.theslowmo.com` 的公开页面 GET/HEAD 请求；带查询参数、Cookie 或 Authorization 的请求不进入这条规则，错误响应不缓存。Giscus、图床及其他子域名不在规则范围内。Git 推送会部署 Vercel 配置，但不会自动修改 Cloudflare 规则。
 
 需要在部署 Ready 后立即清除某个页面的边缘缓存时，用 cf CLI 按 URL 清除（将示例地址替换为本次更新页面，并包括首页/归档等受影响列表页）：
