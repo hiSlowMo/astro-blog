@@ -1,0 +1,22 @@
+{
+  "ref": "blog_public_html",
+  "description": "Blog public HTML: respect short origin TTLs",
+  "expression": "(http.host eq \"www.theslowmo.com\" and http.request.method in {\"GET\" \"HEAD\"} and http.request.uri.query eq \"\" and http.cookie eq \"\" and not any(http.request.headers[\"authorization\"][*] ne \"\") and (http.request.uri.path in {\"/\" \"/about/\" \"/archive/\" \"/moments/\" \"/tags/\" \"/links/\" \"/search/\"} or ((starts_with(http.request.uri.path, \"/posts/\") or starts_with(http.request.uri.path, \"/tags/\")) and ends_with(http.request.uri.path, \"/\"))))",
+  "action": "set_cache_settings",
+  "action_parameters": {
+    "cache": true,
+    "edge_ttl": {
+      "mode": "bypass_by_default",
+      "status_code_ttl": [
+        {
+          "status_code_range": { "from": 300 },
+          "value": -1
+        }
+      ]
+    },
+    "browser_ttl": {
+      "mode": "respect_origin"
+    }
+  },
+  "enabled": true
+}

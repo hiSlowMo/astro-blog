@@ -156,6 +156,23 @@ git push
 - `pnpm check:comments`：评论懒加载、故障重试、主题同步与页面切换回归检查；先启动 `pnpm dev`，或用 `BLOG_TEST_URL` 指定生产预览地址。测试模拟 Giscus 请求，不会发布评论。
 - `pnpm lint`：ESLint 检查。
 
+### 页面预取与缓存
+
+站内链接在悬停或键盘聚焦时预取，导航链接在进入视口后预取；Astro 在慢速网络或开启省流量时改为点击前触发。预取只下载页面，不会执行目标页面中的评论脚本。
+
+`vercel.json` 为公开页面设置浏览器 30 秒、Cloudflare 60 秒缓存，过期后必须重新验证，不使用过期内容后台刷新的策略。Vercel 部署 Ready 后，已缓存的旧页面最多保留约 60 秒；已经打开的页面需要刷新或重新导航才能显示新内容。带哈希的 CSS、JS 和字体仍使用平台默认长期缓存。
+
+Cloudflare 规则源文件为 `config/cloudflare-blog-cache-rule.json`。它只匹配 `www.theslowmo.com` 的公开页面 GET/HEAD 请求；带查询参数、Cookie 或 Authorization 的请求不进入这条规则，错误响应不缓存。Giscus、图床及其他子域名不在规则范围内。Git 推送会部署 Vercel 配置，但不会自动修改 Cloudflare 规则。
+
+需要在部署 Ready 后立即清除某个页面的边缘缓存时，用 cf CLI 按 URL 清除（将示例地址替换为本次更新页面，并包括首页/归档等受影响列表页）：
+
+```bash
+cf cache purge --zone e54aa1d0876650c79211f56ce0d6b2d4 \
+  --body '{"files":["https://www.theslowmo.com/","https://www.theslowmo.com/archive/"]}'
+```
+
+手动清除边缘缓存不会清除访客浏览器中尚未过期的 30 秒缓存。回退时关闭 Cloudflare 中 `blog_public_html` 规则，并恢复 `vercel.json` 和 `astro.config.ts` 的对应设置。
+
 本地图片可放在文章旁的 `_images/` 目录。字体维护资料位于 `assets/fonts/font-subset-list/`，OG 图片生成字体位于 `assets/fonts/og/`，均不会作为公开静态资源部署。
 
 ## 致谢

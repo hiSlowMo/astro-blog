@@ -45,8 +45,10 @@ export default defineConfig({
   base,
   trailingSlash: 'always', // Not recommended to change
   prefetch: {
-    prefetchAll: false,
-    defaultStrategy: 'tap', // hover, tap, viewport, load
+    // Fetch same-origin destinations on hover/focus, before the click.
+    // Astro falls back to tap on slow connections or when Save-Data is enabled.
+    prefetchAll: true,
+    defaultStrategy: 'hover',
   },
   ...imageConfig,
   i18n: {

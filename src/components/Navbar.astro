@@ -90,6 +90,7 @@ const moreItems = [
       <li class="nav-primary-item" inert={isMoreActive}>
         <a
           href={getLocalizedPath(item.href)}
+          data-astro-prefetch="viewport"
           class={item.className}
         >
           {item.label}
@@ -130,6 +131,7 @@ const moreItems = [
                   : (
                       <a
                         href={getLocalizedPath(item.href)}
+                        data-astro-prefetch="viewport"
                         class="nav-more-link"
                       >
                         <span class={item.className}>
