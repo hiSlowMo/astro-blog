@@ -32,20 +32,20 @@ const contactEmail = themeConfig.footer.links
 : (
     <ul class="mt-4 space-y-3">
       {friendLinks.map(link => (
-        <li class="border uno-round-border border-secondary/15 p-4 transition-colors hover:(border-primary/20)">
+        <li class="border uno-round-border border-secondary/15 transition-colors hover:(border-primary/20)">
           <a
-            class="highlight-hover transition-colors after:bottom-0.35em hover:(c-primary font-bold)"
+            class="group block p-4"
             href={link.url}
             target="_blank"
             rel="noopener"
             data-umami-event="outbound-link-click"
           >
-            {link.name}
+            <span class="highlight-hover transition-colors after:bottom-0.35em group-hover:(c-primary font-bold)">{link.name}</span>
+            {link.description && (
+              <p class="mt-1 text-3.4 c-secondary">{link.description}</p>
+            )}
+            <p class="mt-1.5 break-all text-3.2 c-secondary font-mono op-75">{link.url}</p>
           </a>
-          {link.description && (
-            <p class="mt-1 text-3.4 c-secondary">{link.description}</p>
-          )}
-          <p class="mt-1.5 break-all text-3.2 c-secondary font-mono op-75">{link.url}</p>
         </li>
       ))}
     </ul>
