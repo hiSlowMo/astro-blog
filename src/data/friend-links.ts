@@ -9,15 +9,15 @@ export interface SiteInfoField {
   value: string
 }
 
-export const friendLinks: FriendLink[] = []
-
-export const websiteLinks: FriendLink[] = [
+export const friendLinks: FriendLink[] = [
   {
-    name: '开往',
-    url: 'https://www.travellings.cn/go.html',
-    description: '随机前往开往成员的博客',
+    name: 'WEP',
+    url: 'https://taoran.weppp.cyou/',
+    description: 'How\'s your day been?',
   },
 ]
+
+export const websiteLinks: FriendLink[] = []
 
 export const siteInfo: SiteInfoField[] = [
   { name: 'Name', value: 'SlowMo\'s 办事处' },

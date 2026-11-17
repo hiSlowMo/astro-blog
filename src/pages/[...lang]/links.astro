@@ -1,5 +1,6 @@
 ---
-import { allLocales } from '@/config'
+import Comment from '@/components/Comment/Index.astro'
+import { allLocales, themeConfig } from '@/config'
 import { applyRules, friendLinks, siteInfo, websiteLinks } from '@/data/friend-links'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { ui } from '@/i18n/ui'
@@ -13,6 +14,10 @@ export async function getStaticPaths() {
 
 const currentLang = getLangFromLocale(Astro.currentLocale)
 const currentUI = ui[currentLang as keyof typeof ui] ?? {}
+const contactEmail = themeConfig.footer.links
+  .map(link => link.url)
+  .find(url => /^mailto:/i.test(url))
+  ?.replace(/^mailto:/i, '')
 ---
 
 <Layout pageTitle={currentUI.links} pageDescription="SlowMo 的朋友们、常用网站及友链申请方式。">
@@ -40,6 +45,7 @@ const currentUI = ui[currentLang as keyof typeof ui] ?? {}
           {link.description && (
             <p class="mt-1 text-3.4 c-secondary">{link.description}</p>
           )}
+          <p class="mt-1.5 break-all text-3.2 c-secondary font-mono op-75">{link.url}</p>
         </li>
       ))}
     </ul>
@@ -88,12 +94,35 @@ const currentUI = ui[currentLang as keyof typeof ui] ?? {}
       </li>
     ))}
   </ul>
-  <p class="mt-6 text-3.6 c-secondary">可在下方留言或发邮件申请友链，几点说明：</p>
+  {contactEmail
+    ? (
+        <p class="mt-6 text-3.6 c-secondary">
+          可在下方留言或发邮件至
+          <a
+            class="highlight-hover transition-colors after:bottom-0.35em hover:(c-primary font-bold)"
+            href={`mailto:${contactEmail}`}
+            data-umami-event="outbound-link-click"
+            data-umami-event-url={`mailto:${contactEmail}`}
+          >
+            {contactEmail}
+          </a>
+          申请友链，几点说明：
+        </p>
+      )
+    : (
+        <p class="mt-6 text-3.6 c-secondary">可在下方留言申请友链，几点说明：</p>
+      )}
   <ul class="mt-3 list-disc pl-5 text-3.6 c-secondary space-y-1.5">
     {applyRules.map(rule => (
       <li>{rule}</li>
     ))}
   </ul>
+
+  <!-- Comment -->
+  <div class="mt-12.6 uno-decorative-line" />
+  <div id="links-comments" data-pagefind-ignore>
+    <Comment />
+  </div>
 </Layout>
 
 <script is:inline data-astro-rerun>
