@@ -23,7 +23,15 @@ import { remarkReadingTime } from './src/plugins/remark-reading-time.mjs'
 const { url: site } = themeConfig.site
 const { imageHostURL } = themeConfig.preload ?? {}
 const imageConfig = imageHostURL
-  ? { image: { domains: [imageHostURL], remotePatterns: [{ protocol: 'https' }] } }
+  ? {
+      image: {
+        domains: [imageHostURL],
+        remotePatterns: [{ protocol: 'https' }],
+        layout: 'constrained' as const,
+        breakpoints: [640, 960, 1280, 1600],
+        responsiveStyles: true,
+      },
+    }
   : {}
 
 // Exclude inactive providers before Astro/Vite collect their client scripts and assets.

@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content'
 import type { Language } from '@/i18n/config'
+import { Image } from 'astro:assets'
 import { getCollection, render } from 'astro:content'
 import Comment from '@/components/Comment/Index.astro'
 import PostDate from '@/components/PostDate.astro'
@@ -15,6 +16,7 @@ import { getPostPath } from '@/i18n/path'
 import Layout from '@/layouts/Layout.astro'
 import { checkPostSlugDuplication, getPostCoverURL, getPostsBySeries, getPostUpdatedAt, shouldIncludePost } from '@/utils/content'
 import { getPostDescription } from '@/utils/description'
+import { hasMathContent } from '@/utils/math'
 
 export async function getStaticPaths() {
   const posts: CollectionEntry<'posts'>[] = await getCollection('posts')
@@ -81,6 +83,7 @@ const slug = post.data.abbrlink || post.id
 const description = getPostDescription(post, 'meta')
 const { Content, headings, remarkPluginFrontmatter } = await render(post)
 const hasMermaid = /^```mermaid(?:\s|$)/m.test(post.body ?? '')
+const hasMath = hasMathContent(post.body, post.filePath)
 const tocHeadings = post.data.toc ? headings : []
 const updatedDate = getPostUpdatedAt(post)
 const coverURL = getPostCoverURL(post.data.cover)
@@ -107,6 +110,7 @@ const searchCategories = post.data.categories.join(' ')
   postSlug={post.id}
   supportedLangs={supportedLangs}
   enableContentEnhancements
+  enableKatex={hasMath}
 >
   <article class="heti">
     <div id="post-top-anchor" aria-hidden="true" />
@@ -165,9 +169,13 @@ const searchCategories = post.data.categories.join(' ')
     </div>
     {coverURL && (
       <figure class="post-cover mb-10.5" data-pagefind-ignore>
-        <img
+        <Image
           src={coverURL}
           alt={post.data.title}
+          inferSize
+          layout="constrained"
+          widths={[640, 960, 1280, 1600]}
+          sizes="(max-width: 768px) 100vw, 720px"
           loading="eager"
           decoding="async"
           fetchpriority="high"

@@ -201,7 +201,7 @@ export const themeConfig: ThemeConfig = {
   preload: {
     // image hosting url
     // optimize remote images and generate low-quality placeholders
-    imageHostURL: '',
+    imageHostURL: 'img.theslowmo.com',
     // custom google analytics js
     // for users who proxy tracking scripts to a custom domain
     // see https://gist.github.com/xiaopc/0602f06ca465d76bd9efd3dda9393738

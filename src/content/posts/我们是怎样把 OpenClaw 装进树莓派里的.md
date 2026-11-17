@@ -20,7 +20,7 @@ lang: ''
 abbrlink: ''
 ---
 
-![](https://img.theslowmo.com/2026/03/7ab71814232e3289638cb6a4b2f8c771.webp)
+![_显示博客页面的笔记本与树莓派设备](https://img.theslowmo.com/2026/03/7ab71814232e3289638cb6a4b2f8c771.webp)
 
 “现在能用了么？”
 

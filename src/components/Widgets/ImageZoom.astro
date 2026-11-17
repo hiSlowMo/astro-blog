@@ -56,8 +56,19 @@ function zoomIn(img: HTMLImageElement) {
   const rect = img.getBoundingClientRect()
   originalImg = img
 
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  const scaleFactor = viewportWidth < 768 ? 1 : 0.8
+  const scale = Math.min(
+    (viewportWidth * scaleFactor) / rect.width,
+    (viewportHeight * scaleFactor) / rect.height,
+  )
+
   zoomedImg = img.cloneNode() as HTMLImageElement
   zoomedImg.className = 'zoom-img'
+  // The clone is scaled up with a transform, but srcset selection uses sizes.
+  // Point it at the final on-screen size so the zoomed view stays sharp.
+  zoomedImg.sizes = `${Math.round(rect.width * scale)}px`
   zoomedImg.removeAttribute('id')
   zoomedImg.removeAttribute('loading')
   zoomedImg.removeAttribute('tabindex')
@@ -77,13 +88,6 @@ function zoomIn(img: HTMLImageElement) {
     closeButton.focus()
   }
 
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
-  const scaleFactor = viewportWidth < 768 ? 1 : 0.8
-  const scale = Math.min(
-    (viewportWidth * scaleFactor) / rect.width,
-    (viewportHeight * scaleFactor) / rect.height,
-  )
   const translateX = (-rect.left + (viewportWidth - rect.width) / 2) / scale
   const translateY = (-rect.top + (viewportHeight - rect.height) / 2) / scale
 

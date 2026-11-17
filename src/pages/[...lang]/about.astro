@@ -5,6 +5,7 @@ import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { ui } from '@/i18n/ui'
 import Layout from '@/layouts/Layout.astro'
+import { hasMathContent } from '@/utils/math'
 
 export async function getStaticPaths() {
   return allLocales.map(lang => ({
@@ -18,9 +19,10 @@ const allAboutEntries = await getCollection('about')
 const aboutEntry = allAboutEntries.find(entry => entry.data.lang === currentLang)
   ?? allAboutEntries.find(entry => entry.data.lang === '')
 const { Content } = aboutEntry ? await render(aboutEntry) : { Content: null }
+const hasMath = hasMathContent(aboutEntry?.body, aboutEntry?.filePath)
 ---
 
-<Layout pageTitle={ui[currentLang].about} pageDescription="关于 SlowMo：一名软件工程专业的学生，记录计算机、排版美学与日常思考。" enableContentEnhancements>
+<Layout pageTitle={ui[currentLang].about} pageDescription="关于 SlowMo：一名软件工程专业的学生，记录计算机、排版美学与日常思考。" enableContentEnhancements enableKatex={hasMath}>
   <!-- Decorative Line -->
   <div class="uno-decorative-line" />
   <!-- About Page Content -->

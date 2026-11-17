@@ -12,10 +12,11 @@ interface Props {
   postTitle?: string
   postDescription?: string
   postSlug?: string
+  enableKatex?: boolean
 }
 
 // Props and Language
-const { pageTitle, pageDescription, postTitle, postDescription, postSlug } = Astro.props
+const { pageTitle, pageDescription, postTitle, postDescription, postSlug, enableKatex = false } = Astro.props
 const { currentLang } = getPageInfo(Astro.url.pathname)
 const currentUI = ui[currentLang as keyof typeof ui] ?? {}
 
@@ -61,7 +62,7 @@ const pageImage = postSlug
 <meta name="theme-color" content={metaTheme} />
 
 <!-- Preload -->
-{katexEnabled && <link rel="stylesheet" href={katexCSS} media="print" onload={`this.media='all'`} />}
+{katexEnabled && enableKatex && <link rel="stylesheet" href={katexCSS} media="print" onload={`this.media='all'`} />}
 
 <!-- Site Links -->
 <link rel="canonical" href={Astro.url} />

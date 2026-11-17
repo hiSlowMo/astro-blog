@@ -29,6 +29,7 @@ interface Props {
   postSlug?: string
   supportedLangs?: Language[]
   enableContentEnhancements?: boolean
+  enableKatex?: boolean
 }
 
 const {
@@ -39,6 +40,7 @@ const {
   postSlug,
   supportedLangs = [],
   enableContentEnhancements = false,
+  enableKatex = false,
 } = Astro.props
 const { isPost, isSearch, isMoments, isAbout, isArchive, isTag, isLinks } = getPageInfo(Astro.url.pathname)
 // Each section of the site gets its own sky, the rest share the clouds
@@ -65,7 +67,7 @@ const MarginBottom = isPost && themeConfig.comment.enabled
     isPost ? 'scroll-smooth' : '',
   ]}
 >
-  <Head {pageTitle} {pageDescription} {postTitle} {postDescription} {postSlug} />
+  <Head {pageTitle} {pageDescription} {postTitle} {postDescription} {postSlug} {enableKatex} />
   <body data-pagefind-ignore={isPost ? undefined : 'all'}>
     <AsciiSky scene={skyScene} />
     <div

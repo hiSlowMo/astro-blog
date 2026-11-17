@@ -15,6 +15,76 @@ function isWhitespaceText(node) {
   return node?.type === 'text' && node.value.trim() === ''
 }
 
+// Mirrors the article widths in reading.css (min(100% - 7rem, 44rem) from
+// 768px up) and the generic Layout.astro container below that breakpoint.
+const ARTICLE_CONTENT_WIDTH = 'min(calc(100vw - 7rem), 44rem)'
+const TABLET_CONTENT_WIDTH = 'calc(min(100vw, 45rem) - 5rem)'
+const PHONE_CONTENT_WIDTH = 'calc(100vw - 2.7rem)'
+const NARROW_CONTENT_WIDTH = '88vw'
+
+const CONTENT_IMAGE_SIZES = [
+  `(min-width: 768px) ${ARTICLE_CONTENT_WIDTH}`,
+  `(min-width: 640px) ${TABLET_CONTENT_WIDTH}`,
+  `(min-width: 360px) ${PHONE_CONTENT_WIDTH}`,
+  NARROW_CONTENT_WIDTH,
+].join(', ')
+
+// Gallery items cap at 80% of the content column, 70% on lg screens.
+const GALLERY_IMAGE_SIZES = [
+  '(min-width: 1024px) 493px',
+  '(min-width: 768px) min(calc(80vw - 5.6rem), 35.2rem)',
+  '(min-width: 640px) calc(min(80vw, 36rem) - 4rem)',
+  '(min-width: 360px) calc(80vw - 2.16rem)',
+  '70.4vw',
+].join(', ')
+
+function applyLoadingAttributes(imgNode) {
+  const properties = imgNode.properties ?? (imgNode.properties = {})
+  properties.loading ??= 'lazy'
+  properties.decoding ??= 'async'
+}
+
+function applyContentImageSizes(imgNode, width) {
+  const properties = imgNode.properties ?? (imgNode.properties = {})
+  properties.sizes ??= getSizesForWidth(width)
+}
+
+function applyGalleryImageSizes(imgNode) {
+  const properties = imgNode.properties ?? (imgNode.properties = {})
+  properties.sizes ??= GALLERY_IMAGE_SIZES
+}
+
+function formatSize(value) {
+  return Number(value.toFixed(3))
+}
+
+function getSizesForWidth(width) {
+  if (!width) {
+    return CONTENT_IMAGE_SIZES
+  }
+
+  const percentMatch = width.match(/^(\d+(?:\.\d+)?)%$/)
+  if (!percentMatch) {
+    return [
+      `(min-width: 768px) min(${width}, ${ARTICLE_CONTENT_WIDTH})`,
+      `(min-width: 640px) min(${width}, ${TABLET_CONTENT_WIDTH})`,
+      `(min-width: 360px) min(${width}, ${PHONE_CONTENT_WIDTH})`,
+      `min(${width}, ${NARROW_CONTENT_WIDTH})`,
+    ].join(', ')
+  }
+
+  const ratio = Math.min(Number(percentMatch[1]) / 100, 1)
+  const vw = value => `${formatSize(value)}vw`
+  const rem = value => `${formatSize(value)}rem`
+
+  return [
+    `(min-width: 768px) min(calc(${vw(100 * ratio)} - ${rem(7 * ratio)}), ${rem(44 * ratio)})`,
+    `(min-width: 640px) calc(min(${vw(100 * ratio)}, ${rem(45 * ratio)}) - ${rem(5 * ratio)})`,
+    `(min-width: 360px) calc(${vw(100 * ratio)} - ${rem(2.7 * ratio)})`,
+    vw(88 * ratio),
+  ].join(', ')
+}
+
 function normalizeCssSize(value) {
   if (!value) {
     return null
@@ -103,9 +173,28 @@ function createParagraph(children) {
 }
 
 function createFigure(imgNode, isInGallery = false) {
-  const altText = imgNode.properties?.alt
   const { width } = parseImageOptions(imgNode)
-  const shouldSkipCaption = !altText || altText.startsWith('_')
+
+  if (isInGallery) {
+    applyGalleryImageSizes(imgNode)
+  }
+  else {
+    applyContentImageSizes(imgNode, width)
+  }
+
+  const rawAltText = imgNode.properties?.alt
+  const shouldSkipCaption = !rawAltText || rawAltText.startsWith('_')
+  // A leading underscore marks alt text that should not become a visible caption.
+  // Keep the text itself in the alt attribute for accessibility.
+  const altText = shouldSkipCaption && typeof rawAltText === 'string'
+    ? rawAltText.replace(/^_/, '')
+    : rawAltText
+
+  if (altText !== rawAltText) {
+    imgNode.properties ??= {}
+    imgNode.properties.alt = altText
+  }
+
   const shouldWrapImage = isInGallery || !shouldSkipCaption || !!width
 
   if (!shouldWrapImage) {
@@ -156,6 +245,10 @@ export function rehypeImageProcessor() {
 
       if (imgNodes.length === 0) {
         return
+      }
+
+      for (const imgNode of imgNodes) {
+        applyLoadingAttributes(imgNode)
       }
 
       const isInGallery = parent?.properties?.className?.includes('gallery-container')

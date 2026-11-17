@@ -5,6 +5,7 @@ import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { ui } from '@/i18n/ui'
 import Layout from '@/layouts/Layout.astro'
+import { hasMathContent } from '@/utils/math'
 
 export async function getStaticPaths() {
   return allLocales.map(lang => ({
@@ -22,6 +23,7 @@ const allMoments = await getCollection(
 const moments = allMoments.sort(
   (a, b) => b.data.published.valueOf() - a.data.published.valueOf(),
 )
+const hasMath = moments.some(moment => hasMathContent(moment.body, moment.filePath))
 const renderedMoments = await Promise.all(
   moments.map(async (moment) => {
     const { Content } = await render(moment)
@@ -49,6 +51,7 @@ function formatMomentDate(date: Date) {
   pageTitle={currentUI.moments}
   pageDescription={currentUI.momentsIntro}
   enableContentEnhancements
+  enableKatex={hasMath}
 >
   <div class="uno-decorative-line" />
 
