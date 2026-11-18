@@ -1,0 +1,560 @@
+---
+// SUBMIT AN ALBUM — the application form for THE SLOWMO RECORDS.
+import SiteInfoCopy from '@/components/Records/SiteInfoCopy.astro'
+import { allLocales, themeConfig } from '@/config'
+import { applyRules, siteProfile } from '@/data/friend-links'
+import { getLangRouteParam } from '@/i18n/lang'
+import RecordLayout from '@/layouts/RecordLayout.astro'
+import { getPageInfo } from '@/utils/page'
+
+export async function getStaticPaths() {
+  return allLocales.map(lang => ({
+    params: { lang: getLangRouteParam(lang) },
+  }))
+}
+
+const { getLocalizedPath } = getPageInfo(Astro.url.pathname)
+const linksPath = getLocalizedPath('/links/')
+const contactEmail = themeConfig.footer.links
+  .map(link => link.url)
+  .find(url => /^mailto:/i.test(url))
+  ?.replace(/^mailto:/i, '')
+const mailHref = contactEmail ? `mailto:${contactEmail}` : undefined
+---
+
+<RecordLayout
+  pageTitle="提交站点信息 · THE SLOWMO RECORDS"
+  pageDescription="向 THE SLOWMO RECORDS 推荐一个独立博客：先把 SlowMo's 办事处加入你的友链，再填写站点与署名信息。"
+  backHref={linksPath}
+  backLabel="BACK TO THE RECORDS"
+>
+  <div class="submit-page">
+    <!-- Header -->
+    <header class="submit-head rec-fade">
+      <p class="rec-label">THE SLOWMO RECORDS <span class="submit-head__sep">/</span> SUBMISSIONS</p>
+      <h1 class="submit-head__title">推荐一张专辑</h1>
+      <p class="submit-head__en">SUBMIT AN ALBUM</p>
+      <p class="submit-head__status" role="note">
+        <span class="submit-head__dot" aria-hidden="true"></span>
+        <span class="rec-label">STATUS /</span>
+        <span>开放申请 · 人工审核</span>
+      </p>
+    </header>
+
+    <div class="submit-grid">
+      <!-- Step 01: this site's details -->
+      <aside class="submit-side rec-fade" aria-labelledby="step-site" style="--fade-delay: 120ms">
+        <p class="rec-label">STEP 01</p>
+        <h2 class="submit-side__title" id="step-site">请先将本站添加到贵站友链列表中</h2>
+        <SiteInfoCopy profile={siteProfile} />
+
+        <div class="house-rules">
+          <p class="rec-label">HOUSE RULES / 几点说明</p>
+          <ul>
+            {applyRules.map(rule => <li>{rule}</li>)}
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Step 02: the form -->
+      <div class="submit-main rec-fade" style="--fade-delay: 180ms">
+        <p class="rec-label">STEP 02</p>
+        <h2 class="submit-side__title" id="step-form">填写专辑信息</h2>
+
+        <noscript>
+          <p class="form-noscript">请开启 JavaScript 以提交表单。{mailHref && <>也可发邮件至 <a class="rec-link" href={mailHref}>{contactEmail}</a>。</>}</p>
+        </noscript>
+
+        <!-- method="dialog": even without JavaScript, submitting never sends anything anywhere -->
+        <form class="record-form" method="dialog" data-record-form aria-labelledby="step-form">
+          <fieldset class="form-group">
+            <legend class="form-group__legend"><span class="form-group__key">A /</span> THE ALBUM</legend>
+
+            <div class="form-grid">
+              <div class="form-field" data-field>
+                <label class="form-field__label" for="f-name">站点名称 <span class="req" aria-hidden="true">*</span></label>
+                <input class="form-field__input" id="f-name" name="name" type="text" required maxlength="40" autocomplete="organization" aria-describedby="f-name-error" />
+                <p class="form-field__error" id="f-name-error" data-error></p>
+              </div>
+
+              <div class="form-field" data-field>
+                <label class="form-field__label" for="f-url">站点链接 <span class="req" aria-hidden="true">*</span></label>
+                <input class="form-field__input" id="f-url" name="url" type="url" required inputmode="url" autocomplete="url" placeholder="https://" aria-describedby="f-url-error" />
+                <p class="form-field__error" id="f-url-error" data-error></p>
+              </div>
+
+              <div class="form-field form-field--wide" data-field>
+                <label class="form-field__label" for="f-desc">站点简介 <span class="req" aria-hidden="true">*</span></label>
+                <input class="form-field__input" id="f-desc" name="description" type="text" required maxlength="60" aria-describedby="f-desc-error" />
+                <p class="form-field__error" id="f-desc-error" data-error></p>
+              </div>
+
+              <div class="form-field" data-field>
+                <label class="form-field__label" for="f-icon">图标链接 <span class="req" aria-hidden="true">*</span></label>
+                <input class="form-field__input" id="f-icon" name="icon" type="url" required inputmode="url" placeholder="https://" aria-describedby="f-icon-error" />
+                <p class="form-field__error" id="f-icon-error" data-error></p>
+              </div>
+
+              <div class="form-field" data-field>
+                <label class="form-field__label" for="f-rss">RSS / Feed</label>
+                <input class="form-field__input" id="f-rss" name="rss" type="url" inputmode="url" placeholder="https://" aria-describedby="f-rss-error" />
+                <p class="form-field__error" id="f-rss-error" data-error></p>
+              </div>
+              {([['cover', '专辑封面地址'], ['article', '代表文章链接']] as const).map(([name, label]) => (
+                <div class="form-field" data-field>
+                  <label class="form-field__label" for={`f-${name}`}>{label}</label>
+                  <input class="form-field__input" id={`f-${name}`} name={name} type="url" placeholder="https://" aria-describedby={`f-${name}-error`} />
+                  <p class="form-field__error" id={`f-${name}-error`} data-error></p>
+                </div>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset class="form-group">
+            <legend class="form-group__legend"><span class="form-group__key">B /</span> THE ARTIST</legend>
+
+            <div class="form-grid">
+              <div class="form-field" data-field>
+                <label class="form-field__label" for="f-artist">署名 <span class="req" aria-hidden="true">*</span></label>
+                <input class="form-field__input" id="f-artist" name="artist" type="text" required maxlength="40" autocomplete="nickname" aria-describedby="f-artist-error" />
+                <p class="form-field__error" id="f-artist-error" data-error></p>
+              </div>
+
+              <div class="form-field" data-field>
+                <label class="form-field__label" for="f-email">联系邮箱 <span class="req" aria-hidden="true">*</span></label>
+                <input class="form-field__input" id="f-email" name="email" type="email" required inputmode="email" autocomplete="email" aria-describedby="f-email-error" />
+                <p class="form-field__error" id="f-email-error" data-error></p>
+              </div>
+
+              <div class="form-field form-field--wide" data-field>
+                <label class="form-field__label" for="f-genre">类型标签</label>
+                <input class="form-field__input" id="f-genre" name="genres" type="text" maxlength="60" placeholder="Network, Anime, Mindset" aria-describedby="f-genre-error" />
+                <p class="form-field__error" id="f-genre-error" data-error></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <label><input type="checkbox" name="rules" required /> 我已阅读并同意申请规则</label>
+          <label hidden aria-hidden="true">请留空<input name="website" tabindex="-1" autocomplete="off" /></label>
+          <div class="form-actions">
+            <button class="form-submit" type="submit">
+              <span>提交申请</span>
+              <span class="rec-arrow" aria-hidden="true">↗</span>
+            </button>
+            <p class="form-actions__summary" data-form-summary aria-live="polite"></p>
+          </div>
+        </form>
+
+        <!-- What happens after a clean form: the honest answer -->
+        <section class="submit-result" data-submit-result hidden tabindex="-1" aria-labelledby="submit-result-title">
+          <h3 class="submit-result__title" id="submit-result-title">申请已收到，等待审核</h3>
+          <p class="submit-result__text" data-receipt></p>
+          <div class="submit-result__actions" data-copy-scope>
+            <button type="button" class="submit-result__button" data-copy-value="" data-copy-label="申请信息" data-submit-copy>
+              复制申请信息
+            </button>
+            <p class="submit-result__status" data-copy-status aria-live="polite"></p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</RecordLayout>
+
+<script>
+import '@/scripts/records-page'
+import '@/scripts/records-submit'
+</script>
+
+<style>
+  /* ── Header ───────────────────────────────────────────── */
+  .submit-head {
+    padding-bottom: clamp(1.25rem, 2.4vw, 1.6rem);
+    border-bottom: 1px solid var(--rec-rule);
+  }
+
+  .submit-head__sep {
+    margin: 0 0.35em;
+    color: var(--rec-faint);
+  }
+
+  .submit-head__title {
+    margin: 0.7rem 0 0;
+    color: var(--rec-ink);
+    font-family: var(--rec-serif);
+    font-size: clamp(1.85rem, 1.25rem + 2.2vw, 2.75rem);
+    font-weight: 800;
+    line-height: 1.08;
+  }
+
+  .submit-head__en {
+    margin: 0.45rem 0 0;
+    color: var(--rec-muted);
+    font-family: var(--rec-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.32em;
+  }
+
+  .submit-head__status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.6rem;
+    max-width: 46rem;
+    margin: 1rem 0 0;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--rec-hair);
+    color: var(--rec-ink);
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  /* An empty square: the line is not live yet */
+  .submit-head__dot {
+    flex: none;
+    width: 0.55rem;
+    height: 0.55rem;
+    border: 1px solid currentColor;
+    transform: translateY(-0.05em);
+  }
+
+  /* ── Layout ───────────────────────────────────────────── */
+  .submit-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    padding-top: clamp(1.5rem, 3vw, 2.25rem);
+  }
+
+  .submit-side,
+  .submit-main {
+    min-width: 0;
+  }
+
+  .submit-side__title {
+    margin: 0.3rem 0 0.85rem;
+    color: var(--rec-ink);
+    font-family: var(--rec-serif);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .house-rules {
+    margin-top: 1.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rec-hair);
+  }
+
+  .house-rules ul {
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .house-rules li {
+    position: relative;
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    color: var(--rec-ink-2);
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+
+  .house-rules li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--rec-faint);
+  }
+
+  /* ── Form ─────────────────────────────────────────────── */
+  .form-noscript {
+    margin: 1rem 0 0;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--rec-hair);
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+
+  .req {
+    color: var(--rec-ink);
+    font-family: var(--rec-mono);
+    font-weight: 700;
+  }
+
+  .form-group {
+    min-width: 0;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .form-group__legend {
+    width: 100%;
+    padding: 0 0 0.45rem;
+    border-bottom: 1px solid var(--rec-rule);
+    color: var(--rec-ink);
+    font-family: var(--rec-serif);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  .form-group__key {
+    color: var(--rec-muted);
+    font-family: var(--rec-mono);
+    font-size: 0.8125rem;
+    font-weight: 400;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0 1.5rem;
+  }
+
+  .form-field {
+    min-width: 0;
+    padding-top: 0.85rem;
+  }
+
+  .form-field__label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    color: var(--rec-ink);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  .form-field__input {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    min-height: 2.6rem;
+    margin-top: 0.3rem;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid var(--rec-hair);
+    border-radius: 0;
+    background-color: oklch(var(--un-preset-theme-colors-background));
+    color: var(--rec-ink);
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1.5;
+    transition: border-color var(--motion-fast, 160ms) ease, box-shadow var(--motion-fast, 160ms) ease;
+    appearance: none;
+  }
+
+  .form-field__input::placeholder {
+    color: var(--rec-faint);
+    opacity: 0.7;
+  }
+
+  .form-field__input:hover {
+    border-color: oklch(var(--un-preset-theme-colors-secondary) / 0.55);
+  }
+
+  .form-field__input:focus-visible {
+    outline: none;
+    border-color: var(--rec-ink);
+    box-shadow: inset 0 0 0 1px var(--rec-ink);
+  }
+
+  .form-field__error {
+    margin: 0;
+    color: var(--rec-ink);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  .form-field__error:not(:empty) {
+    margin-top: 0.35rem;
+  }
+
+  .form-field__error:not(:empty)::before {
+    content: '✕ ';
+    font-family: var(--rec-mono);
+    font-weight: 400;
+  }
+
+  /* An invalid field gets a heavier ink rule, never a colour */
+  .form-field[data-invalid] .form-field__input {
+    border-color: var(--rec-ink);
+    border-left-width: 3px;
+  }
+
+  .form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rec-rule);
+  }
+
+  .form-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2.5rem;
+    min-height: 2.75rem;
+    margin: 0;
+    padding: 0 1.1rem;
+    border: 0;
+    border-radius: 0;
+    background-color: var(--rec-ink);
+    color: oklch(var(--un-preset-theme-colors-background));
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background-color var(--motion-fast, 160ms) ease;
+  }
+
+  .form-submit:hover,
+  .form-submit:focus-visible {
+    background-color: oklch(var(--un-preset-theme-colors-primary) / 0.82);
+  }
+
+  .form-submit:active {
+    background-color: oklch(var(--un-preset-theme-colors-primary) / 0.72);
+  }
+
+  .form-actions__summary {
+    margin: 0;
+    color: var(--rec-ink);
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  /* ── Result ───────────────────────────────────────────── */
+  .submit-result {
+    margin-top: 1.75rem;
+    padding: 1.15rem 1.15rem 1rem;
+    border: 1px solid var(--rec-hair);
+    border-top: 3px solid var(--rec-ink);
+  }
+
+  .submit-result[hidden] {
+    display: none;
+  }
+
+  .submit-result:focus {
+    outline: none;
+  }
+
+  .submit-result:focus-visible {
+    outline: 2px solid oklch(var(--un-preset-theme-colors-accent));
+    outline-offset: 3px;
+  }
+
+  .submit-result__title {
+    margin: 0.3rem 0 0;
+    color: var(--rec-ink);
+    font-family: var(--rec-serif);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .submit-result__text {
+    max-width: 40em;
+    margin: 0.6rem 0 0;
+    color: var(--rec-ink-2);
+    font-size: 0.875rem;
+    line-height: 1.8;
+  }
+
+  .submit-result__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1.5rem;
+    margin-top: 0.9rem;
+  }
+
+  .submit-result__button {
+    min-height: 2.75rem;
+    margin: 0;
+    padding: 0 1rem;
+    border: 1px solid var(--rec-ink);
+    border-radius: 0;
+    background: none;
+    color: var(--rec-ink);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background-color var(--motion-fast, 160ms) ease;
+  }
+
+  .submit-result__button:hover,
+  .submit-result__button:focus-visible {
+    background-color: oklch(var(--un-preset-theme-colors-primary) / 0.06);
+  }
+
+  .submit-result__button:active,
+  .submit-result__button[data-copy-state] {
+    background-color: oklch(var(--un-preset-theme-colors-primary) / 0.12);
+  }
+
+  .submit-result__status {
+    flex-basis: 100%;
+    min-height: 1.3rem;
+    margin: 0.25rem 0 0;
+    color: var(--rec-muted);
+    font-family: var(--rec-mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+  }
+
+  .submit-result__status[data-state='failed'] {
+    color: var(--rec-ink);
+  }
+
+  .submit-result__status :global(.copy-status__value) {
+    display: block;
+    max-height: 12rem;
+    margin-top: 0.4rem;
+    padding: 0.6rem 0.7rem;
+    overflow: auto;
+    border: 1px solid var(--rec-hair);
+    color: var(--rec-ink);
+    user-select: all;
+  }
+
+  .submit-result__status[data-state='done'] :global(.copy-status__value) {
+    display: none;
+  }
+
+  /* ── Tablet & desktop ─────────────────────────────────── */
+  @media (min-width: 48rem) {
+    .form-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .form-field--wide {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .submit-grid {
+      grid-template-columns: clamp(17.5rem, 24vw, 20rem) minmax(0, 1fr);
+      gap: clamp(2rem, 4vw, 3.5rem);
+    }
+
+    .submit-side {
+      position: sticky;
+      top: 1.5rem;
+      align-self: start;
+    }
+  }
+</style>

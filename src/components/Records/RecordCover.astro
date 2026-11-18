@@ -1,0 +1,90 @@
+---
+// The album cover is the site's own icon, centred on a square and never stretched or cropped.
+// If the favicon fails, src/scripts/records-page.ts tries the apple-touch-icon, then falls back
+// to one neutral placeholder shared by every album.
+import type { FriendAlbum } from '@/data/friend-links'
+import { getCoverSource } from '@/utils/records'
+
+interface Props {
+  album: Pick<FriendAlbum, 'url' | 'icon' | 'appleTouchIcon' | 'iconSize' | 'iconBackground'>
+  /** Eager-load the cover image when it sits in the first screen. */
+  eager?: boolean
+  class?: string
+}
+
+const { album, eager = false, class: className } = Astro.props
+const { src, fallbackSrc, size, background } = getCoverSource(album)
+// A raster icon is never enlarged past its own pixel size; an SVG fills the square
+const style = [
+  size && `--icon-max: ${size}px`,
+  background && `--icon-bg: ${background}`,
+].filter(Boolean).join('; ') || undefined
+---
+
+<div
+  class:list={['record-cover', className]}
+  style={style}
+  data-cover
+  data-cover-state={src ? undefined : 'failed'}
+  aria-hidden="true"
+>
+  {src && (
+    <img
+      class="record-cover__img"
+      src={src}
+      alt=""
+      width={size ?? 256}
+      height={size ?? 256}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      referrerpolicy="no-referrer"
+      data-fallback-src={fallbackSrc}
+    />
+  )}
+</div>
+
+<style>
+  .record-cover {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    width: 100%;
+    overflow: hidden;
+    background-color: var(--icon-bg, oklch(var(--un-preset-theme-colors-secondary) / 0.08));
+  }
+
+  /* A hairline keeps a white cover from melting into a white page */
+  .record-cover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 1px oklch(var(--un-preset-theme-colors-primary) / 0.1);
+    pointer-events: none;
+  }
+
+  .record-cover__img {
+    display: block;
+    width: min(100%, var(--icon-max, 100%));
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: contain;
+  }
+
+  /* One placeholder for every icon that could not load: a thin ring on a neutral square */
+  .record-cover[data-cover-state='failed'] {
+    background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.08);
+  }
+
+  .record-cover[data-cover-state='failed'] .record-cover__img {
+    display: none;
+  }
+
+  .record-cover[data-cover-state='failed']::before {
+    content: '';
+    width: 38%;
+    aspect-ratio: 1;
+    border: 1px solid oklch(var(--un-preset-theme-colors-primary) / 0.22);
+    border-radius: 50%;
+  }
+</style>

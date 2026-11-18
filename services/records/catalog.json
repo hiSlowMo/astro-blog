@@ -1,0 +1,75 @@
+[
+  {
+    "catalogNo": "001",
+    "name": "WEP",
+    "url": "https://taoran.weppp.cyou/",
+    "description": "How's your day been?",
+    "artist": "WEP",
+    "icon": "https://taoran.weppp.cyou/icon.svg",
+    "iconBackground": "#161616",
+    "rss": "https://taoran.weppp.cyou/rss.xml",
+    "genres": [
+      "AI",
+      "Agent",
+      "LLM"
+    ],
+    "addedAt": "2026-11-17",
+    "tracks": [
+      {
+        "title": "莫名爆火的项目，这流量我是真吃不下，流程记录",
+        "url": "https://taoran.weppp.cyou/posts/github-hghub",
+        "date": "2026-11-10",
+        "excerpt": "开源后不到三天，stars 莫名涨到了 1k+ ，很诧异，但这个repo太新，traffic 都没数据。"
+      },
+      {
+        "title": "基于deepseek的一些行为的感悟——《当没有人给 AI 下命令时，它会做什么？》",
+        "url": "https://taoran.weppp.cyou/posts/deepseek",
+        "date": "2026-09-08",
+        "excerpt": "我很喜欢跟 AI 日常聊天，聊各种有的没的，但是又比较注重隐私，于是自己搞了个跨端的日常聊天软件。"
+      },
+      {
+        "title": "Mechanically Strong, Cognitively Weak：我对 Agent Harness 的一次认知修正",
+        "url": "https://taoran.weppp.cyou/posts/agent",
+        "date": "2026-08-09",
+        "excerpt": "但在继续学习和实践 Agent 的过程中，我发现，自己过去对“弱 Harness”的理解存在一个很大的偏差。"
+      }
+    ]
+  },
+  {
+    "catalogNo": "002",
+    "name": "記緒漂流",
+    "url": "https://ttio.cc",
+    "description": "于记忆之川，泛思绪之舟。",
+    "artist": "TuyuriTio",
+    "icon": "https://ttio.cc/favicon-96x96.png",
+    "iconSize": 96,
+    "iconBackground": "#ffffff",
+    "rss": "https://ttio.cc/feed.xml",
+    "genres": [
+      "Network",
+      "Anime",
+      "Mindset"
+    ],
+    "addedAt": "2026-11-18",
+    "tracks": [
+      {
+        "title": "Tailscale 内网 HTTPS 统一路由方案",
+        "url": "https://ttio.cc/jotting/tailscale-https",
+        "date": "2026-09-30",
+        "excerpt": "带有端口的 Docker 访问方式并非长久之计，通过子域名访问相对更具备语义，同时还能解决 HTTPS 的支持问题。"
+      },
+      {
+        "title": "Cloudflare One 集成 OAuth 访问控制",
+        "url": "https://ttio.cc/jotting/cloudflare-one-oauth",
+        "date": "2026-05-01",
+        "excerpt": "本文介绍笔者使用 Cloudflare One 集成 GitHub OAuth 访问控制，为无认证的记账 Web 端添加简洁身份验证，保障个人应用安全。"
+      },
+      {
+        "title": "打造专属记账助手",
+        "url": "https://ttio.cc/note/accounting-bot",
+        "date": "2026-04-27",
+        "excerpt": "本文记述笔者从快捷记账转向beancount，并利用Telegram Bot与AI自行开发自动化记账工具的历程与反思。"
+      }
+    ]
+  }
+]

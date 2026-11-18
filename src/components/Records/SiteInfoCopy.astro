@@ -1,0 +1,322 @@
+---
+// This site's details as a row of copy buttons: icon, name, description, homepage and feed.
+// Every button behaves the same way: one hover tint, one tooltip centred above it.
+// Behaviour lives in src/scripts/records-page.ts (one delegated listener for every copy button).
+import type { SiteProfile } from '@/data/friend-links'
+
+interface Props {
+  profile: SiteProfile
+}
+
+const { profile } = Astro.props
+---
+
+<div class="site-info" data-copy-scope>
+  <div class="site-info__row">
+    <button
+      type="button"
+      class="copy-btn site-info__icon"
+      data-copy-value={profile.icon}
+      data-copy-label="图标链接"
+      aria-label="复制图标链接"
+    >
+      <img src={profile.icon} alt="" width="44" height="44" loading="lazy" decoding="async" />
+      <span class="copy-tip" aria-hidden="true">点击复制图标链接</span>
+    </button>
+
+    <button
+      type="button"
+      class="copy-btn site-info__name"
+      data-copy-value={profile.name}
+      data-copy-label="站点名称"
+      aria-label={`复制站点名称：${profile.name}`}
+    >
+      <span class="site-info__text">{profile.name}</span>
+      <span class="copy-tip" aria-hidden="true">点击复制站点名称</span>
+    </button>
+
+    <span class="site-info__tools">
+      <button
+        type="button"
+        class="copy-btn site-info__tool"
+        data-copy-value={profile.url}
+        data-copy-label="站点链接"
+        aria-label="复制站点链接"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+        <span class="copy-tip" aria-hidden="true">点击复制站点链接</span>
+      </button>
+      {profile.rss && (
+        <button
+          type="button"
+          class="copy-btn site-info__tool"
+          data-copy-value={profile.rss}
+          data-copy-label=" Feed 链接"
+          aria-label="复制 Feed 链接"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M4 11a9 9 0 0 1 9 9" />
+            <path d="M4 4a16 16 0 0 1 16 16" />
+            <circle cx="5" cy="19" r="1" />
+          </svg>
+          <span class="copy-tip" aria-hidden="true">点击复制 Feed 链接</span>
+        </button>
+      )}
+    </span>
+
+    <button
+      type="button"
+      class="copy-btn site-info__desc"
+      data-copy-value={profile.description}
+      data-copy-label="站点简介"
+      aria-label={`复制站点简介：${profile.description}`}
+    >
+      <span class="site-info__text">{profile.description}</span>
+      <span class="copy-tip" aria-hidden="true">点击复制站点简介</span>
+    </button>
+  </div>
+
+  <!-- Read out on every copy; seen only when copying failed and the value has to be taken by hand -->
+  <p class="site-info__status" data-copy-status aria-live="polite"></p>
+</div>
+
+<style>
+  .site-info {
+    position: relative;
+    --copy-tint: oklch(var(--un-preset-theme-colors-primary) / 0.07);
+    --copy-tint-strong: oklch(var(--un-preset-theme-colors-primary) / 0.13);
+    container: site-info / inline-size;
+  }
+
+  .site-info__row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'icon name tools'
+      'icon desc desc';
+    align-items: center;
+    column-gap: 0.5rem;
+    padding: 0.6rem 0.4rem 0.6rem 0.6rem;
+    border: 1px solid var(--rec-hair);
+  }
+
+  /* ── Copy buttons: one look for all five ──────────────── */
+  .copy-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    min-height: 2.5rem;
+    margin: 0;
+    padding: 0 0.4rem;
+    border: 0;
+    border-radius: 2px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color var(--motion-fast, 160ms) ease, color var(--motion-fast, 160ms) ease;
+  }
+
+  @media (hover: hover) {
+    .copy-btn:hover {
+      background-color: var(--copy-tint);
+      color: var(--rec-ink);
+    }
+  }
+
+  .copy-btn:focus-visible {
+    background-color: var(--copy-tint);
+    color: var(--rec-ink);
+  }
+
+  /* A tap shows at once on touch screens, where there is no hover */
+  .copy-btn:active,
+  .copy-btn[data-copy-state] {
+    background-color: var(--copy-tint-strong);
+    color: var(--rec-ink);
+  }
+
+  .site-info__icon {
+    grid-area: icon;
+    align-self: start;
+    justify-content: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    padding: 0.3rem;
+  }
+
+  .site-info__icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px var(--rec-hair);
+  }
+
+  .site-info__name {
+    grid-area: name;
+    justify-self: start;
+    color: var(--rec-ink);
+    font-family: var(--rec-serif);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .site-info__desc {
+    grid-area: desc;
+    justify-self: start;
+    color: var(--rec-ink-2);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+  .site-info__text {
+    overflow-wrap: anywhere;
+  }
+
+  .site-info__tools {
+    grid-area: tools;
+    align-self: start;
+    display: flex;
+  }
+
+  .site-info__tool {
+    justify-content: center;
+    width: 2.5rem;
+    padding: 0;
+    color: var(--rec-muted);
+  }
+
+  .site-info__tool svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .site-info__tool circle {
+    fill: currentColor;
+  }
+
+  /* ── Tooltip: centred above its button, with a caret ──── */
+  .copy-tip {
+    --tip-shift: 0px;
+    position: absolute;
+    bottom: calc(100% + 0.45rem);
+    left: 50%;
+    z-index: 5;
+    padding: 0.3rem 0.55rem;
+    border-radius: 2px;
+    background-color: var(--rec-ink);
+    color: oklch(var(--un-preset-theme-colors-background));
+    font-family: var(--rec-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-style: normal;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(calc(-50% + var(--tip-shift)), 0.2rem);
+    transition:
+      opacity var(--motion-fast, 160ms) ease,
+      transform var(--motion-fast, 160ms) ease,
+      visibility 0s linear var(--motion-fast, 160ms);
+  }
+
+  /* The caret stays over the button even when the tip is nudged away from a screen edge */
+  .copy-tip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: calc(50% - var(--tip-shift));
+    border: 0.3rem solid transparent;
+    border-top-color: var(--rec-ink);
+    transform: translateX(-50%);
+  }
+
+  @media (hover: hover) {
+    .copy-btn:hover:not([data-tip-hidden]) > .copy-tip {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(calc(-50% + var(--tip-shift)), 0);
+      transition-delay: 0s;
+    }
+  }
+
+  .copy-btn:focus-visible:not([data-tip-hidden]) > .copy-tip,
+  .copy-btn[data-copy-state] > .copy-tip {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(calc(-50% + var(--tip-shift)), 0);
+    transition-delay: 0s;
+  }
+
+  /* ── Status line ──────────────────────────────────────── */
+  .site-info__status:not([data-state='failed']) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .site-info__status {
+    margin: 0.5rem 0 0;
+    color: var(--rec-muted);
+    font-family: var(--rec-mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    overflow-wrap: anywhere;
+  }
+
+  .site-info__status[data-state='failed'] {
+    color: var(--rec-ink);
+  }
+
+  .site-info__status :global(.copy-status__value) {
+    color: var(--rec-ink);
+    user-select: all;
+  }
+
+  .site-info__status[data-state='failed'] :global(.copy-status__value) {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+  }
+
+  /* Narrow cards: the link and feed buttons drop under the description */
+  @container site-info (max-width: 17.5rem) {
+    .site-info__row {
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas:
+        'icon name'
+        'icon desc'
+        'icon tools';
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .copy-btn,
+    .copy-tip {
+      transition: none;
+    }
+  }
+
+  :global(html.reduce-motion) :is(.copy-btn, .copy-tip) {
+    transition: none;
+  }
+</style>

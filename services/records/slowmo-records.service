@@ -1,0 +1,22 @@
+[Unit]
+Description=SlowMo Records API
+After=network.target
+
+[Service]
+User=slowmo-records
+WorkingDirectory=/srv/apps/slowmo-records
+StateDirectory=slowmo-records
+StateDirectoryMode=0700
+UMask=0077
+ExecStartPre=/usr/bin/python3 jobs.py init
+ExecStart=/usr/bin/gunicorn --bind 127.0.0.1:18735 --workers 1 --threads 3 app:app
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target

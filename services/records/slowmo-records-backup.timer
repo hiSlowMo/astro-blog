@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up the SlowMo database daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+Unit=slowmo-records@backup.service
+
+[Install]
+WantedBy=timers.target

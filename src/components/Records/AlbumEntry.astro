@@ -1,0 +1,252 @@
+---
+// One album on THE COLLECTION shelf: the record itself on top, its newest post underneath.
+import type { FriendAlbum } from '@/data/friend-links'
+import RecordCover from '@/components/Records/RecordCover.astro'
+import { formatRecordDate, getLatestTrack } from '@/utils/records'
+
+interface Props {
+  album: FriendAlbum
+}
+
+const { album } = Astro.props
+const track = getLatestTrack(album)
+const titleId = `record-${album.catalogNo}-title`
+---
+
+<article class="album" id={`record-${album.catalogNo}`} aria-labelledby={titleId}>
+  <div class="album__record">
+    <a
+      class="album__cover"
+      href={album.url}
+      target="_blank"
+      rel="noopener"
+      tabindex="-1"
+      aria-hidden="true"
+      data-umami-event="outbound-link-click"
+      data-umami-event-url={album.url}
+    >
+      <RecordCover album={album} />
+    </a>
+
+    <div class="album__info">
+      <p class="rec-label">RECORD NO. <span class="rec-value">{album.catalogNo}</span></p>
+      <h3 class="album__title" id={titleId}>
+        <a
+          class="album__link"
+          href={album.url}
+          target="_blank"
+          rel="noopener"
+          data-umami-event="outbound-link-click"
+          data-umami-event-url={album.url}
+        >
+          <span class="album__name">{album.name}</span>
+          <span class="rec-arrow album__arrow" aria-hidden="true">↗</span>
+        </a>
+      </h3>
+      {album.artist && <p class="rec-label album__artist">ARTIST / <span class="rec-value">{album.artist}</span></p>}
+      {album.description && <p class="album__notes">{album.description}</p>}
+      {album.genres && album.genres.length > 0 && (
+        <p class="rec-label album__genre">GENRE / <span class="rec-value">{album.genres.join(' · ')}</span></p>
+      )}
+    </div>
+  </div>
+
+    <div class="album__track" hidden={!track}>
+      <p class="rec-label album__track-label">
+        LATEST TRACK <span aria-hidden="true">/</span> <span class="album__track-note">最新曲目</span>
+      </p>
+      <a
+        class="album__track-title"
+        href={track?.url}
+        target="_blank"
+        rel="noopener"
+        data-umami-event="outbound-link-click"
+        data-umami-event-url={track?.url}
+      >
+        {track?.title}
+      </a>
+      <div class="album__track-foot">
+        <time class="rec-label album__track-date" hidden={!track?.date} datetime={track?.date}>{formatRecordDate(track?.date)}</time>
+        <a
+          class="rec-action album__track-read"
+          href={track?.url}
+          target="_blank"
+          rel="noopener"
+          data-umami-event="outbound-link-click"
+          data-umami-event-url={track?.url}
+        >
+          READ TRACK <span class="rec-arrow" aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </div>
+</article>
+
+<style>
+  /* Each album stands on its own: a hairline frame, no fill */
+  .album {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: clamp(1.125rem, 2.2vw, 1.5rem);
+    border: 1px solid var(--rec-hair);
+    scroll-margin-top: 1.5rem;
+  }
+
+  /* ── The record: cover first, then what it is ─────────── */
+  .album__record {
+    display: grid;
+    grid-template-columns: clamp(4rem, 20vw, 6rem) minmax(0, 1fr);
+    align-items: start;
+    column-gap: clamp(0.75rem, 3.5vw, 1.25rem);
+    padding-bottom: 1.25rem;
+  }
+
+  .album__cover {
+    display: block;
+    width: 100%;
+  }
+
+  .album__info {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .album__title {
+    margin: 0.3rem 0 0.2rem;
+    color: var(--rec-ink);
+    font-family: var(--rec-serif);
+    font-size: clamp(1.375rem, 1.2rem + 0.55vw, 1.625rem);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  /* A taller hit area for a short title, without moving the text */
+  .album__link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4em;
+    max-width: 100%;
+    padding: 0.5rem 0;
+    margin: -0.5rem 0;
+  }
+
+  .album__name {
+    overflow-wrap: anywhere;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color var(--motion-base, 220ms) ease;
+  }
+
+  .album__link:hover .album__name,
+  .album__link:focus-visible .album__name {
+    text-decoration-color: currentColor;
+  }
+
+  .album__arrow {
+    color: var(--rec-muted);
+    font-family: var(--rec-mono);
+    font-size: 0.8125rem;
+    font-weight: 400;
+  }
+
+  .album__notes {
+    margin: 0.5rem 0 0;
+    color: var(--rec-ink-2);
+    font-size: 0.875rem;
+    line-height: 1.65;
+  }
+
+  .album__genre {
+    margin-top: 0.45rem;
+    color: var(--rec-faint);
+  }
+
+  .album__genre .rec-value {
+    color: var(--rec-muted);
+  }
+
+  /* ── Latest track: quieter than the record above it ───── */
+  /* Pinned to the bottom, so tracks line up across a row of albums */
+  .album__track {
+    margin-top: auto;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--rec-hair);
+  }
+
+  .album__track-label {
+    color: var(--rec-faint);
+  }
+
+  .album__track-note {
+    margin-left: 0.4em;
+    font-family: var(--rec-sans);
+    letter-spacing: 0.04em;
+  }
+
+  /* Two lines at most */
+  .album__track-title {
+    display: -webkit-box;
+    margin-top: 0.4rem;
+    overflow: hidden;
+    color: var(--rec-ink);
+    font-size: 0.975rem;
+    font-weight: 500;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.3em;
+    transition:
+      color var(--motion-fast, 160ms) ease,
+      text-decoration-color var(--motion-base, 220ms) ease;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .album__track-title:hover,
+  .album__track-title:focus-visible {
+    color: var(--rec-ink);
+    text-decoration-color: currentColor;
+  }
+
+  .album__track-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0 1rem;
+    margin-top: 0.15rem;
+  }
+
+  .album__track-date {
+    color: var(--rec-muted);
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .album .album__track-read {
+    min-height: 2.75rem;
+    margin-left: auto;
+    color: var(--rec-ink-2);
+    font-size: 0.75rem;
+  }
+
+  /* ── Wider screens: cover beside the record ───────────── */
+  @media (min-width: 40rem) {
+    .album__record {
+      grid-template-columns: 6.5rem minmax(0, 1fr);
+      column-gap: 1.25rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .album__record {
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+      column-gap: 1.5rem;
+    }
+  }
+</style>

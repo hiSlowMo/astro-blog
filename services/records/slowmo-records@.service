@@ -1,0 +1,17 @@
+[Unit]
+Description=SlowMo Records %i
+After=network-online.target slowmo-records.service
+
+[Service]
+Type=oneshot
+User=slowmo-records
+WorkingDirectory=/srv/apps/slowmo-records
+StateDirectory=slowmo-records
+StateDirectoryMode=0700
+UMask=0077
+ExecStart=/usr/bin/python3 jobs.py %i
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+MemoryMax=192M

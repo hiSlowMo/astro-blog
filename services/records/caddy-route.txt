@@ -1,0 +1,10 @@
+	handle /records/v1/* {
+		request_body {
+			max_size 16KB
+		}
+		reverse_proxy unix//config/records/api.sock {
+			header_up X-Records-Client {remote_host}
+			header_up -Authorization
+			header_up -Cookie
+		}
+	}

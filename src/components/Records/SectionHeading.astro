@@ -1,0 +1,66 @@
+---
+interface Props {
+  /** Section number on the page, e.g. 01 */
+  no: string
+  title: string
+  /** Chinese caption next to the title */
+  caption?: string
+  id: string
+}
+
+const { no, title, caption, id } = Astro.props
+---
+
+<div class="records-heading">
+  <h2 class="records-heading__title" id={id}>
+    <span class="records-heading__no">{no}</span>
+    <span class="records-heading__slash" aria-hidden="true">/</span>
+    {title}
+  </h2>
+  {caption && <p class="records-heading__caption">{caption}</p>}
+  {Astro.slots.has('default') && (
+    <div class="records-heading__aside">
+      <slot />
+    </div>
+  )}
+</div>
+
+<style>
+  .records-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 1.5rem;
+    margin-bottom: clamp(1rem, 2vw, 1.35rem);
+  }
+
+  .records-heading__title {
+    margin: 0;
+    color: var(--rec-ink);
+    font-family: var(--rec-serif);
+    font-size: clamp(1.125rem, 1rem + 0.45vw, 1.375rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: 0.015em;
+    text-transform: uppercase;
+    font-variant-numeric: lining-nums;
+    scroll-margin-top: 1.5rem;
+  }
+
+  .records-heading__slash {
+    margin: 0 0.18em;
+    font-weight: 400;
+  }
+
+  .records-heading__caption {
+    margin: 0;
+    color: var(--rec-muted);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+  }
+
+  .records-heading__aside {
+    margin-left: auto;
+  }
+</style>

@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh SlowMo feeds every half hour
+
+[Timer]
+OnCalendar=*:0/30
+Persistent=true
+Unit=slowmo-records@sync.service
+
+[Install]
+WantedBy=timers.target

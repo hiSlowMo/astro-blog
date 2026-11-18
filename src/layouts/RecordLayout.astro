@@ -1,0 +1,310 @@
+---
+// Standalone full-width layout for THE SLOWMO RECORDS (/links/ only).
+// It keeps the site's Head (SEO, theme restore, ClientRouter), theme colours, fonts and the
+// shared theme switch, but drops the blog chrome: no side column, navbar, floating buttons or sky.
+import SoundEffect from '@/components/Widgets/SoundEffect.astro'
+import { themeConfig } from '@/config'
+import Head from '@/layouts/Head.astro'
+import { getPageInfo } from '@/utils/page'
+import '@fontsource-variable/playfair-display'
+import '@fontsource/noto-serif-sc/700.css'
+import '@/styles/global.css'
+import '@/styles/transition.css'
+
+interface Props {
+  pageTitle?: string
+  pageDescription?: string
+  /** Where the top bar's back link goes. Defaults to the blog home. */
+  backHref?: string
+  backLabel?: string
+}
+
+const { pageTitle, pageDescription, backHref, backLabel = 'BACK TO THESLOWMO' } = Astro.props
+const { getLocalizedPath } = getPageInfo(Astro.url.pathname)
+const homePath = getLocalizedPath('/')
+const backPath = backHref ?? homePath
+
+const {
+  light: { background: lightMode },
+  dark: { background: darkMode },
+} = themeConfig.color
+const fontStyle = themeConfig.global.fontStyle === 'serif' ? 'font-serif' : 'font-sans'
+const { title: siteTitle } = themeConfig.site
+const startYear = themeConfig.footer.startYear
+const currentYear = new Date().getFullYear()
+const yearRange = startYear && startYear < currentYear ? `${startYear}–${currentYear}` : String(currentYear)
+---
+
+<html lang={Astro.currentLocale} class={fontStyle}>
+  <Head {pageTitle} {pageDescription} />
+  <body data-pagefind-ignore="all">
+    <div class="records-shell">
+      <header class="records-topbar">
+        <a class="records-topbar__link" href={backPath}>
+          <span class="rec-arrow rec-arrow--back" aria-hidden="true">←</span>
+          <span>{backLabel}</span>
+        </a>
+        <button
+          id="theme-toggle-button"
+          class="records-topbar__link records-topbar__theme"
+          type="button"
+          data-light-mode={lightMode}
+          data-dark-mode={darkMode}
+          aria-label="切换深色与浅色主题"
+        >
+          <span class="records-topbar__theme-key records-topbar__theme-name">THEME:</span>
+          <span class="records-topbar__mode records-topbar__mode--dark">DARK</span>
+          <span class="records-topbar__theme-key" aria-hidden="true">/</span>
+          <span class="records-topbar__mode records-topbar__mode--light">LIGHT</span>
+        </button>
+      </header>
+
+      <main class="records-main">
+        <slot />
+      </main>
+
+      <footer class="records-colophon">
+        <p class="rec-label">THE SLOWMO RECORDS <span class="records-colophon__sep">/</span> <span class="records-colophon__owner">© {yearRange} {siteTitle}</span></p>
+        <a class="records-topbar__link" href={homePath}>
+          <span class="rec-arrow rec-arrow--back" aria-hidden="true">←</span>
+          <span>BACK TO THESLOWMO</span>
+        </a>
+      </footer>
+    </div>
+    <SoundEffect />
+  </body>
+</html>
+
+<script>
+// The same switch the rest of the site uses, so the theme stays in step across pages
+import '@/scripts/theme-toggle'
+</script>
+
+<style is:global>
+  /* Page tokens: the blog's own colours, set in black, white and grey */
+  .records-shell {
+    --rec-ink: oklch(var(--un-preset-theme-colors-primary));
+    --rec-ink-2: oklch(var(--un-preset-theme-colors-primary) / 0.84);
+    --rec-muted: oklch(var(--un-preset-theme-colors-secondary));
+    --rec-faint: oklch(var(--un-preset-theme-colors-secondary) / 0.86);
+    --rec-rule: oklch(var(--un-preset-theme-colors-primary) / 0.88);
+    --rec-hair: oklch(var(--un-preset-theme-colors-secondary) / 0.24);
+    --rec-serif: 'Playfair Display Variable', 'Source Han Serif SC', 'Songti SC', 'Noto Serif SC', Georgia, serif;
+    --rec-mono: var(--font-mono);
+    --rec-sans: var(--font-sans);
+  }
+
+  .records-shell .rec-label {
+    margin: 0;
+    color: var(--rec-muted);
+    font-family: var(--rec-mono);
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .records-shell .rec-value {
+    color: var(--rec-ink-2);
+    font-family: var(--rec-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.03em;
+    text-transform: none;
+  }
+
+  .records-shell .rec-link {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    transition: text-decoration-color var(--motion-base, 220ms) ease;
+  }
+
+  .records-shell .rec-link:hover,
+  .records-shell .rec-link:focus-visible {
+    text-decoration-color: currentColor;
+  }
+
+  .records-shell .rec-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    min-height: 2.75rem;
+    color: var(--rec-ink);
+    font-family: var(--rec-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.12em;
+    text-decoration: underline;
+    text-decoration-color: oklch(var(--un-preset-theme-colors-primary) / 0.3);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.45em;
+    transition: text-decoration-color var(--motion-base, 220ms) ease;
+  }
+
+  .records-shell .rec-action:hover,
+  .records-shell .rec-action:focus-visible {
+    text-decoration-color: currentColor;
+  }
+
+  .records-shell .rec-arrow {
+    display: inline-block;
+    transition: transform var(--motion-base, 220ms) var(--motion-ease-standard, ease);
+  }
+
+  .records-shell a:hover > .rec-arrow,
+  .records-shell a:focus-visible > .rec-arrow {
+    transform: translate(0.12em, -0.12em);
+  }
+
+  .records-shell a:hover > .rec-arrow--back,
+  .records-shell a:focus-visible > .rec-arrow--back {
+    transform: translateX(-0.2em);
+  }
+
+  /* No lone character left on the last line of a paragraph */
+  .records-main :is(p, li) {
+    text-wrap: pretty;
+  }
+
+  .records-shell :focus-visible {
+    outline: 2px solid oklch(var(--un-preset-theme-colors-accent));
+    outline-offset: 3px;
+  }
+
+  /* A gentle fade as the page's sections come in */
+  @keyframes records-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+  }
+
+  .records-shell .rec-fade {
+    animation: records-fade-in 520ms var(--motion-ease-enter, ease-out) both;
+    animation-delay: var(--fade-delay, 0ms);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .records-shell .rec-fade {
+      animation: none;
+    }
+
+    .records-shell .rec-arrow {
+      transition: none;
+    }
+  }
+
+  html.reduce-motion .records-shell .rec-fade {
+    animation: none;
+  }
+</style>
+
+<style>
+  .records-shell {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 70rem;
+    min-height: 100dvh;
+    margin: 0 auto;
+    padding: 0 clamp(1.125rem, 4vw, 3rem) max(2rem, env(safe-area-inset-bottom));
+    color: var(--rec-ink-2);
+    /* A hidden copy tooltip near the screen edge must not make the page scroll sideways */
+    overflow-x: clip;
+  }
+
+  .records-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--rec-hair);
+  }
+
+  .records-topbar__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55em;
+    min-height: 2.75rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--rec-ink);
+    font-family: var(--rec-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .records-topbar__theme {
+    gap: 0.45em;
+  }
+
+  .records-topbar__theme-key {
+    color: var(--rec-muted);
+  }
+
+  /* Both modes stay on screen; the active one is lit */
+  .records-topbar__mode {
+    color: var(--rec-faint);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.45em;
+    transition:
+      color var(--motion-fast, 160ms) ease,
+      text-decoration-color var(--motion-base, 220ms) ease;
+  }
+
+  :global(html.dark) .records-topbar__mode--dark,
+  :global(html:not(.dark)) .records-topbar__mode--light {
+    color: var(--rec-ink);
+    text-decoration-color: currentColor;
+  }
+
+  .records-topbar__theme:hover .records-topbar__mode {
+    color: var(--rec-ink);
+  }
+
+  .records-main {
+    padding-top: clamp(1.25rem, 3vw, 2.25rem);
+  }
+
+  .records-colophon {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--rec-hair);
+  }
+
+  .records-colophon__sep {
+    margin: 0 0.4em;
+    color: var(--rec-faint);
+  }
+
+  .records-colophon__owner {
+    white-space: nowrap;
+  }
+
+  /* Phones: smaller labels keep both controls on one line */
+  @media (max-width: 22.5rem) {
+    .records-topbar__link {
+      font-size: 0.6875rem;
+      letter-spacing: 0.08em;
+    }
+
+    /* DARK / LIGHT still reads as the switch; the button keeps its full accessible name */
+    .records-topbar__theme-name {
+      display: none;
+    }
+  }
+</style>

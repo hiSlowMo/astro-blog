@@ -1,0 +1,21 @@
+[Unit]
+Description=Private transport from API gateway to SlowMo Records
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=records-tunnel
+UMask=0077
+RuntimeDirectory=records-tunnel
+BindPaths=/srv/apps/magpie/caddy-config/records:/run/records-tunnel
+ExecStart=/usr/bin/ssh -NT -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/var/lib/records-tunnel/known_hosts -o ExitOnForwardFailure=yes -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o StreamLocalBindUnlink=yes -i /var/lib/records-tunnel/key -L /run/records-tunnel/api.sock:127.0.0.1:18735 records-forward@120.46.72.12
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectHome=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/apps/magpie/caddy-config/records
+
+[Install]
+WantedBy=multi-user.target
