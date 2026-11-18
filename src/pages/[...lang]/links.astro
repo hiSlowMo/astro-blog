@@ -308,9 +308,9 @@ import '@/scripts/records-tracks'
     margin: 0.55rem 0 0;
     color: var(--rec-muted);
     font-family: var(--rec-mono);
-    font-size: clamp(0.6875rem, 0.64rem + 0.15vw, 0.75rem);
+    font-size: clamp(0.75rem, 0.7rem + 0.15vw, 0.8125rem);
     line-height: 1.7;
-    letter-spacing: 0.32em;
+    letter-spacing: 0.26em;
     text-wrap: balance;
   }
 
@@ -365,8 +365,8 @@ import '@/scripts/records-tracks'
   .masthead__intro {
     max-width: 38rem;
     color: var(--rec-ink-2);
-    font-size: 0.875rem;
-    line-height: 1.75;
+    font-size: 0.9375rem;
+    line-height: 1.8;
   }
 
   .masthead__intro p {
@@ -388,7 +388,7 @@ import '@/scripts/records-tracks'
   }
 
   .masthead__submit .rec-label {
-    color: var(--rec-faint);
+    color: var(--rec-ink-2);
   }
 
   /* The one button on the page, framed like the submit button it leads to */
@@ -478,7 +478,7 @@ import '@/scripts/records-tracks'
     margin: 0.85rem 0 0;
     overflow: hidden;
     color: var(--rec-ink-2);
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     line-height: 1.75;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
@@ -575,7 +575,7 @@ import '@/scripts/records-tracks'
 
   .arrival__meta {
     overflow: hidden;
-    color: var(--rec-faint);
+    color: var(--rec-muted);
     white-space: nowrap;
     text-overflow: ellipsis;
     font-variant-numeric: tabular-nums;
@@ -704,7 +704,7 @@ import '@/scripts/records-tracks'
     /* Intro on the left, the submit entry in its own column on the right */
     .masthead__body {
       grid-template-columns: minmax(0, 1fr) auto;
-      align-items: stretch;
+      align-items: center;
       column-gap: clamp(2rem, 5vw, 4rem);
     }
 
