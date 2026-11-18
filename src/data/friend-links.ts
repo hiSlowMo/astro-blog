@@ -15,6 +15,11 @@ export const friendLinks: FriendLink[] = [
     url: 'https://taoran.weppp.cyou/',
     description: 'How\'s your day been?',
   },
+  {
+    name: '記緒漂流',
+    url: 'https://ttio.cc',
+    description: '于记忆之川，泛思绪之舟。',
+  },
 ]
 
 export const websiteLinks: FriendLink[] = []
