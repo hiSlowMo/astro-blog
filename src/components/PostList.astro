@@ -39,7 +39,7 @@ const isHome = isHomePage(Astro.url.pathname)
         <h3 class="inline-flex flex-wrap items-center gap-x-2 gap-y-1 transition-colors hover:c-primary">
           <a
             class:list={[
-              'text-pretty cjk:tracking-wide',
+              'text-pretty cjk:tracking-wide c-primary',
               isHome ? 'sm:(font-medium text-4.5)' : '',
             ]}
             href={getPostPath(slug, lang)}
