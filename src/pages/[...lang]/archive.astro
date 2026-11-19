@@ -22,8 +22,6 @@ const currentUI = ui[currentLang]
 
 const allPosts = Array.from(postsByYear.values()).flat()
 const categoryFilters = getUsedCategoryFilters(allPosts)
-const totalPosts = allPosts.length
-const totalWords = allPosts.reduce((sum, post) => sum + countMarkdownWords(post.body ?? '').total, 0)
 
 const { birthYear } = themeConfig.site
 
@@ -41,12 +39,13 @@ function getAgeForYear(year: number) {
   }
 
   const age = year - birthYear
-  return age > 0 ? `${age}岁` : ''
+  return age >= 0 ? `${age} 岁` : ''
 }
 ---
 
 <Layout pageTitle={currentUI.archive} pageDescription="按年份浏览 SlowMo 的全部公开文章，记录学习、技术实践与生活思考。">
   <div data-archive-root>
+    <h2 class="section-label archive-heading">{currentUI.archive} <small lang="en">ARCHIVE</small></h2>
     <section class="archive-toolbar font-navbar">
       <div class="archive-toolbar-left">
         <div class="archive-filter-dropdown" data-filter-dropdown data-open="0">
@@ -61,7 +60,7 @@ function getAgeForYear(year: number) {
             data-dropdown-trigger
           >
             <span class="archive-filter-icon" aria-hidden="true">
-              <svg viewBox="0 0 20 20" width="1em" height="1em"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 4h7l9 9-7 7-9-9zM14 4l9 9-7 7"/><circle cx="7" cy="8" r="1"/></svg>
             </span>
             <span class="archive-filter-label" data-dropdown-label>分类</span>
             <span class="archive-filter-caret" aria-hidden="true">
@@ -86,7 +85,7 @@ function getAgeForYear(year: number) {
               aria-selected="true"
             >
               <span class="archive-filter-icon" aria-hidden="true">
-                <svg viewBox="0 0 20 20" width="1em" height="1em"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 4h7l9 9-7 7-9-9zM14 4l9 9-7 7"/><circle cx="7" cy="8" r="1"/></svg>
               </span>
               全部
             </button>
@@ -107,35 +106,29 @@ function getAgeForYear(year: number) {
           </div>
         </div>
 
-        <button class="archive-filter-plain" type="button" data-sort-button aria-label="切换排序字段">
-          <span class="archive-filter-icon" aria-hidden="true">
-            <svg viewBox="0 0 20 20" width="1em" height="1em"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M5 4.5v2M15 4.5v2M4 8.5h12M5.5 11h3M11.5 11h3M5.5 14h3" /></svg>
-          </span>
+        <button class="archive-filter-plain" type="button" data-sort-button title="从新到旧排列，点击切换创建日期和更新日期">
           <span class="archive-sort-label">创建日期</span>
+          <span aria-hidden="true">↓</span>
+          <span class="sr-only">，从新到旧，点击切换排序字段</span>
         </button>
       </div>
 
-      <div class="archive-summary" data-total-words={totalWords} title="中文按字、英文和数字按词；不含代码、网址及图片信息">
-        <span>{formatWordCount(totalWords)}</span>
-        <span class="archive-summary-divider">·</span>
-        <span>{totalPosts} 篇</span>
-      </div>
     </section>
 
     <div class="archive-years">
       {[...postsByYear.entries()].map(([year, posts]) => {
-        const yearWords = posts.reduce((sum, post) => sum + countMarkdownWords(post.body ?? '').total, 0)
-        const yearStats = `${formatWordCount(yearWords)} · ${posts.length}篇`
         const yearAge = getAgeForYear(year)
+        const yearWords = posts.reduce((sum, post) => sum + countMarkdownWords(post.body ?? '').total, 0)
 
         return (
           <section class="archive-year" data-year={year}>
-            <div class="archive-year-watermark archive-year-watermark--year year-watermark font-title">{year}</div>
-
-            <div class="archive-year-watermark archive-year-watermark--age year-watermark font-title" aria-live="polite">
-              <span class="archive-year-age">{yearAge}</span>
-              <span class="archive-year-stats">{yearStats}</span>
-            </div>
+            <header class="archive-year-heading">
+              <h3 class="archive-year-watermark">{year}</h3>
+              <div class="archive-year-watermark archive-year-detail">
+                <span class="archive-year-age">{yearAge}</span>
+                <span class="archive-year-stats">{formatWordCount(yearWords)} · {posts.length}篇</span>
+              </div>
+            </header>
 
             <ul class="archive-list">
               {posts.map((post) => {
@@ -146,32 +139,30 @@ function getAgeForYear(year: number) {
                 return (
                   <li
                     class="archive-item"
-                    data-tags={tags.join(',')}
                     data-categories={categories.join(',')}
                     data-created={post.data.published.valueOf()}
                     data-updated={(post.data.updated ?? post.data.published).valueOf()}
                   >
                     <SortableDate class="archive-date font-time" date={post.data.published} updatedDate={post.data.updated} format="MM/DD" />
 
-                    <div class="archive-title-wrap">
-                      <a class="archive-title" href={getPostPath(slug, currentLang)}>
-                        {post.data.title}
-                      </a>
-                      {post.data.status && (
-                        <StatusBadge
-                          status={post.data.status}
-                          compact
-                        />
-                      )}
-                    </div>
-
-                    <div class="archive-tags">
-                      {tags.map(tag => (
-                        <a class="archive-tag" href={getTagPath(tag, currentLang)}>
-                          # {tag}
-                        </a>
-                      ))}
-                    </div>
+                    <a class="archive-title module-title" href={getPostPath(slug, currentLang)}>
+                      {post.data.title}
+                    </a>
+                    {(post.data.status || tags.length > 0) && (
+                      <div class="archive-meta">
+                        {post.data.status && <StatusBadge status={post.data.status} compact />}
+                        {tags.length > 0 && (
+                          <div class="archive-tags">
+                            {tags.slice(0, 2).map((tag, index) => (
+                              <span class="archive-tag-entry">
+                                <a class="archive-tag" href={getTagPath(tag, currentLang)} title={tag}>#{tag}</a>
+                                {index === 1 && tags.length > 2 && <span aria-label="更多标签见文章页">…</span>}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </li>
                 )
               })}
@@ -195,8 +186,12 @@ function getAgeForYear(year: number) {
     --archive-menu-close-duration: var(--motion-fast);
     --archive-layout-duration: var(--motion-slow);
     --archive-motion-easing: var(--motion-ease-standard);
-    --archive-filter-col-w: 7.5rem;
     --archive-sort-col-w: 6.25rem;
+  }
+
+  [data-archive-root] {
+    --archive-index-width: 5.75rem;
+    --archive-column-gap: .75rem;
   }
 
   [data-archive-root][data-layout-animating='1'] .archive-year,
@@ -205,12 +200,16 @@ function getAgeForYear(year: number) {
   }
 
   /* ===== 顶部工具栏 ===== */
+  .archive-heading {
+    margin: 0 0 1rem;
+  }
+
   .archive-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1.2rem;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
     position: relative;
     z-index: 30;
   }
@@ -218,25 +217,10 @@ function getAgeForYear(year: number) {
   .archive-toolbar-left {
     display: grid;
     align-items: center;
-    grid-template-columns: var(--archive-filter-col-w) var(--archive-sort-col-w);
-    gap: 0.45rem;
+    grid-template-columns: var(--archive-index-width) var(--archive-sort-col-w);
+    gap: var(--archive-column-gap);
     font-size: 0.9rem;
     color: oklch(var(--un-preset-theme-colors-secondary) / 0.75);
-  }
-
-  .archive-summary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1rem;
-    color: oklch(var(--un-preset-theme-colors-secondary) / 0.6);
-    white-space: nowrap;
-    position: relative;
-    z-index: 0;
-  }
-
-  .archive-summary-divider {
-    opacity: 0.6;
   }
 
   /* ===== 控件（summary/button）统一盒模型，避免不齐高 ===== */
@@ -245,7 +229,7 @@ function getAgeForYear(year: number) {
     display: inline-flex;
     align-items: stretch;
     height: var(--archive-control-h);
-    inline-size: var(--archive-filter-col-w);
+    inline-size: 100%;
     isolation: isolate;
     z-index: 1;
   }
@@ -259,9 +243,8 @@ function getAgeForYear(year: number) {
     align-items: center;
     gap: 0.3rem;
 
-    padding: 0 0.5rem;
-    /* 裸文字控件：透明边框只占位，保证 hover 时高度不变 */
-    border: 1px solid transparent;
+    padding: 0;
+    border: none;
     border-radius: 0;
     background: transparent;
     color: inherit;
@@ -427,7 +410,6 @@ function getAgeForYear(year: number) {
       opacity var(--archive-layout-duration) var(--archive-motion-easing),
       transform var(--archive-layout-duration) var(--archive-motion-easing),
       max-height var(--archive-layout-duration) var(--archive-motion-easing);
-    max-height: 999px;
     overflow: hidden;
     margin-bottom: 3.6rem;
   }
@@ -441,10 +423,18 @@ function getAgeForYear(year: number) {
   }
 
   /* ===== 年份水印（年份/年龄） ===== */
+  .archive-year-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .75rem;
+    line-height: 1;
+  }
+
   .archive-year-watermark {
-    font-family: var(--font-sans) !important;
-    position: absolute;
-    top: 0;
+    font-family: var(--font-sans);
+    font-size: var(--archive-year-font-size);
     font-weight: 700;
     letter-spacing: 0.001em;
     font-variant-numeric: tabular-nums;
@@ -480,54 +470,41 @@ function getAgeForYear(year: number) {
     }
   }
 
-  .archive-year-watermark--year {
-    left: 0.5rem;
-    font-size: var(--archive-year-font-size);
-  }
-
-  .archive-year-watermark--age {
-    right: 0;
+  .archive-year-detail {
+    display: grid;
     text-align: right;
-    min-width: 4ch;
-    display: inline-grid;
+    align-items: center;
     font-size: clamp(2.6rem, 6vw, 4.6rem);
+    white-space: nowrap;
   }
 
-  /* 年龄 / 统计：叠在同一格，通过 is-active 切换 */
   .archive-year-age,
   .archive-year-stats {
     grid-area: 1 / 1;
-    white-space: nowrap;
-    transition:
-      opacity var(--archive-layout-duration) var(--archive-motion-easing),
+    transition: opacity var(--archive-layout-duration) var(--archive-motion-easing),
       transform var(--archive-layout-duration) var(--archive-motion-easing);
   }
 
-  .archive-year-age {
-    font-size: 1em;
-    opacity: 1;
-    transform: translateY(0);
-  }
-
   .archive-year-stats {
-    font-size: 0.35em;
-    letter-spacing: 0.02em;
+    font-size: .35em;
+    letter-spacing: .02em;
+    -webkit-text-stroke-width: 0;
     opacity: 0;
-    transform: translateY(0.35rem);
+    transform: translateY(.35rem);
   }
 
   .archive-year.is-active .archive-year-watermark {
-    color: oklch(var(--un-preset-theme-colors-primary) / 0.8);
+    color: oklch(var(--un-preset-theme-colors-primary) / .8);
     -webkit-text-stroke-color: transparent;
   }
 
   .archive-year.is-active .archive-year-age {
     opacity: 0;
-    transform: translateY(-0.35rem);
+    transform: translateY(-.35rem);
   }
 
   .archive-year.is-active .archive-year-stats {
-    opacity: 0.75;
+    opacity: .75;
     transform: translateY(65%);
   }
 
@@ -535,22 +512,20 @@ function getAgeForYear(year: number) {
   .archive-list {
     list-style: none;
     margin: 0;
-    /* 随水印字号预留高度，让首行与水印之间保有间距。 */
-    padding: calc(var(--archive-year-font-size) + 0.75rem) 0 0;
+    padding: 0;
     position: relative;
     z-index: 1;
   }
 
   .archive-item {
     display: grid;
-    grid-template-columns: 3.6rem minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 1rem;
+    grid-template-columns: var(--archive-index-width) minmax(0, 1fr) minmax(0, 23%);
+    align-items: baseline;
+    gap: .12rem var(--archive-column-gap);
 
     /* 裸行：不加底色与描边，悬停只换文字色 */
-    padding: 0.15rem 0;
+    padding: .6rem 0;
 
-    max-height: 10rem;
     overflow: hidden;
 
     transition:
@@ -559,10 +534,6 @@ function getAgeForYear(year: number) {
       max-height var(--archive-layout-duration) var(--archive-motion-easing),
       padding var(--archive-layout-duration) var(--archive-motion-easing),
       margin var(--archive-layout-duration) var(--archive-motion-easing);
-  }
-
-  .archive-item + .archive-item {
-    margin-top: 0.15rem;
   }
 
   .archive-item.is-exiting {
@@ -602,33 +573,24 @@ function getAgeForYear(year: number) {
 
   .archive-date {
     /* 日期统一走站点等宽字体（JetBrains Mono），与其他页面一致 */
-    font-size: 1rem;
+    font-size: .875rem;
     color: oklch(var(--un-preset-theme-colors-secondary) / 0.9);
     letter-spacing: 0.09em;
   }
 
-  /* 归档标题沿用常规字重，避免浏览器对系统字体的中间字重匹配不一致。 */
   .archive-title {
-    font-size: 1.02rem;
-    font-weight: 400;
-    color: oklch(var(--un-preset-theme-colors-primary) / 0.92);
+    grid-column: 2;
     text-decoration: none;
-
-    margin: 0 -0.2rem;
-    letter-spacing: 0;
-
-    /* 防止挤压时标题把布局撑爆 */
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
 
-  .archive-title-wrap {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    min-width: 0;
+  .archive-meta {
+    display: contents;
+  }
+
+  .archive-meta :global(.status-badge) {
+    grid-column: 2;
+    grid-row: 2;
   }
 
   .archive-title:hover {
@@ -636,33 +598,53 @@ function getAgeForYear(year: number) {
   }
 
   .archive-tags {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: start;
     display: flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    font-size: 0.85rem;
-    color: oklch(var(--un-preset-theme-colors-secondary) / 0.5);
+    min-width: 0;
+    gap: .1rem .45rem;
+    padding-top: .18rem;
+    font-size: .8rem;
+    color: oklch(var(--un-preset-theme-colors-secondary));
+    white-space: nowrap;
   }
 
   .archive-tag {
+    overflow: hidden;
+    text-overflow: ellipsis;
     text-decoration: none;
     color: inherit;
     transition: color 180ms ease, opacity 180ms ease;
   }
 
-  .archive-item:hover .archive-tag,
-  .archive-item:focus-within .archive-tag {
-    color: oklch(var(--un-preset-theme-colors-secondary) / 0.75);
+  .archive-tag-entry {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    gap: .2em;
+  }
+
+  .archive-tag:hover,
+  .archive-tag:focus-visible {
+    color: oklch(var(--un-preset-theme-colors-primary) / .8);
   }
 
   /* ===== 手机适配 ===== */
   @media (max-width: 768px) {
+    [data-archive-root] {
+      --archive-index-width: 3.2rem;
+      --archive-column-gap: .6rem;
+    }
+
     .archive-toolbar {
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       gap: 0.55rem;
+      margin-bottom: .65rem;
     }
 
     .archive-toolbar-left {
@@ -675,17 +657,6 @@ function getAgeForYear(year: number) {
       width: auto;
       gap: 0.85rem;
       margin-inline-start: -0.4rem;
-    }
-
-    .archive-summary {
-      width: auto;
-      flex: 0 0 auto;
-      min-height: 2.16rem;
-      min-width: max-content;
-      justify-content: flex-end;
-      gap: 0.24rem;
-      font-size: clamp(0.76rem, 3.1vw, 0.84rem);
-      line-height: 1;
     }
 
     .archive-filter-dropdown {
@@ -772,45 +743,40 @@ function getAgeForYear(year: number) {
       touch-action: manipulation;
     }
 
-    .archive-summary-divider {
-      opacity: 0.45;
-    }
-
-    .archive-summary span {
-      line-height: 1;
-    }
-
-    .archive-summary,
     .archive-filter-dropdown,
     .archive-filter-plain {
       align-self: center;
     }
 
-    .archive-year-watermark {
-      font-family: var(--font-sans) !important;
-      top: 0.2rem;
-    }
-
     .archive-year {
       --archive-year-font-size: clamp(2.6rem, 14vw, 4rem);
+      margin-bottom: 2rem;
     }
 
-    .archive-year-watermark--age {
+    .archive-year-heading {
+      margin-bottom: .45rem;
+    }
+
+    .archive-year-detail {
       font-size: clamp(2.2rem, 13vw, 3.6rem);
     }
 
     .archive-item {
-      grid-template-columns: 3.2rem minmax(0, 1fr);
-      gap: 0.6rem;
-      row-gap: 0.3rem;
-      padding: 0.1rem 0;
+      grid-template-columns: var(--archive-index-width) minmax(0, 1fr);
+      padding: .35rem 0;
+    }
+
+    .archive-meta {
+      grid-column: 2;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      min-width: 0;
     }
 
     .archive-tags {
-      grid-column: 1 / -1;
-      justify-content: flex-start;
-      padding-left: 3.8rem;
-      gap: 0.35rem;
+      flex-wrap: nowrap;
+      padding-top: 0;
     }
   }
 
@@ -829,10 +795,6 @@ function getAgeForYear(year: number) {
       font-size: 0.86rem;
     }
 
-    .archive-summary {
-      font-size: 0.76rem;
-      gap: 0.18rem;
-    }
   }
 
   /* 减少动态：无动画 */

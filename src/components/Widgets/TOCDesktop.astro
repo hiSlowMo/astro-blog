@@ -268,6 +268,11 @@ const tocTree = buildTocTree(filteredHeadings)
     font-weight: 700;
   }
 
+  .series-tree-item:has(> .series-tree-link.is-current)::after {
+    height: 2px;
+    background-color: oklch(var(--un-preset-theme-colors-accent));
+  }
+
   .toc-disclosure-body {
     display: grid;
     grid-template-rows: 1fr;

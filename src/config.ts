@@ -24,7 +24,7 @@ export const themeConfig: ThemeConfig = {
     favicon: '/icons/avatar.png', // or https://example.com/favF.svg
     startDate: '2026-02-14',
     // used by the archive page age watermark
-    birthYear: 2007,
+    birthYear: 2006,
     // status light under the site title, remove to hide it
     status: {
       text: [

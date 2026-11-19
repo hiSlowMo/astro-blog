@@ -172,7 +172,7 @@ document.addEventListener('astro:page-load', initRotatingStatus)
 
 <style>
   .site-status {
-    --status-color: oklch(var(--un-preset-theme-colors-accent));
+    --status-color: var(--status-success);
   }
   .site-status[data-tone='away'] {
     --status-color: oklch(66% 0.14 70);

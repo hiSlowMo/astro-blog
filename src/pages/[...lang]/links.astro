@@ -85,7 +85,7 @@ const sectionNo = (key: string) => padNumber(sectionKeys.indexOf(key) + 1)
     <!-- Now Spinning -->
     {albums.length > 0 && (
       <section class="spinning rec-fade" hidden={!spinning.length} aria-labelledby="now-spinning" style="--fade-delay: 60ms">
-        <SectionHeading no={sectionNo('spinning')} title="Now Spinning" caption="随机选曲" id="now-spinning">
+        <SectionHeading no={sectionNo('spinning')} title="随机选曲" english="NOW SPINNING" id="now-spinning">
           <span class="rec-label" lang="en">SHUFFLE ON</span>
         </SectionHeading>
         <div class="spinning__deck" data-spinning>
@@ -174,7 +174,7 @@ const sectionNo = (key: string) => padNumber(sectionKeys.indexOf(key) + 1)
     <!-- New Arrivals: only once the collection is too long to take in at a glance -->
     {newArrivals.length > 0 && (
       <section class="records-section arrivals-section rec-fade" aria-labelledby="new-arrivals" style="--fade-delay: 120ms">
-        <SectionHeading no={sectionNo('arrivals')} title="New Arrivals" caption="新近上架" id="new-arrivals" />
+        <SectionHeading no={sectionNo('arrivals')} title="新近上架" english="NEW ARRIVALS" id="new-arrivals" />
         <ol class="arrivals" style={`--arrival-count: ${newArrivals.length}`}>
           {newArrivals.map(album => (
             <li>
@@ -208,7 +208,7 @@ const sectionNo = (key: string) => padNumber(sectionKeys.indexOf(key) + 1)
 
     <!-- The Collection -->
     <section class="records-section collection-section rec-fade" aria-labelledby="the-collection" style="--fade-delay: 120ms">
-      <SectionHeading no={sectionNo('collection')} title="The Collection" caption="唱片目录" id="the-collection">
+      <SectionHeading no={sectionNo('collection')} title="唱片目录" english="THE COLLECTION" id="the-collection">
         <p class="rec-label">{padNumber(albums.length)} RECORDS</p>
       </SectionHeading>
 

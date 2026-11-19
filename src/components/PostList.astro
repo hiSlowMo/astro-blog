@@ -2,101 +2,120 @@
 import type { Language } from '@/i18n/config'
 import type { Post } from '@/types'
 import PinIcon from '@/assets/icons/pin-icon.svg'
-import PostDate from '@/components/PostDate.astro'
+import SortableDate from '@/components/SortableDate.astro'
 import StatusBadge from '@/components/StatusBadge.astro'
 import { getPostPath } from '@/i18n/path'
+import { ui } from '@/i18n/ui'
 import { getPostDescription } from '@/utils/description'
-import { isHomePage } from '@/utils/page'
 
 export interface Props {
   posts: Post[]
   lang: Language
-  pinned?: boolean
 }
 
-const { posts, lang, pinned = false } = Astro.props
-const isHome = isHomePage(Astro.url.pathname)
+const { posts, lang } = Astro.props
 ---
 
 <ul>
   {posts.map((post) => {
     const slug = post.data.abbrlink || post.id
-    const tags = post.data.tags ?? []
     const categories = post.data.categories ?? []
 
     return (
       <li
-        class:list={[
-          'post-item mb-4 lg:(flex flex-wrap items-baseline gap-x-2.5)',
-          isHome ? 'lg:mb-6' : '',
-        ]}
-        data-tags={tags.join(',')}
+        class="post-item mb-4 lg:mb-6"
         data-categories={categories.join(',')}
         data-created={post.data.published.valueOf()}
         data-updated={(post.data.updated ?? post.data.published).valueOf()}
       >
-        {/* post title */}
-        <h3 class="inline-flex flex-wrap items-center gap-x-2 gap-y-1 transition-colors hover:c-primary">
-          <a
-            class:list={[
-              'text-pretty cjk:tracking-wide c-primary',
-              isHome ? 'sm:(font-medium text-4.5)' : '',
-            ]}
-            href={getPostPath(slug, lang)}
-            transition:name={`post-${slug}${lang ? `-${lang}` : ''}`}
-            data-disable-theme-toggle-transition
-          >
-            {post.data.title}
-          </a>
-          {post.data.status && (
-            <StatusBadge
-              status={post.data.status}
-              compact
-            />
-          )}
-          {/* pinned icon */}
-          {pinned && (
-            <PinIcon
-              aria-hidden="true"
-              class="ml-0.25em inline-block aspect-square w-0.98em translate-y--0.1em lg:(w-1.05em translate-y--0.15em)"
-              fill="currentColor"
-            />
-          )}
-        </h3>
-
-        {/* mobile post time */}
         <div
-          class="py-0.8 text-3.5 font-time lg:hidden"
+          class="post-date font-time"
           transition:name={`time-${slug}${lang ? `-${lang}` : ''}`}
           data-disable-theme-toggle-transition
         >
-          <PostDate
-            date={post.data.published}
-            updatedDate={post.data.updated}
-            sortable
-            minutes={post.remarkPluginFrontmatter.minutes}
-          />
+          <span class="post-date-full">
+            <SortableDate date={post.data.published} updatedDate={post.data.updated} format="YYYY-MM-DD" />
+          </span>
+          <span class="post-date-short">
+            <SortableDate date={post.data.published} updatedDate={post.data.updated} format="MM.DD" />
+          </span>
         </div>
-
-        {/* desktop post time */}
-        <div class="hidden whitespace-nowrap text-3.65 font-time lg:block">
-          <PostDate
-            date={post.data.published}
-            updatedDate={post.data.updated}
-            sortable
-            minutes={post.remarkPluginFrontmatter.minutes}
-          />
-        </div>
-
-        {/* desktop post description */}
-        {isHome && (
-          <div
-            class="heti hidden lg:(mt-2.25 basis-full) sm:(mt-1 block)"
-          >
+        <div class="post-copy">
+          <h3>
+            <a
+              class="module-title text-pretty"
+              href={getPostPath(slug, lang)}
+              transition:name={`post-${slug}${lang ? `-${lang}` : ''}`}
+              data-disable-theme-toggle-transition
+            >
+              {post.data.title}
+            </a>
+          </h3>
+          <div class="post-meta font-time">
+            <span>{ui[lang].readingMinutes.replace('{COUNT}', String(post.remarkPluginFrontmatter.minutes))}</span>
+            {(post.data.pin ?? 0) > 0 && (
+              <PinIcon aria-hidden="true" class="w-1em" fill="currentColor" />
+            )}
+            {post.data.status && <StatusBadge status={post.data.status} dotOnly />}
+          </div>
+          <div class="heti post-summary mt-1 hidden sm:block">
             <p>{getPostDescription(post, 'list')}</p>
           </div>
-        )}
+        </div>
       </li>
     )
   })}
 </ul>
+
+<style>
+  .post-item {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: clamp(.65rem, 2vw, 1.4rem);
+  }
+
+  .post-date, .post-meta {
+    color: oklch(var(--un-preset-theme-colors-secondary));
+    font-size: .85rem;
+  }
+
+  .post-date {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .post-copy {
+    overflow-wrap: anywhere;
+  }
+
+  .post-date-short {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .post-item {
+      grid-template-columns: clamp(64px, 12vw, 72px) minmax(0, 1fr);
+    }
+
+    .post-date-full {
+      display: none;
+    }
+
+    .post-date-short {
+      display: inline;
+    }
+  }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .15rem;
+  }
+
+  .post-summary :global(p) {
+    color: oklch(var(--un-preset-theme-colors-secondary) / .86);
+    font-weight: 400;
+  }
+</style>

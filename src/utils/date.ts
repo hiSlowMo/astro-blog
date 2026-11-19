@@ -1,13 +1,13 @@
 import type { ThemeConfig } from '@/types'
 
-export type DateFormat = ThemeConfig['global']['dateFormat'] | 'MM/DD'
+export type DateFormat = ThemeConfig['global']['dateFormat'] | 'MM/DD' | 'MM.DD'
 
 export function formatPostDate(date: Date, format: DateFormat) {
   const iso = date.toISOString().split('T')[0]
   if (format === 'YYYY-MM-DD')
     return iso
-  if (format === 'MM/DD')
-    return iso.slice(5).replace('-', '/')
+  if (format === 'MM/DD' || format === 'MM.DD')
+    return iso.slice(5).replace('-', format === 'MM/DD' ? '/' : '.')
 
   const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',

@@ -24,7 +24,7 @@ const tagCounts = Object.fromEntries(
   <section class="tag-overview" aria-labelledby="tag-overview-title">
     <header class="tag-overview-header">
       <div>
-        <h1 id="tag-overview-title">标签</h1>
+        <h1 class="section-label" id="tag-overview-title">{ui[currentLang].tags} <small lang="en">TAGS</small></h1>
         <p>同一篇文字，也可以有不同的入口。</p>
       </div>
       <span class="font-time">{allTags.length} TOPICS</span>
@@ -38,10 +38,6 @@ const tagCounts = Object.fromEntries(
 </Layout>
 
 <style>
-  .tag-overview {
-    max-width: 36rem;
-  }
-
   .tag-overview-header {
     display: flex;
     align-items: baseline;
@@ -50,13 +46,6 @@ const tagCounts = Object.fromEntries(
     margin-bottom: 2.25rem;
     padding-bottom: 1.5rem;
     border-bottom: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
-  }
-
-  .tag-overview-header h1 {
-    margin: 0;
-    font-size: 1.3rem;
-    font-weight: 500;
-    letter-spacing: 0.04em;
   }
 
   .tag-overview-header p {

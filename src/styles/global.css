@@ -2,8 +2,19 @@
 @import "@fontsource-variable/noto-sans-sc";
 @import "@fontsource-variable/jetbrains-mono";
 :root {
+  --page-title-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+  --section-title-size: clamp(1.25rem, 1.12rem + .55vw, 1.5rem);
+  --module-title-size: clamp(1.0625rem, 1rem + .25vw, 1.125rem);
+  --label-size: clamp(.875rem, .85rem + .12vw, .9375rem);
+  --status-success: #047857;
+  --status-error: #b42318;
   --font-sans: "Inter Variable","PingFang SC","Noto Sans SC Variable",system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
   --font-mono: "JetBrains Mono Variable",ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
+
+:root.dark {
+  --status-success: #6ee7b7;
+  --status-error: #fda29b;
 }
 
 html, body {
@@ -23,10 +34,46 @@ h1, h2, h3, h4 {
   font-weight: 550;
 }
 
+.page-title, .section-label, .module-title {
+  font-family: var(--font-sans);
+  color: oklch(var(--un-preset-theme-colors-primary));
+  overflow-wrap: anywhere;
+}
+
+.page-title {
+  font-size: var(--page-title-size);
+  font-weight: 680;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.section-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .2rem clamp(.55rem, 1vw, .8rem);
+  margin: 0;
+  font-size: var(--section-title-size);
+  font-weight: 660;
+  line-height: 1.35;
+  letter-spacing: .01em;
+}
+
+.section-label > small {
+  color: oklch(var(--un-preset-theme-colors-secondary));
+  font: 450 var(--label-size)/1.4 var(--font-mono);
+  letter-spacing: .055em;
+}
+
+.module-title {
+  font-size: var(--module-title-size);
+  font-weight: 550;
+  line-height: 1.5;
+}
+
 .font-time,
 .archive-date,
-.archive-tags,
-.archive-summary {
+.archive-tags {
   font-weight: 400;
   opacity: 0.82;
 }

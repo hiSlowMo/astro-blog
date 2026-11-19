@@ -97,52 +97,49 @@ const moreItems = [
         </a>
       </li>
     ))}
-    <li>
-      <div
-        class="nav-more-shell"
-        aria-hidden="false"
+    <li class="nav-more-item">
+      <button
+        type="button"
+        class="nav-more-toggle cursor-pointer select-none"
+        aria-expanded={isMoreActive ? 'true' : 'false'}
+        data-nav-more-trigger
       >
-        <button
-          type="button"
-          class="nav-more-toggle cursor-pointer select-none"
-          aria-expanded={isMoreActive ? 'true' : 'false'}
-          data-nav-more-trigger
-        >
-          <span class={getNavMoreToggleClass(isMoreActive)}>
-            {currentUI.more}
-          </span>
-        </button>
-        <div class="nav-more-panel" aria-hidden={isMoreActive ? 'false' : 'true'} inert={!isMoreActive}>
-          <ul class="nav-more-list">
-            {moreItems.map((item, index) => (
-              <li style={`--nav-item-index:${index};`}>
-                {item.type === 'search'
-                  ? (
-                      <button
-                        type="button"
-                        data-search-open
-                        class="nav-search-button"
-                      >
-                        <span class={item.className}>
-                          {item.label}
-                        </span>
-                      </button>
-                    )
-                  : (
-                      <a
-                        href={getLocalizedPath(item.href)}
-                        data-astro-prefetch="viewport"
-                        class="nav-more-link"
-                      >
-                        <span class={item.className}>
-                          {item.label}
-                        </span>
-                      </a>
-                    )}
-              </li>
-            ))}
-          </ul>
-        </div>
+        <span class={getNavMoreToggleClass(isMoreActive)}>
+          {currentUI.more}
+        </span>
+      </button>
+    </li>
+    <li class="nav-more-panel-item">
+      <div class="nav-more-panel" aria-hidden={isMoreActive ? 'false' : 'true'} inert={!isMoreActive}>
+        <ul class="nav-more-list">
+          {moreItems.map((item, index) => (
+            <li style={`--nav-item-index:${index};`}>
+              {item.type === 'search'
+                ? (
+                    <button
+                      type="button"
+                      data-search-open
+                      class="nav-search-button"
+                    >
+                      <span class={item.className}>
+                        {item.label}
+                      </span>
+                    </button>
+                  )
+                : (
+                    <a
+                      href={getLocalizedPath(item.href)}
+                      data-astro-prefetch="viewport"
+                      class="nav-more-link"
+                    >
+                      <span class={item.className}>
+                        {item.label}
+                      </span>
+                    </a>
+                  )}
+            </li>
+          ))}
+        </ul>
       </div>
     </li>
   </ul>
@@ -162,10 +159,30 @@ const moreItems = [
     const trigger = nav.querySelector('[data-nav-more-trigger]')
     const panel = nav.querySelector('.nav-more-panel')
     const primaryItems = nav.querySelectorAll('.nav-primary-item')
+    const moreList = panel?.querySelector('.nav-more-list')
     if (!(trigger instanceof HTMLElement) || !(panel instanceof HTMLElement))
       return
 
     let isOpen = nav.dataset.navOpen === '1'
+    const mobileNav = window.matchMedia('(max-width: 768px)')
+
+    const measureMobileNav = () => {
+      if (!mobileNav.matches || !nav.isConnected)
+        return
+
+      primaryItems.forEach((item) => {
+        const link = item.querySelector('a, button')
+        const width = Math.ceil(link?.getBoundingClientRect().width || item.scrollWidth)
+        if (width > 0) {
+          item.style.setProperty('--nav-item-width', `${width}px`)
+        }
+      })
+
+      const moreWidth = Math.ceil(moreList?.scrollWidth ?? 0)
+      if (moreWidth > 0) {
+        nav.style.setProperty('--nav-more-width', `${moreWidth}px`)
+      }
+    }
 
     const setOpen = (nextOpen) => {
       isOpen = nextOpen
@@ -177,6 +194,10 @@ const moreItems = [
     }
 
     const controller = new AbortController()
+    measureMobileNav()
+    window.addEventListener('resize', measureMobileNav, { signal: controller.signal })
+    mobileNav.addEventListener('change', measureMobileNav, { signal: controller.signal })
+    document.fonts?.ready.then(measureMobileNav)
 
     trigger.addEventListener('click', () => {
       setOpen(!isOpen)
@@ -229,7 +250,73 @@ const moreItems = [
   @media (max-width: 768px) {
     nav[aria-label='Site Navigation'] {
       position: relative;
-      block-size: 9.65rem;
+      block-size: auto;
+      margin-bottom: 2rem;
+    }
+
+    nav[aria-label='Site Navigation'] .nav-list {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: baseline;
+    }
+
+    nav[aria-label='Site Navigation'] .nav-primary-item {
+      flex: 0 0 auto;
+      max-width: var(--nav-item-width, 8rem);
+      max-height: none;
+      margin-inline-end: 1.35rem;
+      overflow: hidden;
+      white-space: nowrap;
+      transition:
+        max-width 260ms var(--nav-motion-easing),
+        margin-inline-end 260ms var(--nav-motion-easing),
+        opacity 160ms var(--nav-motion-easing),
+        transform 220ms var(--nav-motion-easing);
+    }
+
+    nav[aria-label='Site Navigation'][data-nav-open='1'] .nav-primary-item {
+      max-width: 0;
+      max-height: none;
+      margin-inline-end: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    nav[aria-label='Site Navigation'] .nav-more-item {
+      flex: 0 0 auto;
+    }
+
+    nav[aria-label='Site Navigation'] .nav-more-panel-item {
+      flex: 0 0 auto;
+      max-width: 0;
+      margin-inline-start: 1.35rem;
+      overflow: hidden;
+      transition: max-width 280ms var(--nav-motion-easing);
+    }
+
+    nav[aria-label='Site Navigation'][data-nav-open='1'] .nav-more-panel-item {
+      max-width: var(--nav-more-width, 14rem);
+    }
+
+    nav[aria-label='Site Navigation'] .nav-more-panel {
+      inline-size: max-content;
+    }
+
+    nav[aria-label='Site Navigation'] .nav-more-list {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 0.65rem 1.35rem;
+      margin-top: 0;
+    }
+
+    nav[aria-label='Site Navigation'] .nav-more-list li,
+    nav[aria-label='Site Navigation'] .nav-more-list a,
+    nav[aria-label='Site Navigation'] .nav-more-list button {
+      inline-size: auto;
+    }
+
+    nav[aria-label='Site Navigation'] .nav-more-list li + li {
+      margin-top: 0 !important;
     }
   }
 
@@ -274,7 +361,13 @@ const moreItems = [
   }
 
   .nav-more-highlight::after {
-    background-color: oklch(0.74 0.09 235 / 0.42);
+    height: 2px;
+    background-color: oklch(var(--un-preset-theme-colors-accent));
+  }
+
+  nav :is(a, button):focus-visible {
+    outline: 2px solid oklch(var(--un-preset-theme-colors-accent));
+    outline-offset: 2px;
   }
 
   .nav-list > li > a.highlight-static::after,
@@ -331,9 +424,43 @@ const moreItems = [
   @media (prefers-reduced-motion: reduce) {
     .nav-primary-item,
     .nav-more-panel,
+    .nav-more-panel-item,
     .nav-more-panel > .nav-more-list,
     .nav-more-list li {
       transition: none;
+    }
+  }
+
+  @media (min-width: 769px) and (prefers-reduced-motion: no-preference) {
+    :root {
+      --nav-desktop-easing: cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    .nav-primary-item {
+      transition:
+        max-height 320ms var(--nav-desktop-easing),
+        opacity 220ms var(--nav-desktop-easing),
+        transform 320ms var(--nav-desktop-easing);
+    }
+
+    .nav-more-panel {
+      transition: grid-template-rows 340ms var(--nav-desktop-easing);
+    }
+
+    .nav-more-panel > .nav-more-list {
+      transition:
+        opacity 220ms var(--nav-desktop-easing),
+        transform 320ms var(--nav-desktop-easing);
+    }
+
+    .nav-more-list li {
+      transition:
+        opacity 200ms var(--nav-desktop-easing),
+        transform 300ms var(--nav-desktop-easing);
+    }
+
+    nav[data-nav-open='1'] .nav-more-list li {
+      transition-delay: calc(var(--nav-item-index, 0) * 24ms + 18ms);
     }
   }
 
@@ -371,6 +498,7 @@ const moreItems = [
   }
 
   :global(html.reduce-motion) .nav-primary-item,
+  :global(html.reduce-motion) .nav-more-panel-item,
   :global(html.reduce-motion) .nav-more-panel,
   :global(html.reduce-motion) .nav-more-panel > .nav-more-list,
   :global(html.reduce-motion) .nav-more-list li {

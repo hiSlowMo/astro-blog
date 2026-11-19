@@ -53,16 +53,15 @@ function formatMomentDate(date: Date) {
   enableContentEnhancements
   enableKatex={hasMath}
 >
-  <div class="uno-decorative-line" />
-
-  <div class="moments-header">
-    <p class="moments-intro">{currentUI.momentsIntro}</p>
-    {moments.length > 0 && (
+  <header class="moments-header">
+    <div class="moments-heading">
+      <h2 class="section-label">{currentUI.moments} <small lang="en">MOMENTS</small></h2>
       <p class="moments-count font-time">
         {currentUI.momentsCount.replace('{COUNT}', String(moments.length))}
       </p>
-    )}
-  </div>
+    </div>
+    <p class="moments-intro">{currentUI.momentsIntro}</p>
+  </header>
 
   {moments.length === 0
     ? (
@@ -71,7 +70,7 @@ function formatMomentDate(date: Date) {
     : (
         <ul class="moments-list">
           {renderedMoments.map(({ moment, Content }) => (
-            <li id={`moment-${moment.id}`} class="moment-card">
+            <li id={`moment-${moment.id}`} class="moment-card" tabindex="0">
               <div class="no-heti moment-content">
                 <Content />
               </div>
@@ -95,49 +94,58 @@ function formatMomentDate(date: Date) {
 
   <style is:inline>
     .moments-header {
-      margin-top: 0.8rem;
       padding-bottom: 0.75rem;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 0.5rem 1rem;
       border-bottom: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.16);
     }
 
+    .moments-heading {
+      display: flex;
+      align-items: baseline;
+      gap: .65rem;
+      justify-content: space-between;
+    }
+
     .moments-intro {
+      margin-top: .4rem;
       font-size: 0.9rem;
       line-height: 1.6;
       color: oklch(var(--un-preset-theme-colors-secondary) / 0.88);
     }
 
+    .moments-count, .moment-footer {
+      font-size: .85rem;
+      line-height: 1.5;
+      color: oklch(var(--un-preset-theme-colors-secondary));
+    }
+
     .moments-count {
       flex-shrink: 0;
-      font-size: 0.8125rem;
-      line-height: 1.5;
-      color: oklch(var(--un-preset-theme-colors-secondary) / 0.72);
-      font-variant-numeric: tabular-nums;
     }
 
     .moments-list {
-      margin-top: 1.35rem;
+      margin-top: 1rem;
       padding: 0;
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 1.15rem;
+      gap: .9rem;
     }
 
     .moment-card {
       position: relative;
-      padding: 0.85rem 1.15rem 0.75rem;
+      padding: .7rem clamp(.75rem, 2vw, 1rem) .65rem;
       background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.025);
       scroll-margin-top: 4rem;
       transition: background-color 180ms ease;
     }
 
-    .moment-card:hover {
+    .moment-card:hover, .moment-card:focus-within {
       background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.045);
+    }
+
+    .moment-card:focus-visible {
+      outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / .65);
+      outline-offset: 2px;
     }
 
     /* Corner brackets (┌ ┐ └ ┘) at rest -> full 1px frame on hover / focus-within */
@@ -195,8 +203,8 @@ function formatMomentDate(date: Date) {
     }
 
     .moment-content {
-      font-size: 0.9375rem;
-      line-height: 1.72;
+      font-size: 1rem;
+      line-height: 1.75;
       color: oklch(var(--un-preset-theme-colors-primary) / 0.95);
       text-align: left !important;
       text-justify: none !important;
@@ -205,7 +213,7 @@ function formatMomentDate(date: Date) {
 
     .moment-content p {
       margin: 0.3em 0;
-      line-height: 1.72;
+      line-height: inherit;
       color: oklch(var(--un-preset-theme-colors-primary) / 0.95);
       text-align: left !important;
       text-justify: none !important;
@@ -222,15 +230,12 @@ function formatMomentDate(date: Date) {
     }
 
     .moment-footer {
-      margin-top: 0.55rem;
+      margin-top: .4rem;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: flex-end;
       gap: 0.4rem 0.75rem;
-      font-size: 0.8125rem;
-      line-height: 1.4;
-      color: oklch(var(--un-preset-theme-colors-secondary) / 0.72);
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.02em;
     }
@@ -258,14 +263,8 @@ function formatMomentDate(date: Date) {
     }
 
     @media (max-width: 640px) {
-      .moment-card {
-        padding: 0.75rem 0.88rem 0.65rem;
-      }
-      .moment-content {
-        font-size: 0.9rem;
-      }
       .moments-list {
-        gap: 0.95rem;
+        gap: .75rem;
       }
     }
 

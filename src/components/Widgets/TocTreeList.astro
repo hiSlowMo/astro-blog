@@ -137,7 +137,7 @@ const {
     font-size: 0.9375rem;
     line-height: 1.45;
     font-weight: 400;
-    color: oklch(var(--un-preset-theme-colors-secondary) / 0.58);
+    color: oklch(var(--un-preset-theme-colors-secondary));
     transition:
       color var(--motion-fast, 160ms) ease-out,
       font-weight var(--motion-fast, 160ms) ease-out;
@@ -151,8 +151,12 @@ const {
     color: oklch(var(--un-preset-theme-colors-primary) / 0.9);
   }
 
-  .toc-tree-link.is-active,
-  .toc-tree-link:target-current {
+  .toc-tree-item:has(> .toc-tree-link[aria-current='location'])::after {
+    height: 2px;
+    background-color: oklch(var(--un-preset-theme-colors-accent));
+  }
+
+  .toc-tree-link:is(.is-active, :target-current) {
     color: oklch(var(--un-preset-theme-colors-primary));
     font-weight: 700;
   }

@@ -4,10 +4,11 @@ import { getPostStatusLabel } from '@/utils/content'
 interface Props {
   status?: 'idea' | 'ongoing' | 'paused' | 'completed'
   compact?: boolean
+  dotOnly?: boolean
   className?: string
 }
 
-const { status, compact = false, className = '' } = Astro.props
+const { status, compact = false, dotOnly = false, className = '' } = Astro.props
 const label = getPostStatusLabel(status)
 ---
 
@@ -16,11 +17,15 @@ const label = getPostStatusLabel(status)
     class:list={[
       'status-badge inline-flex shrink-0 items-center whitespace-nowrap align-middle leading-none font-navbar',
       compact && 'status-badge--compact',
+      dotOnly && 'status-badge--dot',
       className,
     ]}
     data-status={status}
+    role={dotOnly ? 'img' : undefined}
+    aria-label={dotOnly ? `状态：${label}` : undefined}
+    tabindex={dotOnly ? 0 : undefined}
   >
-    {label}
+    {dotOnly ? <span class="status-hint" aria-hidden="true">{label}</span> : label}
   </span>
 )}
 
@@ -31,11 +36,31 @@ const label = getPostStatusLabel(status)
     font-size: 0.76rem;
     font-weight: 500;
     letter-spacing: 0.03em;
-    color: oklch(var(--un-preset-theme-colors-secondary) / 0.62);
+    color: oklch(var(--un-preset-theme-colors-secondary));
   }
 
   .status-badge--compact {
     font-size: 0.71rem;
+  }
+
+  .status-badge--dot {
+    position: relative;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    cursor: help;
+  }
+
+  .status-hint {
+    position: absolute;
+    inset-inline-start: 100%;
+    visibility: hidden;
+  }
+
+  .status-badge--dot:hover .status-hint,
+  .status-badge--dot:focus .status-hint {
+    visibility: visible;
   }
 
   .status-badge::before {
@@ -60,7 +85,7 @@ const label = getPostStatusLabel(status)
   }
 
   .status-badge[data-status='completed'] {
-    --status-dot: rgb(5 150 105 / 0.8);
+    --status-dot: var(--status-success);
   }
 
   :global(html.dark) .status-badge[data-status='idea'] {
@@ -75,7 +100,4 @@ const label = getPostStatusLabel(status)
     --status-dot: rgb(161 161 170 / 0.6);
   }
 
-  :global(html.dark) .status-badge[data-status='completed'] {
-    --status-dot: rgb(110 231 183 / 0.75);
-  }
 </style>

@@ -1,10 +1,13 @@
 ---
 import PostList from '@/components/PostList.astro'
-import { allLocales } from '@/config'
+import { allLocales, themeConfig } from '@/config'
 import { getUsedCategoryFilters } from '@/data/post-categories'
 import { getLangRouteParam } from '@/i18n/lang'
+import { getPostPath } from '@/i18n/path'
 import Layout from '@/layouts/Layout.astro'
-import { getFeaturedPosts, getPinnedPosts, getPosts, getPostsByYear } from '@/utils/content'
+import { getPostCoverURL, getPosts } from '@/utils/content'
+import { formatPostDate } from '@/utils/date'
+import { getPostDescription } from '@/utils/description'
 import { getPageInfo } from '@/utils/page'
 
 export async function getStaticPaths() {
@@ -13,26 +16,29 @@ export async function getStaticPaths() {
   }))
 }
 
-const { currentLang, getLocalizedPath } = getPageInfo(Astro.url.pathname)
-const pinnedPosts = await getPinnedPosts(currentLang)
-const featuredPosts = await getFeaturedPosts(currentLang)
-const postsByYear = await getPostsByYear(currentLang)
-const categoryFilters = getUsedCategoryFilters(await getPosts(currentLang))
-const featuredIds = new Set(featuredPosts.map(post => post.id))
-const visiblePostsByYear = new Map(
-  [...postsByYear.entries()]
-    .map(([year, posts]) => [year, posts.filter(post => !featuredIds.has(post.id))] as const)
-    .filter(([, posts]) => posts.length > 0),
-)
+const { currentLang } = getPageInfo(Astro.url.pathname)
+const [latest, ...recentPosts] = await getPosts(currentLang)
+const categoryFilters = getUsedCategoryFilters(recentPosts)
+const thumbnails = import.meta.glob<string>('/src/assets/post-thumbnails/*.webp', { eager: true, query: '?url', import: 'default' })
+const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/src/assets/post-thumbnails/${latest.id}.webp`])
 ---
 
 <Layout>
-  <section class="home-intro" aria-label="关于 SlowMo">
-    <p>我是 SlowMo，一名软件工程专业的学生。这里记录计算机、排版美学，以及一些缓慢但认真的思考。</p>
-    <a class="home-intro-link" href={getLocalizedPath('/about/')}>更多关于我 →</a>
-  </section>
-
-  <div data-posts-root>
+  {latest && (
+    <section class="latest" aria-labelledby="latest-label">
+      <h2 class="section-label" id="latest-label">最新发布 <small lang="en">LATEST RELEASE</small></h2>
+      <article class:list={['latest-entry', { 'has-thumbnail': thumbnail }]}>
+        <time class="latest-date font-time" datetime={latest.data.published.toISOString()}>{formatPostDate(latest.data.published, themeConfig.global.dateFormat)}</time>
+        <h3 class="latest-title page-title"><a href={getPostPath(latest.data.abbrlink || latest.id, currentLang)}>{latest.data.title}</a></h3>
+        {thumbnail && <img class="latest-thumbnail" src={thumbnail} alt="" width="144" height="144" decoding="async" />}
+        <p class="latest-summary">{getPostDescription(latest, 'list')}</p>
+      </article>
+    </section>
+  )}
+  {recentPosts.length > 0 && <section data-posts-root aria-labelledby="recent-label">
+    <header class="recent-heading">
+      <h2 class="section-label" id="recent-label">近期收录 <small lang="en">RECENT ENTRIES</small></h2>
+    </header>
     <section class="post-filter font-navbar">
       <div class="post-filter-list">
         <div class="post-filter-dropdown" data-filter-dropdown data-open="0">
@@ -100,30 +106,10 @@ const visiblePostsByYear = new Map(
       </div>
     </section>
 
-    <!-- Pinned Posts -->
-    {pinnedPosts.length > 0 && (
-      <section class="post-year-section post-year-section--pinned mb-7.5">
-        <div class="uno-decorative-line" />
-        <PostList posts={pinnedPosts} lang={currentLang} pinned={true} />
-      </section>
-    )}
-
-    {featuredPosts.length > 0 && (
-      <section class="post-year-section post-year-section--featured mb-7.5">
-        <div class="uno-decorative-line" />
-        <div class="post-section-label font-navbar">精选</div>
-        <PostList posts={featuredPosts} lang={currentLang} />
-      </section>
-    )}
-
-    <!-- Regular Posts -->
-    {[...visiblePostsByYear.entries()].map(([year, posts]) => (
-      <section class="post-year-section mb-7.5" data-year={year}>
-        <div class="uno-decorative-line" />
-        <PostList posts={posts} lang={currentLang} />
-      </section>
-    ))}
-  </div>
+    <div class="post-year-section">
+      <PostList posts={recentPosts} lang={currentLang} />
+    </div>
+  </section>}
 </Layout>
 
 <script>
@@ -131,37 +117,6 @@ const visiblePostsByYear = new Map(
 </script>
 
 <style>
-  .home-intro {
-    max-width: 36rem;
-    margin-bottom: 2.25rem;
-  }
-
-  .home-intro p {
-    margin: 0;
-    color: oklch(var(--un-preset-theme-colors-secondary) / 0.92);
-    font-size: 0.95rem;
-    line-height: 1.8;
-    text-wrap: pretty;
-  }
-
-  .home-intro-link {
-    display: inline-flex;
-    margin-top: 0.55rem;
-    color: oklch(var(--un-preset-theme-colors-secondary) / 0.78);
-    font-size: 0.85rem;
-    text-decoration: none;
-    transition: color var(--motion-fast) ease;
-  }
-
-  .home-intro-link:hover {
-    color: oklch(var(--un-preset-theme-colors-primary));
-  }
-
-  .home-intro-link:focus-visible {
-    outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.45);
-    outline-offset: 3px;
-  }
-
   :root {
     --post-control-h: 1.85rem; /* 想更紧凑可改 1.75rem */
     --post-menu-open-duration: var(--motion-fast);
@@ -187,19 +142,77 @@ const visiblePostsByYear = new Map(
   }
 
   .post-filter-list {
-    display: grid;
+    display: flex;
+    flex: 1;
     align-items: center;
-    grid-template-columns: var(--post-filter-col-w) var(--post-sort-col-w);
+    justify-content: space-between;
     gap: 0.45rem;
     font-size: 0.9rem;
     color: oklch(var(--un-preset-theme-colors-secondary) / 0.75);
   }
 
-  .post-section-label {
-    margin-bottom: 0.8rem;
-    font-size: 0.9rem;
-    color: oklch(var(--un-preset-theme-colors-secondary) / 0.78);
-    letter-spacing: 0.03em;
+  .latest-date {
+    grid-area: date;
+    color: oklch(var(--un-preset-theme-colors-secondary));
+    font-size: .82rem;
+  }
+
+  .latest-entry {
+    --latest-summary-size: .95rem;
+    display: grid;
+    grid-template-areas: "date" "title" "summary";
+    align-items: start;
+    gap: .6rem 1.4rem;
+    margin: 1.25rem 0 2.25rem;
+  }
+
+  .latest-entry.has-thumbnail {
+    grid-template-columns: clamp(5rem, 10vw, 8.5rem) minmax(0, 1fr);
+    grid-template-areas: ". date" "cover title" "cover summary";
+  }
+
+  .latest-thumbnail {
+    grid-area: cover;
+    font-size: var(--page-title-size);
+    margin-block-start: .19em;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    height: auto;
+  }
+
+  .latest-title {
+    grid-area: title;
+    margin: 0;
+  }
+
+  .latest-summary {
+    grid-area: summary;
+    margin: 0;
+    font-size: var(--latest-summary-size);
+    line-height: 1.75;
+  }
+
+  .recent-heading {
+    padding-top: 1.1rem;
+    margin-bottom: .9rem;
+    border-top: 1px solid oklch(var(--un-preset-theme-colors-secondary) / .3);
+  }
+
+  .latest-title a:hover {
+    text-decoration: underline;
+    text-underline-offset: .18em;
+  }
+
+  @media (max-width: 768px) {
+    .latest-entry { column-gap: .9rem; }
+    .latest-entry.has-thumbnail {
+      grid-template-areas: "date date" "title title" "cover summary";
+    }
+    .latest-thumbnail {
+      font-size: var(--latest-summary-size);
+      margin-block-start: .37em;
+    }
   }
 
   /* ===== details/summary 控件：与归档页一致 ===== */
@@ -242,6 +255,7 @@ const visiblePostsByYear = new Map(
   .post-filter-plain {
     height: var(--post-control-h);
     inline-size: var(--post-sort-col-w);
+    justify-content: flex-end;
   }
 
   /* 悬停与展开只换文字色，不再长出一块底色 */
@@ -389,7 +403,6 @@ const visiblePostsByYear = new Map(
       opacity var(--post-layout-duration) var(--post-motion-easing),
       transform var(--post-layout-duration) var(--post-motion-easing),
       max-height var(--post-layout-duration) var(--post-motion-easing);
-    max-height: 999px;
   }
 
   .post-year-section.is-hidden {
@@ -438,22 +451,15 @@ const visiblePostsByYear = new Map(
       position: relative;
     }
 
-    /* Below the intro and in line with it, never floating over it */
     .post-filter {
       position: relative;
       inline-size: auto;
-      margin: -0.75rem 0 1.25rem;
+      margin: 0 0 1.25rem;
       z-index: 35;
     }
 
     .post-filter-list {
-      display: flex;
-      align-items: center;
-      flex-wrap: nowrap;
-      position: relative;
       margin-inline: -0.45rem;
-      justify-content: flex-start;
-      gap: 1.1rem;
     }
 
     .post-filter-dropdown {

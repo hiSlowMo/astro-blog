@@ -303,7 +303,7 @@ const tocTree = buildTocTree(filteredHeadings)
   .toc-mobile-tab.is-active {
     color: oklch(var(--un-preset-theme-colors-primary) / 0.96);
     background: oklch(var(--un-preset-theme-colors-background) / 0.68);
-    box-shadow: 0 1px 10px oklch(0 0 0 / 0.08);
+    box-shadow: inset 0 -2px oklch(var(--un-preset-theme-colors-accent));
     transform: translateY(-0.02rem);
   }
 
@@ -380,6 +380,7 @@ const tocTree = buildTocTree(filteredHeadings)
 
   .toc-mobile-series-link.is-current {
     color: oklch(var(--un-preset-theme-colors-primary) / 0.95);
+    box-shadow: inset 2px 0 oklch(var(--un-preset-theme-colors-accent));
     background: oklch(var(--un-preset-theme-colors-secondary) / 0.11);
   }
 

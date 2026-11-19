@@ -16,19 +16,10 @@ function initPostFilters() {
   const buttons = Array.from(root.querySelectorAll<HTMLElement>('.post-filter-option[data-filter]'))
   const items = Array.from(root.querySelectorAll<HTMLElement>('.post-item'))
   const sections = Array.from(root.querySelectorAll<HTMLElement>('.post-year-section'))
-  const sortableSections = sections.filter(section =>
-    !section.classList.contains('post-year-section--pinned')
-    && !section.classList.contains('post-year-section--featured'),
-  )
+  const list = root.querySelector('ul')
   const dropdown = createDropdownController(root.querySelector<HTMLElement>('[data-filter-dropdown]'))
-  const originalSectionOrder = sortableSections.slice()
-  const originalItemsMap = new Map<HTMLElement, HTMLElement[]>()
   let currentSortKey: PostSortKey = 'created'
   let transitionRequestId = 0
-
-  sortableSections.forEach((section) => {
-    originalItemsMap.set(section, Array.from(section.querySelectorAll<HTMLElement>('.post-item')))
-  })
 
   const getKeyTime = (item: HTMLElement, key: PostSortKey) => {
     const value = key === 'updated' ? item.dataset.updated : item.dataset.created
@@ -97,31 +88,9 @@ function initPostFilters() {
   }
 
   const reorderBySortKey = () => {
-    const sectionOrderIndex = new Map(originalSectionOrder.map((section, index) => [section, index]))
-    const sectionEntries = sortableSections.map((section) => {
-      const list = section.querySelector<HTMLElement>('ul')
-      const itemsInSection = originalItemsMap.get(section) ?? []
-      const orderedItems = itemsInSection
-        .slice()
-        .sort((a, b) => getKeyTime(b, currentSortKey) - getKeyTime(a, currentSortKey))
-
-      orderedItems.forEach(item => list?.appendChild(item))
-
-      const visibleItems = orderedItems.filter(item => !item.classList.contains('is-hidden'))
-      const maxTime = visibleItems.length > 0
-        ? Math.max(...visibleItems.map(item => getKeyTime(item, currentSortKey)))
-        : -1
-
-      return {
-        section,
-        maxTime,
-        index: sectionOrderIndex.get(section) ?? 0,
-      }
-    })
-
-    sectionEntries
-      .sort((a, b) => (b.maxTime - a.maxTime) || (a.index - b.index))
-      .forEach(entry => root.appendChild(entry.section))
+    items.slice()
+      .sort((first, second) => getKeyTime(second, currentSortKey) - getKeyTime(first, currentSortKey))
+      .forEach(item => list?.appendChild(item))
   }
 
   let activeFilterValues: string[] = []

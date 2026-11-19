@@ -279,7 +279,7 @@ const { scene = 'clouds' } = Astro.props
 
   // Drifting clouds, a touch denser around the title; at night stars show through the gaps
   function drawClouds(f: Field, t: number, threshold: number, stars: boolean) {
-    threshold -= f.compact ? 0.045 : 0
+    threshold -= f.compact ? 0.02 : 0
     const drift = t * 0.04
     const morph = t * 0.022
     for (let row = 0; row < f.rows; row++) {
@@ -326,12 +326,12 @@ const { scene = 'clouds' } = Astro.props
 
     for (let col = 0; col < f.cols; col++) {
       const shower = noise3(col / 14, t * 0.08, 5.3)
-      const onset = f.compact ? 0.3 : 0.38
+      const onset = f.compact ? 0.36 : 0.38
       if (shower < onset)
         continue
 
       const intensity = Math.min((shower - onset) / 0.25, 1)
-      for (let drop = 0; drop < (f.compact ? 3 : 2); drop++) {
+      for (let drop = 0; drop < 2; drop++) {
         const seed = hash3(col, drop, 11)
         const speed = 9 + seed * 9
         const length = 3 + Math.floor(hash3(col, drop, 12) * 6)

@@ -1,6 +1,5 @@
 ---
 import { getCollection, render } from 'astro:content'
-import Signature from '@/components/Widgets/Signature.astro'
 import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { ui } from '@/i18n/ui'
@@ -23,133 +22,144 @@ const hasMath = hasMathContent(aboutEntry?.body, aboutEntry?.filePath)
 ---
 
 <Layout pageTitle={ui[currentLang].about} pageDescription="关于 SlowMo：一名软件工程专业的学生，记录计算机、排版美学与日常思考。" enableContentEnhancements enableKatex={hasMath}>
-  <!-- Decorative Line -->
-  <div class="uno-decorative-line" />
-  <!-- About Page Content -->
-  <div class="heti about-content">
+  <div class="about-content">
     {Content && <Content />}
-    <Signature mode="once-on-view" />
   </div>
 </Layout>
 
 <style is:global>
   .about-content {
-    position: relative;
+    --about-column: 110px;
+    --about-gap: clamp(.65rem, 2vw, 1.4rem);
+    color: oklch(var(--un-preset-theme-colors-primary) / .9);
+    line-height: 1.75;
   }
 
-  .about-content > .signature-wrapper {
-    position: absolute;
-    right: 0;
-    bottom: 4rem;
-    margin: 0;
-  }
-
-  @media (max-width: 767px) {
-    .about-content > .signature-wrapper {
-      top: calc(clamp(96px, 28vw, 150px) / 2 + 1.5rem);
-      right: 0.25rem;
-      bottom: auto;
-      width: 8.5rem;
-      transform: translateY(-50%);
-    }
-  }
-
-  /* Slowly rotating line rings behind the avatar in about.md */
-  .about-avatar {
-    position: relative;
+  .about-intro, .about-row {
     display: grid;
-    flex-shrink: 0;
+    grid-template-columns: var(--about-column) minmax(0, 1fr);
+    column-gap: var(--about-gap);
+    align-items: start;
   }
 
-  .about-orbit {
-    --orbit-line: oklch(var(--un-preset-theme-colors-secondary) / 0.24);
-    --orbit-faint: oklch(var(--un-preset-theme-colors-secondary) / 0.14);
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    z-index: -1;
-    width: 220%;
-    aspect-ratio: 1;
-    translate: -50% -50%;
-    pointer-events: none;
+  .about-intro {
+    grid-template-areas: "avatar title" "avatar bio";
+    row-gap: .65rem;
+    margin-bottom: 2rem;
+    font-size: var(--page-title-size);
   }
 
-  .about-orbit > span,
-  .about-orbit > span::before,
-  .about-orbit > span::after {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    translate: -50% -50%;
+  .about-intro h1 {
+    grid-area: title;
   }
 
-  .about-orbit > span::before,
-  .about-orbit > span::after {
-    content: '';
-  }
-
-  /* Inner disc with a solid ring, a dashed outer ring and a small satellite */
-  .about-orbit-ring {
-    width: 66%;
-    aspect-ratio: 1;
-    border: 1px solid var(--orbit-line);
-    border-radius: 50%;
-    background: oklch(var(--un-preset-theme-colors-secondary) / 0.05);
-    animation: about-orbit-spin 180s linear infinite;
-  }
-  .about-orbit-ring::before {
-    width: 128%;
-    aspect-ratio: 1;
-    border: 1px dashed var(--orbit-line);
-    border-radius: 50%;
-  }
-  .about-orbit > .about-orbit-ring::after {
-    top: -14%;
-    width: 5px;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: oklch(var(--un-preset-theme-colors-primary) / 0.55);
-  }
-
-  /* Crosshair lines turning the other way */
-  .about-orbit-cross {
+  .about-avatar {
+    grid-area: avatar;
     width: 100%;
+    height: auto;
     aspect-ratio: 1;
-    animation: about-orbit-spin 120s linear infinite reverse;
-  }
-  .about-orbit-cross::before,
-  .about-orbit-cross::after {
-    width: 100%;
-    height: 1px;
-    background: linear-gradient(to right, transparent, var(--orbit-line) 25%, var(--orbit-line) 75%, transparent);
-  }
-  .about-orbit-cross::after {
-    rotate: 90deg;
+    object-fit: cover;
+    margin-top: .19em;
+    border-radius: 1rem;
   }
 
-  /* Hatched outer band, faded on both sides */
-  .about-orbit-hatch {
-    width: 100%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: repeating-linear-gradient(45deg, var(--orbit-faint) 0 1px, transparent 1px 6px);
-    -webkit-mask-image: radial-gradient(closest-side, transparent 72%, #000 80%, #000 88%, transparent 100%);
-    mask-image: radial-gradient(closest-side, transparent 72%, #000 80%, #000 88%, transparent 100%);
+  .about-bio {
+    grid-area: bio;
+    font-size: 1rem;
+    overflow-wrap: anywhere;
   }
 
-  @keyframes about-orbit-spin {
-    to {
-      rotate: 360deg;
+  .about-bio .signature-wrapper {
+    width: min(8.5rem, 100%);
+    margin: .85rem 0 0;
+  }
+
+  .about-row {
+    border-top: 1px solid oklch(var(--un-preset-theme-colors-secondary) / .25);
+    padding-block: 1.2rem;
+    align-items: baseline;
+  }
+
+  .about-row li + li {
+    margin-top: .25rem;
+  }
+
+  .about-row a {
+    text-decoration: underline;
+    text-underline-offset: .18em;
+    text-decoration-color: oklch(var(--un-preset-theme-colors-secondary) / .6);
+  }
+
+  .about-row a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .about-note {
+    margin: 1.5rem 0 0 calc(var(--about-column) + var(--about-gap));
+    color: oklch(var(--un-preset-theme-colors-secondary) / .86);
+    font-size: .85rem;
+  }
+
+  @media (max-width: 768px) {
+    .about-content { --about-column: clamp(4rem, 14vw, 5rem); }
+    .about-intro {
+      grid-template-columns: var(--about-column) minmax(0, 1fr);
+      grid-template-areas:
+        "title title"
+        "avatar identity"
+        "bio bio"
+        "signature signature";
+      gap: 1rem;
     }
-  }
 
-  html.reduce-motion .about-orbit > span {
-    animation: none;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .about-orbit > span {
-      animation: none;
+    .about-avatar { margin-top: 0; }
+    .about-bio { display: contents; }
+    .about-identity {
+      grid-area: identity;
+      align-self: center;
+      display: grid;
+      gap: .2rem;
+      line-height: 1.45;
     }
+    .about-identity-lead { display: none; }
+    .about-role {
+      color: oklch(var(--un-preset-theme-colors-secondary));
+      font-size: .9rem;
+    }
+    .about-description { grid-area: bio; }
+    .about-bio .signature-wrapper {
+      grid-area: signature;
+      justify-self: end;
+      margin: 0;
+    }
+    .about-row {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: .75rem;
+      padding-block: 1rem;
+    }
+    .about-row ul {
+      display: grid;
+      row-gap: .35rem;
+      line-height: 1.55;
+    }
+    .about-row li + li { margin-top: 0; }
+    .about-topics ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1rem;
+    }
+    .about-contacts li {
+      display: grid;
+      grid-template-columns: var(--about-column) minmax(0, 1fr);
+      column-gap: 1rem;
+      align-items: baseline;
+      color: oklch(var(--un-preset-theme-colors-secondary));
+    }
+    .about-contacts a {
+      justify-self: start;
+      padding-block: .15rem;
+      color: oklch(var(--un-preset-theme-colors-primary) / .9);
+      overflow-wrap: anywhere;
+    }
+    .about-note { margin-inline-start: 0; }
   }
 </style>

@@ -30,7 +30,7 @@ const supportedLangs = await getTagSupportedLangs(tag)
 <Layout pageTitle={`标签：${tag}`} pageDescription={`浏览「${tag}」相关的 ${posts.length} 篇文章，来自 SlowMo's 办事处。`} supportedLangs={supportedLangs}>
   <header class="tag-detail-header">
     <div class="tag-detail-heading">
-      <h1>{tag}</h1>
+      <h1 class="page-title">{tag}</h1>
       <span class="font-time">{posts.length} 篇</span>
     </div>
     <a class="tag-detail-all" href={getLocalizedPath('/tags/', currentLang)}>全部标签 <span aria-hidden="true">↗</span></a>
@@ -47,6 +47,7 @@ const supportedLangs = await getTagSupportedLangs(tag)
             <time class="tag-post-date font-time" datetime={date}>{date}</time>
             <div class="tag-post-title">
               <a
+                class="module-title"
                 href={getPostPath(slug, currentLang)}
                 transition:name={`post-${slug}${currentLang ? `-${currentLang}` : ''}`}
                 data-disable-theme-toggle-transition
@@ -79,15 +80,6 @@ const supportedLangs = await getTagSupportedLangs(tag)
     align-items: baseline;
     gap: 0.75rem;
     min-width: 0;
-  }
-
-  .tag-detail-heading h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 500;
-    line-height: 1.4;
-    text-wrap: balance;
-    overflow-wrap: anywhere;
   }
 
   .tag-detail-heading > span {
@@ -144,9 +136,6 @@ const supportedLangs = await getTagSupportedLangs(tag)
   }
 
   .tag-post-title a {
-    color: oklch(var(--un-preset-theme-colors-primary) / 0.86);
-    font-size: 1.0625rem;
-    line-height: 1.7;
     text-decoration: none;
     overflow-wrap: anywhere;
     transition: color var(--motion-fast) ease;
