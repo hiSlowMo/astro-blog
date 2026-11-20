@@ -1,5 +1,6 @@
 ---
 import PostList from '@/components/PostList.astro'
+import ReleaseSleeve from '@/components/Records/ReleaseSleeve.astro'
 import { allLocales, themeConfig } from '@/config'
 import { getUsedCategoryFilters } from '@/data/post-categories'
 import { getLangRouteParam } from '@/i18n/lang'
@@ -27,10 +28,12 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
   {latest && (
     <section class="latest" aria-labelledby="latest-label">
       <h2 class="section-label" id="latest-label">最新发布 <small lang="en">LATEST RELEASE</small></h2>
-      <article class:list={['latest-entry', { 'has-thumbnail': thumbnail }]}>
+      <article class="latest-entry">
         <time class="latest-date font-time" datetime={latest.data.published.toISOString()}>{formatPostDate(latest.data.published, themeConfig.global.dateFormat)}</time>
         <h3 class="latest-title page-title"><a href={getPostPath(latest.data.abbrlink || latest.id, currentLang)}>{latest.data.title}</a></h3>
-        {thumbnail && <img class="latest-thumbnail" src={thumbnail} alt="" width="144" height="144" decoding="async" />}
+        {thumbnail
+          ? <img class="latest-thumbnail" src={thumbnail} alt="" width="144" height="144" decoding="async" />
+          : <div class="latest-thumbnail"><ReleaseSleeve postId={latest.id} published={latest.data.published} /></div>}
         <p class="latest-summary">{getPostDescription(latest, 'list')}</p>
       </article>
     </section>
@@ -160,15 +163,11 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
   .latest-entry {
     --latest-summary-size: .95rem;
     display: grid;
-    grid-template-areas: "date" "title" "summary";
+    grid-template-columns: clamp(5rem, 10vw, 8.5rem) minmax(0, 1fr);
+    grid-template-areas: ". date" "cover title" "cover summary";
     align-items: start;
     gap: .6rem 1.4rem;
     margin: 1.25rem 0 2.25rem;
-  }
-
-  .latest-entry.has-thumbnail {
-    grid-template-columns: clamp(5rem, 10vw, 8.5rem) minmax(0, 1fr);
-    grid-template-areas: ". date" "cover title" "cover summary";
   }
 
   .latest-thumbnail {
@@ -205,8 +204,8 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
   }
 
   @media (max-width: 768px) {
-    .latest-entry { column-gap: .9rem; }
-    .latest-entry.has-thumbnail {
+    .latest-entry {
+      column-gap: .9rem;
       grid-template-areas: "date date" "title title" "cover summary";
     }
     .latest-thumbnail {
