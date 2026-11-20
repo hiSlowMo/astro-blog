@@ -50,8 +50,8 @@ export const themeConfig: ThemeConfig = {
       primary: 'oklch(20% 0 0)',
       secondary: 'oklch(44% 0 0)',
       background: 'oklch(98.5% 0 0)',
-      accent: 'oklch(46% 0.27 265)', // klein blue
-      highlight: 'oklch(46% 0.27 265 / 0.14)',
+      accent: 'oklch(45% 0.09 167)',
+      highlight: 'oklch(45% 0.09 167 / 0.14)',
     },
 
     dark: {
@@ -133,6 +133,7 @@ export const themeConfig: ThemeConfig = {
 
   // SEO SETTINGS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> START
   seo: {
+    canonicalOrigin: 'https://www.theslowmo.com',
     // @twitter ID
     twitterID: '',
     // site verification
@@ -164,10 +165,6 @@ export const themeConfig: ThemeConfig = {
       // user ID
       userID: '',
     },
-    // apiflash access key
-    // generate website screenshots for open graph images
-    // get your access key at: https://apiflash.com/
-    apiflashKey: '',
   },
   // SEO SETTINGS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END
 

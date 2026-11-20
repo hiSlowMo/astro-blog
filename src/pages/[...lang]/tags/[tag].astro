@@ -29,11 +29,11 @@ const supportedLangs = await getTagSupportedLangs(tag)
 
 <Layout pageTitle={`标签：${tag}`} pageDescription={`浏览「${tag}」相关的 ${posts.length} 篇文章，来自 SlowMo's 办事处。`} supportedLangs={supportedLangs}>
   <header class="tag-detail-header">
+    <a class="tag-detail-all" href={getLocalizedPath('/tags/', currentLang)}><span aria-hidden="true">←</span> 全部标签</a>
     <div class="tag-detail-heading">
       <h1 class="page-title">{tag}</h1>
-      <span class="font-time">{posts.length} 篇</span>
+      <span class="tag-total font-time"><strong>{posts.length}</strong> 篇</span>
     </div>
-    <a class="tag-detail-all" href={getLocalizedPath('/tags/', currentLang)}>全部标签 <span aria-hidden="true">↗</span></a>
   </header>
 
   <!-- Posts List -->
@@ -66,26 +66,39 @@ const supportedLangs = await getTagSupportedLangs(tag)
 
 <style>
   .tag-detail-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
+    display: grid;
+    justify-items: start;
+    gap: .75rem;
+    padding-bottom: .85rem;
+    border-bottom: var(--section-divider);
   }
 
   .tag-detail-heading {
-    display: flex;
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: baseline;
     gap: 0.75rem;
     min-width: 0;
   }
 
-  .tag-detail-heading > span {
-    flex: none;
-    color: oklch(var(--un-preset-theme-colors-secondary) / 0.85);
-    font-size: 0.875rem;
+  .tag-detail-heading h1 {
+    overflow-wrap: anywhere;
+  }
+
+  .tag-total {
+    padding: .25rem .55rem .3rem 1rem;
+    mask-image: var(--cut-start);
+    background: oklch(var(--un-preset-theme-colors-primary));
+    color: oklch(var(--un-preset-theme-colors-background));
+    font-size: .8rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .tag-total strong {
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
   }
 
   .tag-detail-all {
@@ -101,13 +114,12 @@ const supportedLangs = await getTagSupportedLangs(tag)
   }
 
   .tag-detail-all:focus-visible {
-    outline: 2px solid oklch(var(--un-preset-theme-colors-accent) / 0.55);
+    outline: var(--focus-ring);
     outline-offset: 4px;
   }
 
   .tag-post-list {
     display: grid;
-    gap: 1.35rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -115,9 +127,11 @@ const supportedLangs = await getTagSupportedLangs(tag)
 
   .tag-post {
     display: grid;
-    grid-template-columns: 6.25rem minmax(0, 1fr) auto;
+    grid-template-columns: var(--editorial-index) minmax(0, 1fr) auto;
     align-items: baseline;
-    gap: 0.9rem;
+    gap: var(--editorial-gap);
+    padding-block: .85rem;
+    border-bottom: var(--section-divider);
   }
 
   .tag-post-date,
@@ -151,22 +165,23 @@ const supportedLangs = await getTagSupportedLangs(tag)
   }
 
   .tag-post-title a:focus-visible {
-    outline: 2px solid oklch(var(--un-preset-theme-colors-accent) / 0.55);
+    outline: var(--focus-ring);
     outline-offset: 4px;
   }
 
   @media (max-width: 639px) {
     .tag-post {
-      grid-template-columns: 6.25rem minmax(0, 1fr);
-      gap: 0.8rem;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: .3rem .75rem;
     }
 
-    .tag-post-date {
-      font-size: 0.875rem;
+    .tag-post-title {
+      grid-area: 1 / 1 / 2 / -1;
     }
 
+    .tag-post-date,
     .tag-post-reading {
-      display: none;
+      font-size: .8rem;
     }
   }
 

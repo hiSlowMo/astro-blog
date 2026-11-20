@@ -102,6 +102,8 @@ try {
       document.dispatchEvent(new Event('astro:page-load'))
     })
     assert.equal(requests(), 1, 'initialization must not duplicate the widget')
+    await page.evaluate(() => window.scrollBy({ top: -80, behavior: 'instant' }))
+    await page.waitForFunction(() => !document.documentElement.hasAttribute('data-reading-controls-hidden'))
     await page.locator('#theme-toggle-button').click()
     const expectedMode = await page.evaluate(() => document.documentElement.classList.contains('dark') ? 'dark' : 'light')
     const frame = page.frames().find(frame => frame.url().startsWith(widgetURL))

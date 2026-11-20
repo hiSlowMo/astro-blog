@@ -75,6 +75,7 @@ export interface ThemeConfig {
     }
   }
   seo?: {
+    canonicalOrigin?: string
     twitterID?: string
     verification?: {
       google?: string
@@ -88,7 +89,6 @@ export interface ThemeConfig {
       feedID?: string
       userID?: string
     }
-    apiflashKey?: string
   }
   footer: {
     links: {

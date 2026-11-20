@@ -90,9 +90,37 @@ const {
     pointer-events: none;
   }
 
-  /* Root trunk starts slightly above first tick, matching ttio.cc */
-  .toc-tree--root > .toc-tree-item:first-child::before {
-    top: -0.22rem;
+  .toc-tree--root > .toc-tree-item {
+    padding: .35rem 0 !important;
+    border-bottom: 1px solid var(--section-rule);
+  }
+
+  .toc-tree--root > .toc-tree-item::before,
+  .toc-tree--root > .toc-tree-item::after {
+    display: none;
+  }
+
+  .toc-tree--root > .toc-tree-item > .toc-tree-link {
+    padding-inline-start: .85rem;
+    position: relative;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .toc-tree--root > .toc-tree-item > .toc-tree-link[aria-current='location']::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: .32em;
+    width: .4rem;
+    height: .82em;
+    background: oklch(var(--un-preset-theme-colors-accent));
+    mask-image: var(--cut-start), var(--cut-end);
+    mask-composite: intersect;
+  }
+
+  .toc-tree--root > .toc-tree-item > .toc-tree--nested {
+    margin-inline-start: .85rem !important;
   }
 
   /* Nested branch connects seamlessly to bottom of parent label */
@@ -104,10 +132,6 @@ const {
   .toc-tree-item:last-child::before {
     bottom: auto;
     height: 0.92rem;
-  }
-
-  .toc-tree--root > .toc-tree-item:first-child:last-child::before {
-    height: 1.14rem;
   }
 
   .toc-tree--nested > .toc-tree-item:first-child:last-child::before {

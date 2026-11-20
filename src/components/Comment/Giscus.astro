@@ -30,7 +30,10 @@ const giscusConfig = {
 }
 ---
 
-<section class="no-heti thought-comments mt-16" aria-label="评论与回复">
+<section class="no-heti thought-comments" aria-labelledby="comments-heading">
+  <h2 id="comments-heading" class="section-label comments-heading">
+    评论 <small lang="en">COMMENTS</small>
+  </h2>
   <div id="giscus" class="giscus" data-config={JSON.stringify(giscusConfig)}>
   </div>
   <div class="thought-comments-feedback">
@@ -50,7 +53,7 @@ let activeContainer: HTMLElement | null = null
 function getThemeUrl() {
   const mode = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
   const suffix = import.meta.env.DEV ? '/' : ''
-  return new URL(`${base}/giscus/theme-${mode}.css${suffix}?v=20261101-6`, location.origin).href
+  return new URL(`${base}/giscus/theme-${mode}.css${suffix}?v=20261120b`, location.origin).href
 }
 
 function updateGiscusTheme() {
@@ -140,6 +143,7 @@ function loadGiscus(container: HTMLElement) {
 }
 
 function cleanupGiscus() {
+  document.documentElement.removeAttribute('data-comment-keyboard')
   observer?.disconnect()
   observer = undefined
   controller?.abort()
@@ -159,6 +163,15 @@ function setupGiscus() {
   controller = new AbortController()
   container.parentElement?.querySelector('[data-giscus-retry]')?.addEventListener('click', () => loadGiscus(container), { signal: controller.signal })
   document.addEventListener('theme-changed', updateGiscusTheme, { signal: controller.signal })
+  const viewport = window.visualViewport
+  if (viewport) {
+    const updateControls = () => {
+      const editing = container.contains(document.activeElement) && viewport.scale === 1
+      document.documentElement.toggleAttribute('data-comment-keyboard', editing && window.innerHeight - viewport.height > 120)
+    }
+    viewport.addEventListener('resize', updateControls, { signal: controller.signal })
+    window.addEventListener('focus', updateControls, { signal: controller.signal })
+  }
 
   if (!('IntersectionObserver' in window)) {
     loadGiscus(container)
@@ -183,8 +196,27 @@ else
 
 <style>
   .thought-comments {
+    margin-top: var(--comments-margin-top, clamp(2rem, 5vw, 3.5rem));
     font-family: var(--font-sans);
     scroll-margin-top: 4rem;
+  }
+
+  .thought-comments .comments-heading {
+    display: grid;
+    grid-template-columns: var(--editorial-index) minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--editorial-gap);
+    margin: 0 0 1rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--section-rule);
+  }
+
+  @media (max-width: 639px) {
+    .thought-comments .comments-heading {
+      grid-template-columns: auto 1fr;
+      gap: .55rem;
+      margin-bottom: .75rem;
+    }
   }
 
   .thought-comments-status,

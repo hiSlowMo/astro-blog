@@ -56,7 +56,8 @@ def public_url(value):
         return False
 
 
-def fetch(url):
+def fetch(url, *, html_only=False):
+    deadline = time.monotonic() + 10 if html_only else None
     for _ in range(5):
         if not public_url(url):
             raise ValueError("invalid URL")
@@ -64,19 +65,27 @@ def fetch(url):
         port = parts.port or (443 if parts.scheme == "https" else 80)
         host = parts.hostname.encode("idna").decode()
         addresses = [item[4][0] for item in socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)]
-        if not addresses or not all(ipaddress.ip_address(addr).is_global for addr in addresses):
+        resolved = [ipaddress.ip_address(addr) for addr in addresses]
+        if not resolved or not all(ip.is_global and not ip.is_multicast for ip in resolved):
             raise ValueError("non-public address")
         address = next((addr for addr in addresses if ":" not in addr), f"[{addresses[0]}]")
+        timeout = min(12, deadline - time.monotonic()) if deadline else 12
+        if timeout <= 0:
+            raise ValueError("fetch timeout")
+        target = parts._replace(netloc=f"{host}:{port}", fragment="").geturl()
         with tempfile.TemporaryDirectory() as directory:
             body = Path(directory) / "body"
             result = subprocess.run([
                 "curl", "-q", "-sS", "--globoff", "--noproxy", "*", "--proto", "=http,https",
-                "--max-time", "12", "--max-filesize", "4194304", "--user-agent", "SlowMoRecords/1.0",
+                "--max-time", str(timeout), "--max-filesize", "1048576" if html_only else "4194304",
+                "--user-agent", "SlowMoRecords/1.0",
                 "--resolve", f"{host}:{port}:{address}", "--output", str(body),
-                "--write-out", "%{http_code}\n%{redirect_url}", "--", url,
-            ], capture_output=True, check=True, timeout=15)
-            code, redirect = result.stdout.decode().split("\n", 1)
+                "--write-out", "%{http_code}\n%{redirect_url}\n%{content_type}", "--", target,
+            ], capture_output=True, check=True, timeout=timeout + 1)
+            code, redirect, content_type = result.stdout.decode().split("\n", 2)
             if code == "200":
+                if html_only and content_type.split(";")[0].strip().lower() not in ("text/html", "application/xhtml+xml"):
+                    raise ValueError("expected HTML")
                 return url, body.read_bytes()
             if code in ("301", "302", "303", "307", "308") and redirect:
                 url = redirect

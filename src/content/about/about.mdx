@@ -7,7 +7,7 @@ lang: zh
 import Signature from '@/components/Widgets/Signature.astro'
 
 <header class="about-intro">
-  <h1 class="page-title">你好，这里是开场白。</h1>
+  <h1 class="page-title">你好，这里是<span class="about-opening">开场白。</span></h1>
   <img class="about-avatar" src="https://img.theslowmo.com/2026/08/bf1a4df8e1e457061fcc750c054f6691.webp" alt="SlowMo 头像" width="110" height="110" decoding="async" />
   <div class="about-bio">
     <p class="about-identity"><span class="about-identity-lead">我是 </span><strong>人畜无害-SlowMo</strong><span class="about-identity-lead">，</span><span class="about-role">一名软件工程专业的学生。</span></p>
@@ -19,18 +19,20 @@ import Signature from '@/components/Widgets/Signature.astro'
 <section class="about-row about-topics">
   <h2 class="section-label">写些什么</h2>
 
-- 生活中的片段
-- 学习上的历程
-- 没营养的随笔
-- VibeCoding
+- **生活**中的片段
+- **学习**上的历程
+- 没营养的**随笔**
+- **VibeCoding**
 
 </section>
 
 <section class="about-row about-contacts">
   <h2 class="section-label">联系我</h2>
 
-- GitHub：[hiSlowMo](https://github.com/hiSlowMo)
-- 邮箱：[me@theslowmo.com](mailto:me@theslowmo.com)
+  <ul>
+    <li><a href="https://github.com/hiSlowMo"><span>GitHub</span><strong>hiSlowMo</strong><span aria-hidden="true">↗</span></a></li>
+    <li><a href="mailto:me@theslowmo.com"><span>邮箱</span><strong>{'me@theslowmo.com'}</strong><span aria-hidden="true">↗</span></a></li>
+  </ul>
 
 </section>
 

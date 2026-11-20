@@ -162,6 +162,7 @@ const isSingleUtility = utilityButtonCount === 1
 
 <!-- Theme Toggle Script >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 <script>
+import { prefersReducedMotion } from '@/scripts/motion'
 // Theme toggling is shared with standalone layouts (see RecordLayout.astro)
 import '@/scripts/theme-toggle'
 
@@ -171,8 +172,8 @@ function scrollToTarget(selector: string) {
     return
   }
 
-  const behavior = document.documentElement.classList.contains('reduce-motion')
-    ? 'auto'
+  const behavior = prefersReducedMotion()
+    ? 'instant'
     : 'smooth'
 
   target.scrollIntoView({ behavior, block: 'start' })
@@ -195,6 +196,7 @@ function handlePostShortcutClick(e: MouseEvent) {
 
 const PROGRESS_CIRCUMFERENCE = 2 * Math.PI * 15.5
 let progressTicking = false
+let scrollAnchor = 0
 
 function updateTopProgress() {
   progressTicking = false
@@ -204,6 +206,12 @@ function updateTopProgress() {
   }
 
   const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+  const position = Math.max(0, Math.min(maxScroll, window.scrollY))
+  const delta = position - scrollAnchor
+  if (position < 48 || Math.abs(delta) >= 10) {
+    document.documentElement.toggleAttribute('data-reading-controls-hidden', position >= 48 && delta > 0)
+    scrollAnchor = position
+  }
   const progress = maxScroll > 0
     ? Math.min(1, Math.max(0, window.scrollY / maxScroll))
     : 0
@@ -222,6 +230,8 @@ function handleProgressScroll() {
 
 function setupPostProgress() {
   progressTicking = false
+  scrollAnchor = window.scrollY
+  document.documentElement.removeAttribute('data-reading-controls-hidden')
   updateTopProgress()
 }
 
@@ -265,7 +275,7 @@ else {
   }
 
   .floating-utility-button:focus-visible {
-    outline: 2px solid oklch(var(--un-preset-theme-colors-accent));
+    outline: var(--focus-ring);
     outline-offset: 3px;
     border-radius: 50%;
   }
@@ -287,30 +297,20 @@ else {
     display: block;
   }
 
-  /* 触屏与窄屏：收进与目录按钮同款的玻璃胶囊，放大点击区域，并与左下角目录按钮对称 */
   @media (max-width: 1023.98px) {
     #site-utility {
-      --utility-offset-bottom: calc(8.25rem + env(safe-area-inset-bottom));
-      right: max(0.75rem, calc(env(safe-area-inset-right) + 0.7rem));
-      bottom: var(--utility-offset-bottom);
-      gap: 0.1rem;
-      padding: 0.14rem;
-      border: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
-      border-radius: 0.8rem;
-      background:
-        linear-gradient(180deg, rgb(255 255 255 / 0.09), transparent 56%),
-        oklch(var(--un-preset-theme-colors-background) / 0.55);
-      box-shadow:
-        0 18px 32px oklch(0 0 0 / 0.15),
-        inset 0 1px 0 rgb(255 255 255 / 0.13);
-      backdrop-filter: blur(20px) saturate(165%);
-      -webkit-backdrop-filter: blur(20px) saturate(165%);
+      right: calc(var(--controls-edge) + env(safe-area-inset-right));
+      bottom: var(--controls-bottom);
+      gap: 0;
+      border: var(--control-border);
+      border-radius: var(--control-radius);
+      background: var(--control-surface);
     }
 
     .floating-utility-button {
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: 0.66rem;
+      width: var(--control-size);
+      height: var(--control-size);
+      border-radius: var(--control-radius);
     }
 
     .floating-utility-button__ring-svg {
@@ -330,6 +330,8 @@ else {
     }
 
     #site-utility.site-utility--single .floating-utility-button {
+      width: 2.5rem;
+      height: 2.5rem;
       border-radius: 50%;
     }
 
@@ -338,15 +340,9 @@ else {
     }
 
     .floating-utility-button:focus-visible {
-      outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.45);
+      outline: var(--focus-ring);
       outline-offset: 1px;
     }
   }
 
-  /* 与目录按钮在触屏平板上的位置保持一致 */
-  @media (min-width: 769px) and (max-width: 1023.98px) and (hover: none) and (pointer: coarse) {
-    #site-utility {
-      --utility-offset-bottom: calc(1.5rem + env(safe-area-inset-bottom));
-    }
-  }
 </style>

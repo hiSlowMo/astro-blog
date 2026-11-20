@@ -1,3 +1,31 @@
+html[data-reading-layout='article'] #site-footer {
+  padding-top: .7rem;
+  border-top: 1px solid var(--section-rule);
+}
+
+@media (max-width: 767.98px) {
+  html[data-reading-layout='article'] .footer-default {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: .35rem .75rem;
+  }
+
+  html[data-reading-layout='article'] .footer-default p {
+    margin: 0;
+  }
+
+  html[data-reading-layout='article'] .footer-default p:first-child {
+    grid-column: 1 / -1;
+    font-size: .875rem;
+    line-height: 1.75;
+  }
+
+  html[data-comment-keyboard] :is(#site-utility, .toc-mobile-trigger) {
+    visibility: hidden;
+  }
+}
+
 /* Tablet and desktop article layout. Phones retain the existing flow. */
 @media (min-width: 768px) {
   html[data-reading-layout='article'] .site-layout {
@@ -30,9 +58,7 @@
   html[data-reading-layout='article'] #site-footer {
     position: static;
     width: auto;
-    margin-top: 2.25rem;
-    padding-top: 0;
-    border-top: none;
+    margin-top: 1.5rem;
     font-size: 0.875rem;
     line-height: 1.5;
     color: oklch(var(--un-preset-theme-colors-primary) / 0.86);
@@ -43,17 +69,27 @@
   }
 
   html[data-reading-layout='article'] #site-footer .footer-reading {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--editorial-gap);
+  }
+
+  html[data-reading-layout='article'] .footer-reading__left > span:first-child {
+    flex: 0 0 var(--editorial-index);
+  }
+
+  html[data-reading-layout='article'] .footer-reading__sep {
+    display: none;
+  }
+
+  html[data-reading-layout='article'] .footer-reading__icon-group {
+    margin-inline-start: calc(var(--editorial-gap) - .55rem);
   }
 
   html[data-reading-layout='article'] #site-utility {
-    right: 1.25rem;
-    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    right: calc(var(--controls-edge) + env(safe-area-inset-right));
+    bottom: var(--controls-bottom);
     width: auto;
-  }
-
-  html[data-reading-layout='article'] .toc-mobile-shell {
-    --toc-mobile-offset-bottom: calc(1.5rem + env(safe-area-inset-bottom));
   }
 
   html:not([data-reading-layout]) #site-header {
@@ -150,4 +186,39 @@ html.reduce-motion[data-reading-transition]::view-transition-new(*) {
   html[data-reading-transition]::view-transition-new(*) {
     animation: none !important;
   }
+}
+html[data-reading-layout='article'] :is(#site-utility, .toc-mobile-trigger) {
+  transition: opacity var(--motion-fast) ease, translate var(--motion-fast) var(--motion-ease-standard);
+}
+
+html[data-reading-layout='article'][data-reading-controls-hidden]:not(:has([data-mobile-toc-shell][data-open='1']))
+  :is(#site-utility:not(:has(:focus-visible)), .toc-mobile-trigger:not(:focus-visible)) {
+  opacity: 0;
+  translate: 0 .45rem;
+  pointer-events: none;
+}
+
+html.reduce-motion[data-reading-layout='article'] :is(#site-utility, .toc-mobile-trigger) {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-reading-layout='article'] :is(#site-utility, .toc-mobile-trigger) {
+    transition: none;
+  }
+}
+
+html[data-reading-layout='article'] #post-content > p {
+  line-height: 1.85;
+  margin-block-end: 1.1em;
+  text-align: start;
+}
+
+html[data-reading-layout='article'] #post-content > :is(h2, h3) {
+  margin-block: 1.65em .55em;
+  line-height: 1.4;
+}
+
+html[data-reading-layout='article'] #post-content > h2 + h3 {
+  margin-block-start: .7em;
 }

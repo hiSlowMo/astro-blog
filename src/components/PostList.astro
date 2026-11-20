@@ -70,9 +70,9 @@ const { posts, lang } = Astro.props
 <style>
   .post-item {
     display: grid;
-    grid-template-columns: 110px minmax(0, 1fr);
+    grid-template-columns: var(--editorial-index) minmax(0, 1fr);
     align-items: baseline;
-    column-gap: clamp(.65rem, 2vw, 1.4rem);
+    column-gap: var(--editorial-gap);
   }
 
   .post-date, .post-meta {

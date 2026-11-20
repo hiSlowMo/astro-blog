@@ -1,6 +1,8 @@
 import hashlib
 import json
 import re
+import subprocess
+import threading
 import time
 import uuid
 from urllib.parse import urlsplit
@@ -9,6 +11,7 @@ from flask import Flask, abort, jsonify, request
 from werkzeug.exceptions import HTTPException
 
 from feeds import public_url
+from metadata import site_metadata
 from storage import catalog, database
 
 app = Flask(__name__)
@@ -18,6 +21,7 @@ ORIGINS = {"https://www.theslowmo.com", "https://theslowmo.com"}
 FIELDS = {"name": 40, "url": 2048, "artist": 40, "email": 254, "description": 60,
           "icon": 2048, "cover": 2048, "rss": 2048, "article": 2048, "genres": 60}
 REQUIRED = {"name", "url", "artist", "email", "description", "icon"}
+lookup_slot = threading.BoundedSemaphore(1)
 
 
 @app.errorhandler(HTTPException)
@@ -84,20 +88,42 @@ def validate(data):
     return clean
 
 
-@app.post(BASE + "/applications")
-def apply():
+def limit_requests(scope, message):
     if request.headers.get("Origin") not in ORIGINS | {None}:
         abort(403, "申请来源无效。")
     now = int(time.time())
     peer = request.headers.get("X-Records-Client", request.remote_addr)
-    client = hashlib.sha256(f"{now // 3600}:{peer}".encode()).hexdigest()
+    client = scope + hashlib.sha256(f"{now // 3600}:{peer}".encode()).hexdigest()
     with database() as conn:
         conn.execute("DELETE FROM limits WHERE expires <= ?", (now,))
         conn.execute("""INSERT INTO limits VALUES (?,1,?) ON CONFLICT(client)
                         DO UPDATE SET count=count+1""", (client, now + 3600))
         limited = conn.execute("SELECT count FROM limits WHERE client=?", (client,)).fetchone()[0] > 12
     if limited:
-        abort(429, "提交次数过多，请稍后再试。")
+        abort(429, message)
+
+
+@app.post(BASE + "/site-metadata")
+def lookup():
+    limit_requests("metadata:", "抓取次数过多，请稍后再试。")
+    data = request.get_json()
+    url = data.get("url") if isinstance(data, dict) else None
+    if not isinstance(url, str) or len(url) > 2048 or not public_url(url):
+        abort(422, "请输入有效的公开站点地址。")
+    if not lookup_slot.acquire(blocking=False):
+        abort(429, "抓取服务正忙，请稍后再试。")
+    try:
+        return jsonify(site_metadata(url))
+    except (ValueError, OSError, subprocess.SubprocessError):
+        abort(422, "未能读取站点信息，可重试或手动填写。")
+    finally:
+        lookup_slot.release()
+
+
+@app.post(BASE + "/applications")
+def apply():
+    limit_requests("", "提交次数过多，请稍后再试。")
+    now = int(time.time())
     clean = validate(request.get_json())
     site = site_key(clean["url"])
     identifier = "SR-" + uuid.uuid4().hex

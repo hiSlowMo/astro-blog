@@ -221,9 +221,93 @@ function handleBlur(event: FocusEvent) {
 }
 
 // Our own messages replace the browser's bubbles
+function prepareLookup(form: HTMLFormElement) {
+  const address = form.querySelector<HTMLInputElement>('[name="url"]')
+  const button = form.querySelector<HTMLButtonElement>('[data-site-lookup]')
+  const status = form.querySelector<HTMLElement>('[data-lookup-status]')
+  if (!address || !button || !status || button.dataset.bound)
+    return
+  button.dataset.bound = 'true'
+  const filled = new Map<Control, string>()
+  let pending: AbortController | undefined
+  form.addEventListener('input', (event) => {
+    if (event.target instanceof HTMLInputElement)
+      filled.delete(event.target)
+    if (event.target !== address)
+      return
+    pending?.abort()
+    pending = undefined
+    button.textContent = '自动抓取'
+    button.removeAttribute('aria-busy')
+    status.textContent = ''
+    for (const [field, value] of filled) {
+      if (field.value === value)
+        field.value = ''
+    }
+    filled.clear()
+  })
+  button.addEventListener('click', async () => {
+    if (pending)
+      return
+    const error = checkControl(address)
+    showError(address, error)
+    if (error) {
+      address.focus()
+      return
+    }
+    const url = address.value.trim()
+    const controller = new AbortController()
+    pending = controller
+    const timer = window.setTimeout(() => controller.abort(), 15000)
+    button.textContent = '抓取中…'
+    button.setAttribute('aria-busy', 'true')
+    status.textContent = '正在读取站点信息…'
+    try {
+      const endpoint = import.meta.env.DEV ? '/__records-preview/site-metadata' : `${RECORDS_API}/site-metadata`
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+        signal: controller.signal,
+      })
+      const data = await response.json()
+      if (pending !== controller || address.value.trim() !== url)
+        return
+      if (!response.ok) {
+        status.textContent = data.error || '读取失败，可重试或手动填写。'
+        return
+      }
+      const added: string[] = []
+      for (const key of ['name', 'description', 'icon', 'rss']) {
+        const field = form.elements.namedItem(key)
+        if (!(field instanceof HTMLInputElement) || field.value.trim() || typeof data[key] !== 'string' || !data[key])
+          continue
+        field.value = data[key]
+        field.dispatchEvent(new Event('input', { bubbles: true }))
+        filled.set(field, field.value)
+        added.push(RULES[key].label)
+      }
+      status.textContent = added.length ? `已填入${added.join('、')}，可继续编辑。` : '没有可自动补充的字段，可手动填写。'
+    }
+    catch {
+      if (pending === controller)
+        status.textContent = '读取失败，可重试或手动填写。'
+    }
+    finally {
+      clearTimeout(timer)
+      if (pending === controller) {
+        pending = undefined
+        button.removeAttribute('aria-busy')
+        button.textContent = '自动抓取'
+      }
+    }
+  })
+}
+
 function prepareForms() {
   document.querySelectorAll<HTMLFormElement>(FORM_SELECTOR).forEach((form) => {
     form.noValidate = true
+    prepareLookup(form)
   })
 }
 

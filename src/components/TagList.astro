@@ -7,12 +7,13 @@ interface Props {
   currentTag?: string
   lang: Language
   counts?: Record<string, number>
+  indexLayout?: boolean
 }
 
-const { tags, currentTag = '', lang, counts = {} } = Astro.props
+const { tags, currentTag = '', lang, counts = {}, indexLayout = false } = Astro.props
 ---
 
-<nav class="tag-list no-heti" aria-label="文章标签">
+<nav class:list={['tag-list no-heti', { 'tag-index': indexLayout }]} aria-label="文章标签">
   {tags.map(tag => (
     <a
       href={getTagPath(tag, lang)}
@@ -90,6 +91,34 @@ const { tags, currentTag = '', lang, counts = {} } = Astro.props
 
     .tag-list-link sup {
       top: -0.35rem;
+    }
+  }
+
+  .tag-index {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    gap: 0 var(--editorial-gap);
+  }
+
+  .tag-index .tag-list-link {
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .5rem;
+    padding: .65rem 0;
+    border-bottom: var(--section-divider);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .tag-index .tag-list-link sup {
+    position: static;
+    flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 640px) {
+    .tag-index {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 

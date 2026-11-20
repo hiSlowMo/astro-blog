@@ -14,12 +14,13 @@ import '@/styles/transition.css'
 interface Props {
   pageTitle?: string
   pageDescription?: string
+  shareCard?: 'records' | 'submit'
   /** Where the top bar's back link goes. Defaults to the blog home. */
   backHref?: string
   backLabel?: string
 }
 
-const { pageTitle, pageDescription, backHref, backLabel = 'BACK TO THESLOWMO' } = Astro.props
+const { pageTitle, pageDescription, shareCard = 'records', backHref, backLabel = 'BACK TO THESLOWMO' } = Astro.props
 const { getLocalizedPath } = getPageInfo(Astro.url.pathname)
 const homePath = getLocalizedPath('/')
 const backPath = backHref ?? homePath
@@ -36,7 +37,7 @@ const yearRange = startYear && startYear < currentYear ? `${startYear}–${curre
 ---
 
 <html lang={Astro.currentLocale} class={fontStyle}>
-  <Head {pageTitle} {pageDescription} />
+  <Head {pageTitle} {pageDescription} {shareCard} />
   <body data-pagefind-ignore="all">
     <div class="records-shell">
       <header class="records-topbar">
@@ -106,6 +107,7 @@ import '@/scripts/theme-toggle'
   }
 
   .records-shell .rec-value {
+    font-variant-numeric: tabular-nums;
     color: var(--rec-ink-2);
     font-family: var(--rec-mono);
     font-size: 0.8125rem;
@@ -169,7 +171,7 @@ import '@/scripts/theme-toggle'
   }
 
   .records-shell :focus-visible {
-    outline: 2px solid oklch(var(--un-preset-theme-colors-accent));
+    outline: var(--focus-ring);
     outline-offset: 3px;
   }
 
@@ -208,7 +210,10 @@ import '@/scripts/theme-toggle'
     max-width: 70rem;
     min-height: 100dvh;
     margin: 0 auto;
-    padding: 0 clamp(1.125rem, 4vw, 3rem) max(2rem, env(safe-area-inset-bottom));
+    --records-gutter: clamp(1.125rem, 4vw, 3rem);
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
+    padding-left: max(var(--records-gutter), env(safe-area-inset-left));
+    padding-right: max(var(--records-gutter), env(safe-area-inset-right));
     color: var(--rec-ink-2);
     /* A hidden copy tooltip near the screen edge must not make the page scroll sideways */
     overflow-x: clip;

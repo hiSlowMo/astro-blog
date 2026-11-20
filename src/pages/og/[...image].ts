@@ -1,16 +1,17 @@
-import type { CollectionEntry } from 'astro:content'
+import type { APIRoute, GetStaticPaths } from 'astro'
+import type { ShareCard } from '@/data/share-cards'
+import type { SharePage } from '@/utils/share-image'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import { OGImageRoute } from 'astro-og-canvas'
 import { getCollection } from 'astro:content'
+import { shareCards } from '@/data/share-cards'
 import { shouldIncludePost } from '@/utils/content'
 import { getPostDescription } from '@/utils/description'
+import { renderShareImage } from '@/utils/share-image'
 
-// eslint-disable-next-line antfu/no-top-level-await
-const posts = await getCollection('posts', ({ data }) => shouldIncludePost(data, import.meta.env.DEV))
 const ogCoverCacheDir = path.resolve(process.cwd(), 'node_modules/.astro-og-canvas/cover-cache')
 
 async function resolveCoverImagePath(cover: string) {
@@ -45,6 +46,7 @@ async function resolveCoverImagePath(cover: string) {
   catch {}
 
   const response = await fetch(cover, {
+    signal: AbortSignal.timeout(8000),
     headers: {
       'Referer': 'https://theslowmo.com/',
       'User-Agent': 'Mozilla/5.0',
@@ -61,65 +63,22 @@ async function resolveCoverImagePath(cover: string) {
   return cachedPath
 }
 
-// Create slug-to-metadata lookup object for blog posts
-const pages = Object.fromEntries(
-  posts.map((post: CollectionEntry<'posts'>) => [
-    post.id,
-    {
-      title: post.data.title,
-      description: getPostDescription(post, 'og'),
-      cover: post.data.cover,
-    },
-  ]),
-)
+export const getStaticPaths: GetStaticPaths = async () => {
+  const posts = await getCollection('posts', ({ data }) => shouldIncludePost(data, import.meta.env.DEV))
+  return [
+    ...posts.map(post => ({
+      params: { image: `${post.id}.png` },
+      props: { title: post.data.title, description: getPostDescription(post, 'og'), published: post.data.published, cover: post.data.cover },
+    })),
+    ...Object.entries(shareCards).map(([key, card]) => ({
+      params: { image: `brand/${key}.png` },
+      props: { ...card, brand: key as ShareCard },
+    })),
+  ]
+}
 
-// Configure Open Graph image generation route
-// eslint-disable-next-line antfu/no-top-level-await
-export const { getStaticPaths, GET } = await OGImageRoute({
-  param: 'image',
-  pages,
-  getImageOptions: async (_path, page) => {
-    const coverPath = await resolveCoverImagePath(page.cover || '')
-    const hasCover = Boolean(coverPath)
-
-    return {
-      title: page.title,
-      description: page.description,
-      logo: {
-        path: './public/icons/og-logo.png', // Required local path and PNG format
-        size: [250],
-      },
-      border: {
-        color: hasCover ? [216, 226, 235] : [242, 241, 245],
-        width: 20,
-      },
-      font: {
-        title: {
-          families: ['Noto Sans SC'],
-          weight: 'Bold',
-          color: hasCover ? [246, 246, 250] : [34, 33, 36],
-          lineHeight: 1.5,
-        },
-        description: {
-          families: ['Noto Sans SC'],
-          color: hasCover ? [228, 232, 238] : [72, 71, 74],
-          lineHeight: 1.5,
-        },
-      },
-      fonts: [
-        './assets/fonts/og/NotoSansSC-Bold.otf',
-        './assets/fonts/og/NotoSansSC-Regular.otf',
-      ],
-      bgGradient: hasCover ? [[28, 30, 38]] : [[242, 241, 245]],
-      ...(hasCover
-        ? {
-            bgImage: {
-              path: coverPath,
-              fit: 'cover' as const,
-              position: 'center' as const,
-            },
-          }
-        : {}),
-    }
-  },
-})
+export const GET: APIRoute<SharePage> = async ({ props }) => {
+  const cover = props.cover ? await resolveCoverImagePath(props.cover).catch(() => '') : ''
+  const image = await renderShareImage(props, cover)
+  return new Response(new Uint8Array(image), { headers: { 'Content-Type': 'image/png' } })
+}

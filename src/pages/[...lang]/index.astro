@@ -28,17 +28,18 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
   {latest && (
     <section class="latest" aria-labelledby="latest-label">
       <h2 class="section-label" id="latest-label">最新发布 <small lang="en">LATEST RELEASE</small></h2>
-      <article class="latest-entry">
+      <article class:list={['latest-entry', { 'latest-entry--short': Array.from(latest.data.title.trim()).length <= 12 }]}>
         <time class="latest-date font-time" datetime={latest.data.published.toISOString()}>{formatPostDate(latest.data.published, themeConfig.global.dateFormat)}</time>
         <h3 class="latest-title page-title"><a href={getPostPath(latest.data.abbrlink || latest.id, currentLang)}>{latest.data.title}</a></h3>
         {thumbnail
           ? <img class="latest-thumbnail" src={thumbnail} alt="" width="144" height="144" decoding="async" />
-          : <div class="latest-thumbnail"><ReleaseSleeve postId={latest.id} published={latest.data.published} /></div>}
+          : <div class="latest-thumbnail"><ReleaseSleeve title={latest.data.title} published={latest.data.published} /></div>}
         <p class="latest-summary">{getPostDescription(latest, 'list')}</p>
       </article>
     </section>
   )}
-  {recentPosts.length > 0 && <section data-posts-root aria-labelledby="recent-label">
+  {recentPosts.length > 0 && (
+<section data-posts-root aria-labelledby="recent-label">
     <header class="recent-heading">
       <h2 class="section-label" id="recent-label">近期收录 <small lang="en">RECENT ENTRIES</small></h2>
     </header>
@@ -112,7 +113,8 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
     <div class="post-year-section">
       <PostList posts={recentPosts} lang={currentLang} />
     </div>
-  </section>}
+  </section>
+)}
 </Layout>
 
 <script>
@@ -154,26 +156,53 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
     color: oklch(var(--un-preset-theme-colors-secondary) / 0.75);
   }
 
+  .latest {
+    container-type: inline-size;
+  }
+
+  #latest-label {
+    display: inline-flex;
+    padding: .32rem 1.45rem .32rem .6rem;
+    mask-image: var(--cut-end);
+    background: oklch(var(--un-preset-theme-colors-primary));
+    color: oklch(var(--un-preset-theme-colors-background));
+    font-size: 1rem;
+    letter-spacing: .025em;
+  }
+
+  #latest-label small {
+    color: inherit;
+    font-size: .7rem;
+  }
+
   .latest-date {
     grid-area: date;
+    writing-mode: vertical-rl;
+    justify-self: start;
+    margin-top: .28rem;
     color: oklch(var(--un-preset-theme-colors-secondary));
-    font-size: .82rem;
+    font: 500 clamp(.65rem, 2cqi, .76rem)/1 var(--font-mono);
+    letter-spacing: .05em;
   }
 
   .latest-entry {
-    --latest-summary-size: .95rem;
     display: grid;
-    grid-template-columns: clamp(5rem, 10vw, 8.5rem) minmax(0, 1fr);
-    grid-template-areas: ". date" "cover title" "cover summary";
+    grid-template-columns: clamp(.75rem, 3cqi, 1.4rem) minmax(0, 1fr) clamp(4.5rem, 25cqi, 10rem);
+    grid-template-areas: "date title title" "date summary cover";
     align-items: start;
-    gap: .6rem 1.4rem;
-    margin: 1.25rem 0 2.25rem;
+    gap: clamp(.7rem, 2cqi, 1rem) clamp(.55rem, 2.5cqi, 1.1rem);
+    margin: 1rem 0 clamp(1.2rem, 4cqi, 1.75rem);
+  }
+
+  .latest-entry--short {
+    grid-template-columns: clamp(.75rem, 3cqi, 1.4rem) minmax(0, 1fr) clamp(4.5rem, 16cqi, 7rem);
+    grid-template-areas: "date title cover" "date summary cover";
   }
 
   .latest-thumbnail {
     grid-area: cover;
-    font-size: var(--page-title-size);
-    margin-block-start: .19em;
+    display: block;
+    align-self: end;
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
@@ -183,35 +212,54 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
   .latest-title {
     grid-area: title;
     margin: 0;
+    font-size: clamp(1.75rem, 8.15cqi, 3.85rem);
+    font-weight: 780;
+    line-height: 1.1;
+    letter-spacing: -.035em;
+    text-wrap: balance;
+    word-break: auto-phrase;
   }
 
   .latest-summary {
     grid-area: summary;
+    align-self: end;
     margin: 0;
-    font-size: var(--latest-summary-size);
-    line-height: 1.75;
+    max-width: 30em;
+    font-size: clamp(.9rem, 2.6cqi, 1rem);
+    line-height: 1.68;
+    text-wrap: pretty;
   }
 
   .recent-heading {
-    padding-top: 1.1rem;
-    margin-bottom: .9rem;
-    border-top: 1px solid oklch(var(--un-preset-theme-colors-secondary) / .3);
+    padding-top: .75rem;
+    margin-bottom: .7rem;
+    border-top: var(--rule-masthead) solid oklch(var(--un-preset-theme-colors-primary));
   }
 
-  .latest-title a:hover {
-    text-decoration: underline;
-    text-underline-offset: .18em;
+  #recent-label {
+    justify-content: space-between;
   }
 
-  @media (max-width: 768px) {
-    .latest-entry {
-      column-gap: .9rem;
-      grid-template-areas: "date date" "title title" "cover summary";
+  .post-year-section :global(.post-item:not(.is-hidden)) {
+    padding-block: clamp(.6rem, 1.5vw, .85rem);
+    margin-bottom: 0;
+    border-top: var(--section-divider);
+  }
+
+  .latest-title a {
+    text-decoration: underline solid transparent 2px;
+    text-underline-offset: .12em;
+    transition: text-decoration-color var(--motion-base) var(--motion-ease-standard);
+  }
+
+  @media (hover: hover) {
+    .latest-title a:hover {
+      text-decoration-color: oklch(var(--un-preset-theme-colors-primary) / .48);
     }
-    .latest-thumbnail {
-      font-size: var(--latest-summary-size);
-      margin-block-start: .37em;
-    }
+  }
+
+  .latest-title a:focus-visible {
+    text-decoration-color: currentColor;
   }
 
   /* ===== details/summary 控件：与归档页一致 ===== */
@@ -391,7 +439,7 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
   .post-filter-trigger:focus-visible,
   .post-filter-plain:focus-visible,
   .post-filter-option:focus-visible {
-    outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.45);
+    outline: var(--focus-ring);
     outline-offset: 2px;
   }
 
@@ -555,6 +603,11 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
     }
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .latest-title a { transition: none; }
+  }
+
+  :global(html.reduce-motion) .latest-title a,
   :global(html.reduce-motion) .post-filter-menu,
   :global(html.reduce-motion) .post-filter-caret,
   :global(html.reduce-motion) .post-year-section,

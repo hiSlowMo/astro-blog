@@ -60,7 +60,7 @@ html[data-theme-changing] [data-disable-theme-toggle-transition] {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(3rem);
+    transform: translateY(var(--motion-rise-offset));
   }
   to {
     opacity: 1;
@@ -78,7 +78,7 @@ html[data-theme-changing] [data-disable-theme-toggle-transition] {
 
 #post-content > * {
   opacity: 0;
-  animation: fadeInUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+  animation: fadeInUp var(--motion-slow) var(--motion-ease-enter) forwards;
 }
 
 #post-content > *:nth-child(1) { animation-delay: 0.15s; }

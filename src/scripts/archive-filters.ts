@@ -81,6 +81,12 @@ function initArchiveInteractions() {
       orderedItems.forEach(item => list?.appendChild(item))
 
       const visibleItems = orderedItems.filter(item => !item.classList.contains('is-hidden'))
+      let previousMonth = ''
+      for (const item of visibleItems) {
+        const month = item.querySelector('time')?.dateTime.slice(0, 7) ?? ''
+        item.toggleAttribute('data-month-break', !!previousMonth && previousMonth !== month)
+        previousMonth = month
+      }
       const maxTime = visibleItems.length > 0
         ? Math.max(...visibleItems.map(item => getKeyTime(item, currentSortKey)))
         : -1
@@ -189,11 +195,23 @@ function initArchiveInteractions() {
   }
 
   const interactionController = new AbortController()
+  window.matchMedia('(max-width: 768px)').addEventListener('change', () => {
+    root.querySelectorAll('.archive-year-toggle[aria-pressed="true"]').forEach((button) => {
+      button.setAttribute('aria-pressed', 'false')
+    })
+  }, { signal: interactionController.signal })
 
   root.addEventListener('click', (event) => {
     const target = event.target
     if (!(target instanceof Element))
       return
+
+    const yearToggle = target.closest<HTMLButtonElement>('.archive-year-toggle')
+    if (yearToggle) {
+      yearToggle.setAttribute('aria-pressed', String(yearToggle.getAttribute('aria-pressed') !== 'true'))
+      yearToggle.closest('.archive-year')?.classList.remove('is-active')
+      return
+    }
 
     const filterButton = target.closest<HTMLElement>('.archive-filter-option[data-filter]')
     if (filterButton && root.contains(filterButton)) {
@@ -234,38 +252,7 @@ function initArchiveInteractions() {
     if (!(target instanceof Element))
       return
 
-    const item = target.closest<HTMLElement>('.archive-item')
-    if (!item || !root.contains(item))
-      return
-
-    const year = item.closest<HTMLElement>('.archive-year')
-    const relatedTarget = event.relatedTarget
-    const relatedNode = relatedTarget instanceof Node ? relatedTarget : null
-    if (year && (!relatedNode || !year.contains(relatedNode))) {
-      year.classList.remove('is-active')
-    }
-  }, { signal: interactionController.signal })
-
-  root.addEventListener('focusin', (event) => {
-    if (isLayoutAnimating())
-      return
-
-    const target = event.target
-    if (!(target instanceof Element))
-      return
-
-    target.closest<HTMLElement>('.archive-item')?.closest<HTMLElement>('.archive-year')?.classList.add('is-active')
-  }, { signal: interactionController.signal })
-
-  root.addEventListener('focusout', (event) => {
-    if (isLayoutAnimating())
-      return
-
-    const target = event.target
-    if (!(target instanceof Element))
-      return
-
-    const year = target.closest<HTMLElement>('.archive-item')?.closest<HTMLElement>('.archive-year')
+    const year = target.closest<HTMLElement>('.archive-year')
     const relatedTarget = event.relatedTarget
     const relatedNode = relatedTarget instanceof Node ? relatedTarget : null
     if (year && (!relatedNode || !year.contains(relatedNode))) {

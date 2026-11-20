@@ -20,7 +20,7 @@ import { remarkContainerDirectives } from './src/plugins/remark-container-direct
 import { remarkLeafDirectives } from './src/plugins/remark-leaf-directives.mjs'
 import { remarkReadingTime } from './src/plugins/remark-reading-time.mjs'
 
-const { url: site } = themeConfig.site
+const site = themeConfig.seo?.canonicalOrigin || themeConfig.site.url
 const { imageHostURL } = themeConfig.preload ?? {}
 const imageConfig = imageHostURL
   ? {
@@ -110,6 +110,15 @@ export default defineConfig({
   },
   vite: {
     resolve: { alias: inactiveCommentAliases },
+    server: {
+      proxy: {
+        '/__records-preview/site-metadata': {
+          target: 'http://127.0.0.1:18735',
+          rewrite: () => '/records/v1/site-metadata',
+          headers: { Origin: 'https://www.theslowmo.com' },
+        },
+      },
+    },
   },
   // Astro uses server.headers for both dev and preview; Vite preview hooks
   // from the user config are not loaded by `astro preview`.

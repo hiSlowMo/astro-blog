@@ -60,7 +60,7 @@ function getAgeForYear(year: number) {
             data-dropdown-trigger
           >
             <span class="archive-filter-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 4h7l9 9-7 7-9-9zM14 4l9 9-7 7"/><circle cx="7" cy="8" r="1"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 4h7l9 9-7 7-9-9zM14 4l9 9-7 7" /><circle cx="7" cy="8" r="1" /></svg>
             </span>
             <span class="archive-filter-label" data-dropdown-label>分类</span>
             <span class="archive-filter-caret" aria-hidden="true">
@@ -85,7 +85,7 @@ function getAgeForYear(year: number) {
               aria-selected="true"
             >
               <span class="archive-filter-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 4h7l9 9-7 7-9-9zM14 4l9 9-7 7"/><circle cx="7" cy="8" r="1"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 4h7l9 9-7 7-9-9zM14 4l9 9-7 7" /><circle cx="7" cy="8" r="1" /></svg>
               </span>
               全部
             </button>
@@ -123,15 +123,16 @@ function getAgeForYear(year: number) {
         return (
           <section class="archive-year" data-year={year}>
             <header class="archive-year-heading">
-              <h3 class="archive-year-watermark">{year}</h3>
+              <h3 class="archive-year-watermark">{String(year).slice(0, -2)}<span class="archive-year-ending">{String(year).slice(-2)}</span></h3>
               <div class="archive-year-watermark archive-year-detail">
                 <span class="archive-year-age">{yearAge}</span>
-                <span class="archive-year-stats">{formatWordCount(yearWords)} · {posts.length}篇</span>
+                <span class="archive-year-stats" id={`archive-summary-${year}`}>{formatWordCount(yearWords)} · {posts.length}篇</span>
               </div>
+              <button type="button" class="archive-year-toggle" aria-label={`${year} 年年度统计`} aria-pressed="false" aria-describedby={`archive-summary-${year}`} />
             </header>
 
             <ul class="archive-list">
-              {posts.map((post) => {
+              {posts.map((post, index) => {
                 const slug = post.data.abbrlink || post.id
                 const tags = post.data.tags ?? []
                 const categories = post.data.categories ?? []
@@ -139,6 +140,7 @@ function getAgeForYear(year: number) {
                 return (
                   <li
                     class="archive-item"
+                    data-month-break={index > 0 && post.data.published.getUTCMonth() !== posts[index - 1].data.published.getUTCMonth() ? '' : undefined}
                     data-categories={categories.join(',')}
                     data-created={post.data.published.valueOf()}
                     data-updated={(post.data.updated ?? post.data.published).valueOf()}
@@ -217,7 +219,7 @@ function getAgeForYear(year: number) {
   .archive-toolbar-left {
     display: grid;
     align-items: center;
-    grid-template-columns: var(--archive-index-width) var(--archive-sort-col-w);
+    grid-template-columns: minmax(var(--archive-index-width), max-content) var(--archive-sort-col-w);
     gap: var(--archive-column-gap);
     font-size: 0.9rem;
     color: oklch(var(--un-preset-theme-colors-secondary) / 0.75);
@@ -378,10 +380,28 @@ function getAgeForYear(year: number) {
     transform: translateY(1px);
   }
 
-  .archive-filter-option:hover,
-  .archive-filter-option.is-active {
+  .archive-filter-option:hover {
     background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.12);
     color: oklch(var(--un-preset-theme-colors-primary) / 0.95);
+  }
+
+  .archive-filter-option[aria-selected='true'] {
+    background-color: oklch(var(--un-preset-theme-colors-primary));
+    color: oklch(var(--un-preset-theme-colors-background));
+    border-radius: 0;
+    mask-image: var(--cut-end);
+  }
+
+  .archive-filter-option:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -3px;
+  }
+
+  .archive-filter-dropdown:has([aria-selected='true']:not([data-filter='all'])) .archive-filter-label {
+    font-weight: 650;
+    color: oklch(var(--un-preset-theme-colors-primary));
+    text-decoration: underline;
+    text-underline-offset: .25em;
   }
 
   .archive-filter-menu::-webkit-scrollbar {
@@ -402,10 +422,11 @@ function getAgeForYear(year: number) {
   }
 
   .archive-year {
+    --archive-columns: var(--archive-index-width) minmax(0, 1fr) minmax(0, 23%);
     --archive-year-font-size: clamp(1rem, 6.5vw, 5.2rem);
     position: relative;
     padding-top: 0;
-    border-top: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.15);
+    border-top: var(--section-divider);
     transition:
       opacity var(--archive-layout-duration) var(--archive-motion-easing),
       transform var(--archive-layout-duration) var(--archive-motion-easing),
@@ -424,6 +445,7 @@ function getAgeForYear(year: number) {
 
   /* ===== 年份水印（年份/年龄） ===== */
   .archive-year-heading {
+    position: relative;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -433,7 +455,7 @@ function getAgeForYear(year: number) {
   }
 
   .archive-year-watermark {
-    font-family: var(--font-sans);
+    font-family: var(--font-mono);
     font-size: var(--archive-year-font-size);
     font-weight: 700;
     letter-spacing: 0.001em;
@@ -460,7 +482,7 @@ function getAgeForYear(year: number) {
       black 75%,
       rgba(0, 0, 0, 0.2) 100%
     );
-    transition: color 220ms ease, -webkit-text-stroke-color 220ms ease;
+    transition: color var(--motion-base) ease, -webkit-text-stroke-color var(--motion-base) ease;
   }
 
   @supports (-webkit-text-stroke: 1px black) {
@@ -474,8 +496,26 @@ function getAgeForYear(year: number) {
     display: grid;
     text-align: right;
     align-items: center;
-    font-size: clamp(2.6rem, 6vw, 4.6rem);
+    font-size: calc(var(--archive-year-font-size) * .62);
+    font-weight: 550;
+    -webkit-text-stroke-width: 1px;
     white-space: nowrap;
+  }
+
+  .archive-year-heading h3 {
+    display: flex;
+    align-items: baseline;
+    mask-image: none;
+  }
+
+  .archive-year-ending {
+    display: inline-block;
+    padding-inline: .17em .2em;
+    mask-image: var(--cut-start), var(--cut-end);
+    mask-composite: intersect;
+    background: oklch(var(--un-preset-theme-colors-primary));
+    color: oklch(var(--un-preset-theme-colors-background));
+    -webkit-text-stroke-width: 0;
   }
 
   .archive-year-age,
@@ -486,26 +526,30 @@ function getAgeForYear(year: number) {
   }
 
   .archive-year-stats {
-    font-size: .35em;
+    font-size: var(--label-size);
     letter-spacing: .02em;
     -webkit-text-stroke-width: 0;
     opacity: 0;
     transform: translateY(.35rem);
   }
 
-  .archive-year.is-active .archive-year-watermark {
+  .archive-year-toggle {
+    display: none;
+  }
+
+  .archive-year:is(.is-active, :has(.archive-list:focus-within), :has(.archive-year-toggle[aria-pressed='true'])) .archive-year-watermark {
     color: oklch(var(--un-preset-theme-colors-primary) / .8);
     -webkit-text-stroke-color: transparent;
   }
 
-  .archive-year.is-active .archive-year-age {
+  .archive-year:is(.is-active, :has(.archive-list:focus-within), :has(.archive-year-toggle[aria-pressed='true'])) .archive-year-age {
     opacity: 0;
     transform: translateY(-.35rem);
   }
 
-  .archive-year.is-active .archive-year-stats {
+  .archive-year:is(.is-active, :has(.archive-list:focus-within), :has(.archive-year-toggle[aria-pressed='true'])) .archive-year-stats {
     opacity: .75;
-    transform: translateY(65%);
+    transform: none;
   }
 
   /* ===== 文章列表 ===== */
@@ -519,7 +563,7 @@ function getAgeForYear(year: number) {
 
   .archive-item {
     display: grid;
-    grid-template-columns: var(--archive-index-width) minmax(0, 1fr) minmax(0, 23%);
+    grid-template-columns: var(--archive-columns);
     align-items: baseline;
     gap: .12rem var(--archive-column-gap);
 
@@ -578,6 +622,15 @@ function getAgeForYear(year: number) {
     letter-spacing: 0.09em;
   }
 
+  .archive-item[data-month-break] {
+    border-top: var(--section-divider);
+  }
+
+  .archive-item[data-month-break] .archive-date {
+    color: oklch(var(--un-preset-theme-colors-primary));
+    font-weight: 600;
+  }
+
   .archive-title {
     grid-column: 2;
     text-decoration: none;
@@ -632,6 +685,22 @@ function getAgeForYear(year: number) {
   }
 
   /* ===== 手机适配 ===== */
+  @media (min-width: 769px) {
+    .archive-year-heading {
+      display: grid;
+      grid-template-columns: var(--archive-columns);
+      column-gap: var(--archive-column-gap);
+    }
+
+    .archive-year-heading h3 {
+      grid-column: span 2;
+    }
+
+    .archive-year-detail {
+      text-align: start;
+    }
+  }
+
   @media (max-width: 768px) {
     [data-archive-root] {
       --archive-index-width: 3.2rem;
@@ -755,10 +824,23 @@ function getAgeForYear(year: number) {
 
     .archive-year-heading {
       margin-bottom: .45rem;
+      min-height: 44px;
     }
 
-    .archive-year-detail {
-      font-size: clamp(2.2rem, 13vw, 3.6rem);
+    [data-archive-bound='1'] .archive-year-toggle {
+      display: block;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      background: transparent;
+      border: 0;
+    }
+
+    .archive-year-toggle:focus-visible {
+      outline: 1px solid currentColor;
+      outline-offset: -1px;
     }
 
     .archive-item {

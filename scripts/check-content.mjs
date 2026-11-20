@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
+import { parse } from 'node-html-parser'
 
 const checks = [
   {
@@ -23,10 +24,11 @@ const failures = []
 
 for (const check of checks) {
   const html = readFileSync(check.file, 'utf8')
-  if (!html.includes(check.text)) {
+  const content = parse(html).querySelector('main')?.textContent ?? ''
+  if (!content.includes(check.text)) {
     failures.push(`${check.label}未渲染：${check.file}`)
   }
-  if (html.includes('undefined 分钟')) {
+  if (content.includes('undefined 分钟')) {
     failures.push(`阅读时间未生成：${check.file}`)
   }
 }

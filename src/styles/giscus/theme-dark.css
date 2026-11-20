@@ -25,8 +25,8 @@
   --color-canvas-overlay: var(--background-color);
   --color-canvas-inset: transparent;
   --color-canvas-subtle: transparent;
-  --color-accent-fg: oklch(70.7% 0.165 254.624);
-  --color-accent-emphasis: oklch(70.7% 0.165 254.624);
+  --color-accent-fg: oklch(76% 0.15 167);
+  --color-accent-emphasis: var(--color-accent-fg);
 
   /* Official Theme Colors */
   --color-prettylights-syntax-comment: #8b949e;
@@ -90,8 +90,8 @@
   --color-border-default: #30363d;
   --color-border-muted: #21262d;
   --color-neutral-muted: rgb(110 118 129 / 40%);
-  --color-accent-muted: rgb(56 139 253 / 40%);
-  --color-accent-subtle: rgb(56 139 253 / 10%);
+  --color-accent-muted: color-mix(in srgb, var(--color-accent-fg) 40%, transparent);
+  --color-accent-subtle: color-mix(in srgb, var(--color-accent-fg) 12%, transparent);
   --color-success-fg: #3fb950;
   --color-attention-fg: #d29922;
   --color-attention-muted: rgb(187 128 9 / 40%);
@@ -105,7 +105,7 @@
 
   /*! Extensions from @primer/css/alerts/flash.scss */
   --color-social-reaction-bg-hover: var(--color-scale-gray-7);
-  --color-social-reaction-bg-reacted-hover: var(--color-scale-blue-8);
+  --color-social-reaction-bg-reacted-hover: var(--color-accent-subtle);
 }
 
 main .pagination-loader-container {

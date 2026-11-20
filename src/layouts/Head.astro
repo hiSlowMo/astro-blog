@@ -1,7 +1,10 @@
 ---
+import type { ShareCard } from '@/data/share-cards'
 import { ClientRouter } from 'astro:transitions'
 import katexCSS from 'katex/dist/katex.min.css?url'
 import { allLocales, base, defaultLocale, themeConfig } from '@/config'
+import { siteProfile } from '@/data/friend-links'
+import { shareCards } from '@/data/share-cards'
 import { langMap } from '@/i18n/config'
 import { ui } from '@/i18n/ui'
 import { getPageInfo } from '@/utils/page'
@@ -12,19 +15,21 @@ interface Props {
   postTitle?: string
   postDescription?: string
   postSlug?: string
+  article?: { published: Date, updated?: Date, tags: string[] }
+  shareCard?: ShareCard
   enableKatex?: boolean
 }
 
 // Props and Language
-const { pageTitle, pageDescription, postTitle, postDescription, postSlug, enableKatex = false } = Astro.props
-const { currentLang } = getPageInfo(Astro.url.pathname)
+const { pageTitle, pageDescription, postTitle, postDescription, postSlug, article, shareCard = 'home', enableKatex = false } = Astro.props
+const { currentLang, isHome } = getPageInfo(Astro.url.pathname)
 const currentUI = ui[currentLang as keyof typeof ui] ?? {}
 
 // Site Configuration
-const { title, subtitle, description, i18nTitle, author, favicon } = themeConfig.site
+const { title, description, i18nTitle, author, favicon } = themeConfig.site
 const { mode: defaultMode, light: { background: lightMode }, dark: { background: darkMode } } = themeConfig.color
 const { katex: katexEnabled, reduceMotion } = themeConfig.global
-const { verification = {}, twitterID = '', googleAnalyticsID = '', umamiAnalyticsID = '', apiflashKey = '' } = themeConfig.seo ?? {}
+const { verification = {}, twitterID = '', googleAnalyticsID = '', umamiAnalyticsID = '' } = themeConfig.seo ?? {}
 const { google = '', bing = '', yandex = '', baidu = '' } = verification
 const { customGoogleAnalyticsJS = '', customUmamiAnalyticsJS = '' } = themeConfig.preload ?? {}
 const getHrefLang = (locale: string) => (langMap as Record<string, readonly string[]>)[locale]?.[0] ?? locale
@@ -32,20 +37,21 @@ const getHrefLang = (locale: string) => (langMap as Record<string, readonly stri
 // Site Metadata
 const metaTheme = defaultMode === 'dark' ? darkMode : lightMode
 const siteTitle = i18nTitle ? currentUI.title : title
-const siteSubtitle = i18nTitle ? currentUI.subtitle : subtitle
+const siteName = i18nTitle ? currentUI.title : siteProfile.name
 const siteDescription = i18nTitle ? currentUI.description : description
+const defaultDescription = isHome && !i18nTitle ? siteProfile.description : siteDescription
 
 // Page Metadata
 const normalizeWhitespace = (text: string) => text.replace(/\s+/g, ' ').trim()
 const documentTitle = normalizeWhitespace(postTitle || pageTitle
   ? `${postTitle || pageTitle} | ${siteTitle}`
-  : `${siteTitle} - ${siteSubtitle}`)
-const documentDescription = normalizeWhitespace(postDescription || pageDescription || siteDescription)
-const pageImage = postSlug
-  ? new URL(`${base}/og/${postSlug}.png`, Astro.url.origin)
-  : apiflashKey
-    ? `https://api.apiflash.com/v1/urltoimage?access_key=${apiflashKey}&url=${Astro.url}&format=png&width=1500&height=788&ttl=259200&wait_until=network_idle&no_tracking=true`
-    : new URL(`${base}/icons/og-logo.png`, Astro.url.origin)
+  : siteName)
+const documentDescription = normalizeWhitespace(postDescription || pageDescription || defaultDescription)
+const canonical = new URL(Astro.url.pathname, Astro.site)
+const shareTitle = normalizeWhitespace(postTitle || pageTitle || siteName)
+const imageKey = postSlug || `brand/${shareCard}`
+const pageImage = new URL(`${base}/og/${imageKey.split('/').map(encodeURIComponent).join('/')}.png`, canonical)
+const imageAlt = postTitle ? `${siteName} · ${postTitle}` : shareCards[shareCard].title
 ---
 
 <head>
@@ -65,25 +71,38 @@ const pageImage = postSlug
 {katexEnabled && enableKatex && <link rel="stylesheet" href={katexCSS} media="print" onload={`this.media='all'`} />}
 
 <!-- Site Links -->
-<link rel="canonical" href={Astro.url} />
+<link rel="canonical" href={canonical} />
 <link rel="sitemap" href={`${base}/sitemap-index.xml`} />
 <link rel="alternate" href={`${base}/rss.xml`} type="application/rss+xml" title="RSS Feed" />
 <link rel="alternate" href={`${base}/atom.xml`} type="application/atom+xml" title="Atom Feed" />
 {allLocales.map(locale => (
   <link
     rel="alternate"
-    href={`${Astro.url.origin}${base}${locale === defaultLocale ? '' : `/${locale}/`}`}
+    href={`${canonical.origin}${base}${locale === defaultLocale ? '/' : `/${locale}/`}`}
     hreflang={getHrefLang(locale)}
   />
 ))}
 
 <!-- Open Graph -->
 <meta property="og:type" content={postTitle ? 'article' : 'website'} />
-<meta property="og:url" content={Astro.url} />
-<meta property="og:title" content={documentTitle} />
+<meta property="og:site_name" content={siteName} />
+<meta property="og:locale" content={getHrefLang(currentLang).replace(/-/g, '_')} />
+<meta property="og:url" content={canonical} />
+<meta property="og:title" content={shareTitle} />
 <meta property="og:description" content={documentDescription} />
 <meta property="og:image" content={pageImage} />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={imageAlt} />
+{article && <meta property="article:published_time" content={article.published.toISOString()} />}
+{article?.updated && <meta property="article:modified_time" content={article.updated.toISOString()} />}
+{article?.tags.map(tag => <meta property="article:tag" content={tag} />)}
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={shareTitle} />
+<meta name="twitter:description" content={documentDescription} />
+<meta name="twitter:image" content={pageImage} />
+<meta name="twitter:image:alt" content={imageAlt} />
 {twitterID && <meta name="twitter:site" content={twitterID} />}
 
 <!-- Site Verification -->

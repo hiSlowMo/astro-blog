@@ -27,6 +27,7 @@ interface Props {
   postTitle?: string
   postDescription?: string
   postSlug?: string
+  article?: { published: Date, updated?: Date, tags: string[] }
   supportedLangs?: Language[]
   enableContentEnhancements?: boolean
   enableKatex?: boolean
@@ -38,6 +39,7 @@ const {
   postTitle,
   postDescription,
   postSlug,
+  article,
   supportedLangs = [],
   enableContentEnhancements = false,
   enableKatex = false,
@@ -67,7 +69,7 @@ const MarginBottom = isPost && themeConfig.comment.enabled
     isPost ? 'scroll-smooth' : '',
   ]}
 >
-  <Head {pageTitle} {pageDescription} {postTitle} {postDescription} {postSlug} {enableKatex} />
+  <Head {pageTitle} {pageDescription} {postTitle} {postDescription} {postSlug} {article} {enableKatex} />
   <body data-pagefind-ignore={isPost ? undefined : 'all'}>
     <AsciiSky scene={skyScene} />
     <div
@@ -75,7 +77,10 @@ const MarginBottom = isPost && themeConfig.comment.enabled
       p="x-[min(6vw,1.35rem)] y-7"
       lg="mx-[max(5.75rem,calc(50vw-34.25rem))] my-20 max-w-[min(calc(75vw-16rem),44rem)] min-h-full p-0"
     >
-      <Header />
+      <div class="site-header-row">
+        <Header />
+        {!isPost && <Button supportedLangs={supportedLangs} />}
+      </div>
       <Navbar />
       <main
         class={MarginBottom}
@@ -85,7 +90,7 @@ const MarginBottom = isPost && themeConfig.comment.enabled
       </main>
       <Footer />
     </div>
-    <Button supportedLangs={supportedLangs} />
+    {isPost && <Button supportedLangs={supportedLangs} />}
     <SoundEffect />
     {enableContentEnhancements && <CodeCopyButton />}
     {enableContentEnhancements && <GithubCard />}
@@ -98,3 +103,37 @@ const MarginBottom = isPost && themeConfig.comment.enabled
 <script>
   import '@/scripts/reading-layout'
 </script>
+
+<style>
+  .site-header-row { display: contents; }
+  @media (max-width: 1023.98px) {
+    .site-header-row:has(.site-utility--single) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      margin-bottom: clamp(1.4rem, 4vw, 2rem);
+    }
+    .site-header-row:has(.site-utility--single) :global(#site-header) {
+      grid-area: 1 / 1 / 2 / -1;
+      margin-bottom: 0;
+    }
+    .site-header-row :global(#site-utility.site-utility--single) {
+      position: static;
+      grid-area: 1 / 2;
+      align-self: end;
+      margin-bottom: -.625rem;
+    }
+    .site-layout {
+      --page-gutter: min(6vw, 1.35rem);
+      padding-left: max(var(--page-gutter), env(safe-area-inset-left));
+      padding-right: max(var(--page-gutter), env(safe-area-inset-right));
+      padding-top: max(var(--page-gutter), env(safe-area-inset-top), 1.75rem);
+      padding-bottom: calc(var(--controls-bottom) + 3.75rem);
+    }
+    :global(html:has(.site-layout)) {
+      scroll-padding-bottom: calc(var(--controls-bottom) + 3rem);
+    }
+  }
+  @media (min-width: 640px) {
+    .site-layout { --page-gutter: 2.5rem; }
+  }
+</style>

@@ -5,10 +5,13 @@
 | 请求 | 返回 |
 | --- | --- |
 | `GET /health` | API 和数据库就绪时返回 `200` |
+| `POST /site-metadata` | 传入 `{ "url": "https://example.org/" }`，返回首页声明的 `name`、`description`、`icon`、`rss`，缺失字段省略。仅预填资料。读取失败返回 `422`，服务忙或超过频率限制返回 `429` |
 | `GET /tracks` | `albums[]` 含 `catalogNo`、`source`、`updatedAt` 和最多三条 `tracks`。时间戳 `updatedAt` 使用 Unix 秒。曲目含标题、网址、摘要及 Feed 提供的日期 |
 | `POST /applications` | JSON 请求。保存成功返回 `201` 和 `{ "id": "SR-…", "status": "pending" }`。重复申请返回 `409`，字段错误返回 `422`，超过限制返回 `429` |
 
 表单必填 `name`、`url`、`artist`、`email`、`description`、`icon` 和布尔值 `rules: true`。选填 `cover`、`rss`、`article` 和 `genres`。站长通知邮件附完整申请资料和编号，可直接在收件箱审阅，再用编号办理收录。
+
+`astro dev` 将表单的抓取请求转发至 `127.0.0.1:18735`。在 `services/records` 中使用安装了 Flask 和 feedparser 的 Python 环境，设置 `RECORDS_STATE` 指向本地测试目录，运行 `python jobs.py init`，然后运行 `flask --app app run --port 18735` 即可联调。静态构建使用正式 Records API。
 
 ## 按邮件编号审核
 
@@ -26,7 +29,7 @@ sudo -u slowmo-records python3 review.py entry SR-实际编号
 
 ## 曲目和定时任务
 
-在博客的 `src/data/friend-links.ts` 中编辑专辑、RSS 和手工文章。用 Node 22.18+ 在仓库根目录执行 `node services/records/export-catalog.mjs`，再将生成的 `catalog.json` 安装到华为云 `/srv/apps/slowmo-records/catalog.json`。更新曲目时先验证新文件，再原子替换线上文件。只有经过人工审核加入目录的站点才会触发抓取。已保存的申请不会自动进入目录。
+在博客的 `src/data/friend-links.ts` 中编辑专辑、RSS 和手工文章。用 Node 22.18+ 在仓库根目录执行 `node services/records/export-catalog.mjs`，再将生成的 `catalog.json` 安装到华为云 `/srv/apps/slowmo-records/catalog.json`。更新曲目时先验证新文件，再原子替换线上文件。只有经过人工审核加入目录的站点才会定期同步 RSS。已保存的申请不会自动进入目录。
 
 以下命令在华为云执行。站长可用第一条命令按编号查看完整记录。
 

@@ -21,6 +21,7 @@ const SubtitleTag = isPost ? 'div' : 'h2'
   id="site-header"
   class:list={[
     'lg:(uno-desktop-column top-20) cjk:tracking-wide',
+    { 'site-sidebar-header': !isPost },
     isPost
     ? 'mb-6.6 lg:mb-10.8'
     : 'mb-10.5',
@@ -171,6 +172,24 @@ document.addEventListener('astro:page-load', initRotatingStatus)
 </script>
 
 <style>
+  .site-sidebar-header {
+    padding-top: .65rem;
+    border-top: var(--rule-masthead) solid oklch(var(--un-preset-theme-colors-primary));
+  }
+
+  .site-sidebar-header h1 {
+    font-weight: 800;
+    line-height: 1.06;
+    letter-spacing: -.035em;
+  }
+
+  @media (min-width: 1024px) {
+    .site-sidebar-header #site-title-link {
+      display: block;
+      font-size: 2.7rem;
+    }
+  }
+
   .site-status {
     --status-color: var(--status-success);
   }
@@ -193,22 +212,6 @@ document.addEventListener('astro:page-load', initRotatingStatus)
     background: var(--status-color);
   }
 
-  /* online: ping ripple, away: slow breathing, offline: static */
-  .site-status-dot::after {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: inherit;
-    content: '';
-    animation: site-status-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
-  }
-  .site-status:not([data-tone='online']) .site-status-dot::after {
-    display: none;
-  }
-  .site-status[data-tone='away'] .site-status-dot {
-    animation: site-status-breathe 3.2s ease-in-out infinite;
-  }
-
   .site-status-text {
     display: inline-block;
     transform-origin: left center;
@@ -229,22 +232,6 @@ document.addEventListener('astro:page-load', initRotatingStatus)
     transition: none;
   }
 
-  @keyframes site-status-ping {
-    75%,
-    100% {
-      opacity: 0;
-      scale: 2.6;
-    }
-  }
-
-  @keyframes site-status-breathe {
-    50% {
-      opacity: 0.35;
-    }
-  }
-
-  :global(html.reduce-motion) .site-status-dot,
-  :global(html.reduce-motion) .site-status-dot::after,
   :global(html.reduce-motion) .site-status-text {
     animation: none;
     filter: none;
@@ -253,8 +240,6 @@ document.addEventListener('astro:page-load', initRotatingStatus)
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .site-status-dot,
-    .site-status-dot::after,
     .site-status-text {
       animation: none;
       filter: none;

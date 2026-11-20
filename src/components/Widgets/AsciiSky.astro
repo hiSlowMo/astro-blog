@@ -26,21 +26,31 @@ const { scene = 'clouds' } = Astro.props
 <span hidden data-sky-scene={scene} />
 
 <style>
-  /* Mobile: behind the title and navigation, dissolving before the content (the edges are drawn on the canvas) */
+  /* Mobile: the whole scene fades before the reading column begins. */
   .ascii-sky {
     position: absolute;
     top: 0;
     left: 0;
     z-index: -2;
-    width: 100%;
-    height: 26rem;
     pointer-events: none;
+    width: 100%;
+    height: min(11.5rem, 38svh);
     opacity: 0;
     transition: opacity 0.8s ease-out;
   }
 
   .ascii-sky[data-ready] {
     opacity: 1;
+  }
+
+  @media (max-width: 1023.98px) {
+    .ascii-sky {
+      mask-image: linear-gradient(to bottom, black 24%, rgb(0 0 0 / .88) 46%, rgb(0 0 0 / .45) 68%, rgb(0 0 0 / .12) 86%, transparent 100%);
+    }
+
+    :global(html[data-reading-layout='article']) .ascii-sky {
+      height: 4.5rem;
+    }
   }
 
   .ascii-sky-canvas {
@@ -87,7 +97,7 @@ const { scene = 'clouds' } = Astro.props
     glyph: Uint8Array
     tone: Uint8Array
     dark: boolean
-    // The short band behind the header on phones, where each scene runs a little denser
+    // The short band behind the header on narrow screens
     compact: boolean
     // Center of the site title, the focal point most scenes gather around
     anchor: Point
@@ -279,7 +289,7 @@ const { scene = 'clouds' } = Astro.props
 
   // Drifting clouds, a touch denser around the title; at night stars show through the gaps
   function drawClouds(f: Field, t: number, threshold: number, stars: boolean) {
-    threshold -= f.compact ? 0.02 : 0
+    threshold += f.compact ? 0.025 : 0
     const drift = t * 0.04
     const morph = t * 0.022
     for (let row = 0; row < f.rows; row++) {
@@ -1121,9 +1131,6 @@ const { scene = 'clouds' } = Astro.props
       const blinking = !reduceMotion && now >= blinkAt
       if (now > blinkAt + 160)
         blinkAt = now + 2600 + Math.random() * 4400
-      const breath = 0.92 + 0.08 * Math.sin(t * 0.9)
-      // A sheen sweeping across every nine seconds
-      const sheen = reduceMotion ? -1 : (now / 9000 % 1) * 1.8 - 0.4
       const pointer = field.pointer
       for (let row = 0; row < p.rows; row++) {
         for (let col = 0; col < p.cols; col++) {
@@ -1138,9 +1145,8 @@ const { scene = 'clouds' } = Astro.props
           const i = y * field.cols + x
           // Scene changes pass through the portrait as one clean wavefront on their way across the sky
           const wave = (morphProgress - waveAt[i]) / WAVE_SPAN
-          const glint = ((col + row * 2) / (p.cols + p.rows * 2) - sheen) / 0.07
           let glyph = p.glyph[j]
-          let alpha = p.alpha[j] * breath * (1 + 0.5 * Math.exp(-glint * glint)) * (desktop.matches ? 1 : PORTRAIT_MOBILE_INK)
+          let alpha = p.alpha[j] * (desktop.matches ? 1 : PORTRAIT_MOBILE_INK)
           let tone = part === EYE ? 1 : 0
           if (part === HAIR) {
             textureHair(wave > 0 ? scene : previousScene, x, y, t)
@@ -1267,16 +1273,13 @@ const { scene = 'clouds' } = Astro.props
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      // Dark glyphs on a light background read heavier, so give them less ink
-      // and phones get more, the sky there being a narrow band mostly behind text
-      const ink = (colors.dark ? 0.68 : 0.55) * (field.compact ? 1.3 : 1)
+      const ink = (colors.dark ? 0.62 : 0.5) * (field.compact ? 0.92 : 1)
       const pointer = field.pointer
       const { cols, rows, cellW, cellH } = field
       const t = skyTime()
-      // The sky dissolves in from the column on desktop, and out toward the bottom everywhere
       const fadeLeft = desktop.matches ? EDGE_FADE : 0
-      const fadeTop = field.height * (desktop.matches ? 0.45 : 0.6)
-      const fadeBottom = field.height * (desktop.matches ? 0.96 : 1)
+      const fadeTop = field.height * 0.45
+      const fadeBottom = field.height * 0.96
       for (let row = 0; row < rows; row++) {
         const top = Math.round(row * cellH * ratio)
         const y = (row + 0.5) * cellH
@@ -1296,7 +1299,7 @@ const { scene = 'clouds' } = Astro.props
             const qr = Math.min(rows - 1, Math.max(0, row + Math.round(wy * WANDER_ROWS)))
             alpha *= quiet[qr * cols + qc]
 
-            let edge = smooth(clamp01((fadeBottom - y + wy * 120) / (fadeBottom - fadeTop)))
+            let edge = field.compact ? 1 : smooth(clamp01((fadeBottom - y + wy * 120) / (fadeBottom - fadeTop)))
             if (fadeLeft)
               edge *= smooth(clamp01(((col + 0.5) * cellW - 6 - (wx + 0.5) * fadeLeft * 0.6) / fadeLeft))
             // Thinning into drifting grain rather than a smooth gradient
@@ -1308,7 +1311,7 @@ const { scene = 'clouds' } = Astro.props
           if (pointer) {
             const dx = (col + 0.5) * cellW - pointer.x
             const dy = y - pointer.y
-            alpha *= 1 + 0.9 * pointer.strength * Math.exp(-(dx * dx + dy * dy) / LANTERN_RADIUS ** 2)
+            alpha *= 1 + 0.45 * pointer.strength * Math.exp(-(dx * dx + dy * dy) / LANTERN_RADIUS ** 2)
           }
 
           const level = Math.min(LEVELS, Math.round(alpha / MAX_ALPHA * LEVELS))

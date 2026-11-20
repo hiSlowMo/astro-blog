@@ -20,18 +20,6 @@ function getNavItemClass(isActive: boolean) {
     : 'highlight-hover transition-[colors,font-weight] after:bottom-0.7em hover:(c-primary font-bold) nav-more-highlight'
 }
 
-function getNavMoreItemClass(isActive: boolean) {
-  return isActive
-    ? 'highlight-static c-primary font-bold after:bottom-0.7em nav-more-highlight'
-    : 'highlight-hover transition-[colors,font-weight] after:bottom-0.7em hover:(c-primary font-bold) nav-more-highlight'
-}
-
-function getNavMoreToggleClass(isActive: boolean) {
-  return isActive
-    ? 'highlight-static c-primary font-bold after:bottom-0.7em nav-more-highlight'
-    : 'highlight-hover transition-[colors,font-weight] after:bottom-0.7em hover:(c-primary font-bold) nav-more-highlight'
-}
-
 const navItems = [
   {
     href: '/',
@@ -54,23 +42,23 @@ const moreItems = [
   {
     href: '/search/',
     label: currentUI.search,
-    className: getNavMoreItemClass(isSearchActive),
+    className: getNavItemClass(isSearchActive),
     type: 'search',
   },
   {
     href: '/archive/',
     label: currentUI.archive,
-    className: getNavMoreItemClass(isArchiveActive),
+    className: getNavItemClass(isArchiveActive),
   },
   {
     href: '/tags/',
     label: currentUI.tags,
-    className: getNavMoreItemClass(isTagActive),
+    className: getNavItemClass(isTagActive),
   },
   {
     href: '/links/',
     label: currentUI.links,
-    className: getNavMoreItemClass(isLinksActive),
+    className: getNavItemClass(isLinksActive),
   },
 ]
 ---
@@ -104,7 +92,7 @@ const moreItems = [
         aria-expanded={isMoreActive ? 'true' : 'false'}
         data-nav-more-trigger
       >
-        <span class={getNavMoreToggleClass(isMoreActive)}>
+        <span class={getNavItemClass(isMoreActive)}>
           {currentUI.more}
         </span>
       </button>
@@ -164,7 +152,7 @@ const moreItems = [
       return
 
     let isOpen = nav.dataset.navOpen === '1'
-    const mobileNav = window.matchMedia('(max-width: 768px)')
+    const mobileNav = window.matchMedia('(width < 1024px)')
 
     const measureMobileNav = () => {
       if (!mobileNav.matches || !nav.isConnected)
@@ -237,8 +225,8 @@ const moreItems = [
 </script>
 
 <style>
-  :root {
-    --nav-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  #site-nav {
+    --nav-motion-easing: var(--motion-ease-standard);
   }
 
   .nav-list {
@@ -247,17 +235,18 @@ const moreItems = [
     padding: 0;
   }
 
-  @media (max-width: 768px) {
+  @media (width < 1024px) {
     nav[aria-label='Site Navigation'] {
       position: relative;
       block-size: auto;
-      margin-bottom: 2rem;
+      margin-bottom: clamp(1.3rem, 4vw, 1.75rem);
     }
 
     nav[aria-label='Site Navigation'] .nav-list {
       display: flex;
       flex-wrap: nowrap;
-      align-items: baseline;
+      align-items: center;
+      min-height: 2.45em;
     }
 
     nav[aria-label='Site Navigation'] .nav-primary-item {
@@ -279,6 +268,7 @@ const moreItems = [
       max-height: none;
       margin-inline-end: 0;
       opacity: 0;
+      transform: translateX(-.35em);
       pointer-events: none;
     }
 
@@ -300,6 +290,7 @@ const moreItems = [
 
     nav[aria-label='Site Navigation'] .nav-more-panel {
       inline-size: max-content;
+      display: block;
     }
 
     nav[aria-label='Site Navigation'] .nav-more-list {
@@ -307,6 +298,10 @@ const moreItems = [
       flex-wrap: nowrap;
       gap: 0.65rem 1.35rem;
       margin-top: 0;
+    }
+
+    nav[aria-label='Site Navigation'][data-nav-open='0'] :is(.nav-more-list, .nav-more-list li) {
+      transform: translateX(-.35em);
     }
 
     nav[aria-label='Site Navigation'] .nav-more-list li,
@@ -422,17 +417,13 @@ const moreItems = [
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .nav-primary-item,
-    .nav-more-panel,
-    .nav-more-panel-item,
-    .nav-more-panel > .nav-more-list,
-    .nav-more-list li {
+    #site-nav :is(.nav-primary-item, .nav-more-panel, .nav-more-panel-item, .nav-more-list, .nav-more-list li) {
       transition: none;
     }
   }
 
-  @media (min-width: 769px) and (prefers-reduced-motion: no-preference) {
-    :root {
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    #site-nav {
       --nav-desktop-easing: cubic-bezier(0.32, 0.72, 0, 1);
     }
 
@@ -497,11 +488,7 @@ const moreItems = [
     list-style: none;
   }
 
-  :global(html.reduce-motion) .nav-primary-item,
-  :global(html.reduce-motion) .nav-more-panel-item,
-  :global(html.reduce-motion) .nav-more-panel,
-  :global(html.reduce-motion) .nav-more-panel > .nav-more-list,
-  :global(html.reduce-motion) .nav-more-list li {
+  :global(html.reduce-motion) #site-nav :is(.nav-primary-item, .nav-more-panel, .nav-more-panel-item, .nav-more-list, .nav-more-list li) {
     transition: none;
   }
 

@@ -23,6 +23,7 @@ const mailHref = contactEmail ? `mailto:${contactEmail}` : undefined
 ---
 
 <RecordLayout
+  shareCard="submit"
   pageTitle="提交站点信息 · THE SLOWMO RECORDS"
   pageDescription="向 THE SLOWMO RECORDS 推荐一个独立博客：先把 SlowMo's 办事处加入你的友链，再填写站点与署名信息。"
   backHref={linksPath}
@@ -31,11 +32,12 @@ const mailHref = contactEmail ? `mailto:${contactEmail}` : undefined
   <div class="submit-page">
     <!-- Header -->
     <header class="submit-head rec-fade">
-      <p class="rec-label">THE SLOWMO RECORDS <span class="submit-head__sep">/</span> SUBMISSIONS</p>
-      <h1 class="submit-head__title">推荐一张专辑</h1>
-      <p class="submit-head__en">SUBMIT AN ALBUM</p>
+      <div>
+        <p class="rec-label">THE SLOWMO RECORDS <span class="submit-head__sep">/</span> SUBMISSIONS</p>
+        <h1 class="submit-head__title">推荐一张专辑</h1>
+        <p class="submit-head__en">SUBMIT AN ALBUM</p>
+      </div>
       <p class="submit-head__status" role="note">
-        <span class="submit-head__dot" aria-hidden="true"></span>
         <span class="rec-label">STATUS /</span>
         <span>开放申请 · 人工审核</span>
       </p>
@@ -49,7 +51,7 @@ const mailHref = contactEmail ? `mailto:${contactEmail}` : undefined
         <SiteInfoCopy profile={siteProfile} />
 
         <div class="house-rules">
-          <p class="rec-label">HOUSE RULES / 几点说明</p>
+          <h3 class="house-rules__heading" id="house-rules" tabindex="-1">申请规则 <small class="rec-label" lang="en">HOUSE RULES</small></h3>
           <ul>
             {applyRules.map(rule => <li>{rule}</li>)}
           </ul>
@@ -68,9 +70,24 @@ const mailHref = contactEmail ? `mailto:${contactEmail}` : undefined
         <!-- method="dialog": even without JavaScript, submitting never sends anything anywhere -->
         <form class="record-form" method="dialog" data-record-form aria-labelledby="step-form">
           <fieldset class="form-group">
-            <legend class="form-group__legend"><span class="form-group__key">A /</span> THE ALBUM</legend>
+            <legend class="form-group__legend">
+              <span class="form-group__key">A</span>
+              站点信息 <small lang="en">THE ALBUM</small>
+            </legend>
 
             <div class="form-grid">
+              <div class="form-field form-field--wide" data-field>
+                <label class="form-field__label" for="f-url">站点链接 <span class="req" aria-hidden="true">*</span></label>
+                <div class="site-lookup">
+                  <input class="form-field__input" id="f-url" name="url" type="url" required maxlength="2048" inputmode="url" autocomplete="url" placeholder="https://" aria-describedby="f-url-error" />
+                  <div class="site-lookup__action">
+                    <button class="site-lookup__button" type="button" data-site-lookup>自动抓取</button>
+                  </div>
+                </div>
+                <p class="form-field__error" id="f-url-error" data-error></p>
+                <p class="site-lookup__status" role="status" data-lookup-status></p>
+              </div>
+
               <div class="form-field" data-field>
                 <label class="form-field__label" for="f-name">站点名称 <span class="req" aria-hidden="true">*</span></label>
                 <input class="form-field__input" id="f-name" name="name" type="text" required maxlength="40" autocomplete="organization" aria-describedby="f-name-error" />
@@ -78,12 +95,6 @@ const mailHref = contactEmail ? `mailto:${contactEmail}` : undefined
               </div>
 
               <div class="form-field" data-field>
-                <label class="form-field__label" for="f-url">站点链接 <span class="req" aria-hidden="true">*</span></label>
-                <input class="form-field__input" id="f-url" name="url" type="url" required inputmode="url" autocomplete="url" placeholder="https://" aria-describedby="f-url-error" />
-                <p class="form-field__error" id="f-url-error" data-error></p>
-              </div>
-
-              <div class="form-field form-field--wide" data-field>
                 <label class="form-field__label" for="f-desc">站点简介 <span class="req" aria-hidden="true">*</span></label>
                 <input class="form-field__input" id="f-desc" name="description" type="text" required maxlength="60" aria-describedby="f-desc-error" />
                 <p class="form-field__error" id="f-desc-error" data-error></p>
@@ -111,7 +122,10 @@ const mailHref = contactEmail ? `mailto:${contactEmail}` : undefined
           </fieldset>
 
           <fieldset class="form-group">
-            <legend class="form-group__legend"><span class="form-group__key">B /</span> THE ARTIST</legend>
+            <legend class="form-group__legend">
+              <span class="form-group__key">B</span>
+              博主信息 <small lang="en">THE ARTIST</small>
+            </legend>
 
             <div class="form-grid">
               <div class="form-field" data-field>
@@ -134,9 +148,12 @@ const mailHref = contactEmail ? `mailto:${contactEmail}` : undefined
             </div>
           </fieldset>
 
-          <label><input type="checkbox" name="rules" required /> 我已阅读并同意申请规则</label>
           <label hidden aria-hidden="true">请留空<input name="website" tabindex="-1" autocomplete="off" /></label>
           <div class="form-actions">
+            <div class="form-rules">
+              <label><input type="checkbox" name="rules" required aria-labelledby="rules-consent rules-link" /> <span id="rules-consent">我已阅读并同意</span></label>
+              <a id="rules-link" href="#house-rules">申请规则</a>
+            </div>
             <button class="form-submit" type="submit">
               <span>提交申请</span>
               <span class="rec-arrow" aria-hidden="true">↗</span>
@@ -169,7 +186,10 @@ import '@/scripts/records-submit'
 <style>
   /* ── Header ───────────────────────────────────────────── */
   .submit-head {
-    padding-bottom: clamp(1.25rem, 2.4vw, 1.6rem);
+    display: grid;
+    gap: .7rem;
+    align-items: end;
+    padding-bottom: .85rem;
     border-bottom: 1px solid var(--rec-rule);
   }
 
@@ -200,22 +220,10 @@ import '@/scripts/records-submit'
     flex-wrap: wrap;
     align-items: baseline;
     gap: 0.25rem 0.6rem;
-    max-width: 46rem;
-    margin: 1rem 0 0;
-    padding: 0.7rem 0.9rem;
-    border: 1px solid var(--rec-hair);
+    margin: 0;
     color: var(--rec-ink);
     font-size: 0.875rem;
     line-height: 1.6;
-  }
-
-  /* An empty square: the line is not live yet */
-  .submit-head__dot {
-    flex: none;
-    width: 0.55rem;
-    height: 0.55rem;
-    border: 1px solid currentColor;
-    transform: translateY(-0.05em);
   }
 
   /* ── Layout ───────────────────────────────────────────── */
@@ -223,7 +231,7 @@ import '@/scripts/records-submit'
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 2rem;
-    padding-top: clamp(1.5rem, 3vw, 2.25rem);
+    padding-top: clamp(1rem, 2vw, 1.5rem);
   }
 
   .submit-side,
@@ -241,9 +249,20 @@ import '@/scripts/records-submit'
   }
 
   .house-rules {
-    margin-top: 1.75rem;
-    padding-top: 1rem;
+    margin-top: 1.25rem;
+    padding-top: .7rem;
     border-top: 1px solid var(--rec-hair);
+  }
+
+  .house-rules__heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .65rem;
+    margin: 0;
+    scroll-margin-top: 1.5rem;
+    color: var(--rec-ink);
+    font: 700 1rem/1.4 var(--rec-serif);
   }
 
   .house-rules ul {
@@ -290,6 +309,9 @@ import '@/scripts/records-submit'
   }
 
   .form-group__legend {
+    display: flex;
+    align-items: baseline;
+    gap: .55rem;
     width: 100%;
     padding: 0 0 0.45rem;
     border-bottom: 1px solid var(--rec-rule);
@@ -301,10 +323,19 @@ import '@/scripts/records-submit'
   }
 
   .form-group__key {
-    color: var(--rec-muted);
+    padding: .15rem .7rem .15rem .4rem;
+    background: var(--rec-ink);
+    color: oklch(var(--un-preset-theme-colors-background));
+    mask-image: var(--cut-end);
     font-family: var(--rec-mono);
     font-size: 0.8125rem;
-    font-weight: 400;
+    line-height: 1.25;
+  }
+
+  .form-group__legend small {
+    margin-inline-start: auto;
+    color: var(--rec-muted);
+    font: 400 var(--label-size)/1.4 var(--rec-mono);
   }
 
   .form-grid {
@@ -351,12 +382,82 @@ import '@/scripts/records-submit'
     opacity: 0.7;
   }
 
+  .site-lookup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 0rem;
+    margin-top: .3rem;
+    transition: grid-template-columns var(--motion-base) var(--motion-ease-standard);
+  }
+
+  .site-lookup:focus-within,
+  .site-lookup:has(input:not(:placeholder-shown)) {
+    grid-template-columns: minmax(0, 1fr) 5.75rem;
+  }
+
+  .site-lookup input {
+    min-width: 0;
+    margin: 0;
+  }
+
+  .site-lookup__action {
+    min-width: 0;
+    overflow: clip;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity var(--motion-fast) ease, visibility 0s var(--motion-base);
+  }
+
+  .site-lookup:focus-within .site-lookup__action,
+  .site-lookup:has(input:not(:placeholder-shown)) .site-lookup__action {
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 0s;
+  }
+
+  .site-lookup__button {
+    width: 5.25rem;
+    height: 100%;
+    margin-inline-start: .5rem;
+    border: 1px solid var(--rec-hair);
+    color: var(--rec-ink);
+    font-size: .875rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .site-lookup__button:hover,
+  .site-lookup__button:focus-visible {
+    border-color: currentColor;
+  }
+
+  .site-lookup__button:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: -3px;
+  }
+
+  .site-lookup__status {
+    margin: 0;
+    color: var(--rec-muted);
+    font-size: .8125rem;
+  }
+
+  .site-lookup__status:not(:empty) {
+    margin-top: .35rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-lookup, .site-lookup__action { transition: none; }
+  }
+
+  :global(.reduce-motion) .site-lookup,
+  :global(.reduce-motion) .site-lookup__action { transition: none; }
+
   .form-field__input:hover {
     border-color: oklch(var(--un-preset-theme-colors-secondary) / 0.55);
   }
 
   .form-field__input:focus-visible {
-    outline: 2px solid oklch(var(--un-preset-theme-colors-accent));
+    outline: var(--focus-ring);
     outline-offset: 2px;
   }
 
@@ -384,13 +485,48 @@ import '@/scripts/records-submit'
   }
 
   .form-actions {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 0.75rem 1.25rem;
-    margin-top: 1.75rem;
-    padding-top: 1.25rem;
+    gap: .4rem var(--editorial-gap);
+    margin-top: 1.25rem;
+    padding-top: .75rem;
     border-top: 1px solid var(--rec-rule);
+  }
+
+  .form-rules {
+    display: inline-flex;
+    justify-self: start;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0 .25rem;
+    min-height: 2.75rem;
+    font-size: .875rem;
+  }
+
+  .form-rules label,
+  .form-rules a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    gap: .5rem;
+    cursor: pointer;
+  }
+
+  .form-rules a {
+    color: var(--rec-ink);
+    text-decoration: underline;
+    text-underline-offset: .2em;
+  }
+
+  .form-rules input {
+    flex: none;
+  }
+
+  @media (max-width: 36rem) {
+    .form-actions {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 
   .form-submit {
@@ -423,10 +559,16 @@ import '@/scripts/records-submit'
   }
 
   .form-actions__summary {
+    grid-column: 1 / -1;
     margin: 0;
     color: var(--rec-ink);
     font-size: 0.875rem;
     line-height: 1.6;
+  }
+
+  .form-actions__summary:empty {
+    margin: 0;
+    position: absolute;
   }
 
   form:not([data-sending]) .form-actions__summary:not(:empty) {
@@ -438,7 +580,7 @@ import '@/scripts/records-submit'
     margin-top: 1.75rem;
     padding: 1.15rem 1.15rem 1rem;
     border: 1px solid var(--rec-hair);
-    border-top: 3px solid var(--rec-ink);
+    border-top: var(--rule-masthead) solid var(--rec-ink);
   }
 
   .submit-result[hidden] {
@@ -450,7 +592,7 @@ import '@/scripts/records-submit'
   }
 
   .submit-result:focus-visible {
-    outline: 2px solid oklch(var(--un-preset-theme-colors-accent));
+    outline: var(--focus-ring);
     outline-offset: 3px;
   }
 
@@ -478,6 +620,8 @@ import '@/scripts/records-submit'
     max-width: 40em;
     margin: 0.6rem 0 0;
     color: var(--rec-ink-2);
+    font-family: var(--rec-mono);
+    overflow-wrap: anywhere;
     font-size: 0.875rem;
     line-height: 1.8;
   }
@@ -559,9 +703,10 @@ import '@/scripts/records-submit'
   }
 
   @media (min-width: 64rem) {
+    .submit-head,
     .submit-grid {
       grid-template-columns: clamp(17.5rem, 24vw, 20rem) minmax(0, 1fr);
-      gap: clamp(2rem, 4vw, 3.5rem);
+      column-gap: clamp(2rem, 4vw, 3.5rem);
     }
 
     .submit-side {

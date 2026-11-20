@@ -534,9 +534,9 @@ html main {
 }
 
 .gsc-comment-box-textarea {
-  min-height: 86px !important;
+  min-height: clamp(6rem, 20vw, 8rem) !important;
   padding: 0.35rem 0.5rem 0.35rem 2.1rem !important;
-  resize: none !important;
+  resize: vertical !important;
   font: inherit;
   font-size: 1rem !important;
   line-height: 1.7;
@@ -559,7 +559,7 @@ html main {
 }
 
 .gsc-comment-box-preview {
-  min-height: 86px !important;
+  min-height: clamp(6rem, 20vw, 8rem) !important;
   padding: 0.35rem 0.5rem !important;
 }
 
@@ -614,10 +614,7 @@ html main {
   line-height: 1.2 !important;
 }
 
-.gsc-comment-box-buttons button[type='submit'],
-.gsc-comment-box-buttons .btn-primary,
-.gsc-comment-box-buttons .btn-primary:disabled,
-.gsc-comment-box-buttons .btn-primary:hover {
+.gsc-comment-box-buttons button[type='submit'] {
   min-width: 1.9rem !important;
   min-height: 1.9rem !important;
   width: 1.9rem !important;
@@ -650,6 +647,25 @@ html main {
 .gsc-comment-box-is-reply {
   margin: 0.85rem 0 0 3rem !important;
   width: calc(100% - 3rem) !important;
+}
+
+.gsc-comment-box:not(.gsc-comment-box-is-reply):has(.gsc-comment-box-buttons a.btn-primary) {
+  display: block;
+  padding: 0 !important;
+}
+
+.gsc-comment-box:not(.gsc-comment-box-is-reply):has(.gsc-comment-box-buttons a.btn-primary)::before,
+.gsc-comment-box:not(.gsc-comment-box-is-reply):has(.gsc-comment-box-buttons a.btn-primary) > :is(.gsc-comment-box-tabs, .gsc-comment-box-main) {
+  display: none;
+}
+
+.gsc-comment-box:has(.gsc-comment-box-buttons a.btn-primary):not(.gsc-comment-box-is-reply) > .gsc-comment-box-bottom {
+  justify-content: flex-start !important;
+}
+
+.gsc-comment-box-buttons a.btn-primary:is(:hover, :focus-visible) {
+  text-decoration: underline !important;
+  text-underline-offset: .2em;
 }
 
 button:focus-visible,

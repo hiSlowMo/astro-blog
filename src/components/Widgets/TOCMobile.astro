@@ -156,11 +156,10 @@ const tocTree = buildTocTree(filteredHeadings)
   }
 
   .toc-mobile-shell {
-    --toc-mobile-inline-safe: max(0.75rem, calc(env(safe-area-inset-left) + 0.7rem));
-    --toc-mobile-left: var(--toc-mobile-inline-safe);
+    --toc-mobile-left: calc(var(--controls-edge) + env(safe-area-inset-left));
     --toc-mobile-panel-width: min(15.7rem, calc(100vw - 2.6rem));
-    --toc-mobile-offset-bottom: calc(8.25rem + env(safe-area-inset-bottom));
-    --toc-mobile-control-size: 2.56rem;
+    --toc-mobile-offset-bottom: var(--controls-bottom);
+    --toc-mobile-control-size: calc(var(--control-size) + 2 * var(--rule-divider));
     --toc-mobile-panel-gap: 0.72rem;
     position: relative;
     z-index: 46;
@@ -175,17 +174,10 @@ const tocTree = buildTocTree(filteredHeadings)
     display: inline-grid;
     place-items: center;
     padding: 0;
-    border: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
-    border-radius: 0.95rem;
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.09), transparent 56%),
-      oklch(var(--un-preset-theme-colors-background) / 0.4);
-    color: oklch(0.74 0.16 255 / 0.98);
-    box-shadow:
-      0 18px 32px oklch(0 0 0 / 0.15),
-      inset 0 1px 0 rgb(255 255 255 / 0.13);
-    backdrop-filter: blur(20px) saturate(165%);
-    -webkit-backdrop-filter: blur(20px) saturate(165%);
+    border: var(--control-border);
+    border-radius: var(--control-radius);
+    background: var(--control-surface);
+    color: oklch(var(--un-preset-theme-colors-secondary));
     transition:
       color var(--motion-fast, 160ms) ease,
       border-color var(--motion-fast, 160ms) ease,
@@ -195,18 +187,19 @@ const tocTree = buildTocTree(filteredHeadings)
   }
 
   .toc-mobile-trigger.is-active {
-    color: oklch(0.8 0.16 255 / 1);
-    border-color: oklch(var(--un-preset-theme-colors-primary) / 0.18);
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.12), transparent 58%),
-      oklch(var(--un-preset-theme-colors-background) / 0.48);
+    color: oklch(var(--un-preset-theme-colors-accent));
+    border-color: currentColor;
+  }
+
+  .toc-mobile-shell button:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 1px;
   }
 
   .toc-mobile-trigger__icon {
     width: 1.42rem;
     height: 1.42rem;
     display: block;
-    filter: drop-shadow(0 0 0.5rem rgb(95 142 255 / 0.22));
   }
 
   .toc-mobile-backdrop {
@@ -234,21 +227,14 @@ const tocTree = buildTocTree(filteredHeadings)
     display: flex;
     flex-direction: column;
     padding: 0.66rem;
-    border: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
-    border-radius: 1.2rem;
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.08), transparent 62%),
-      oklch(var(--un-preset-theme-colors-background) / 0.58);
-    box-shadow:
-      0 24px 48px oklch(0 0 0 / 0.18),
-      inset 0 1px 0 rgb(255 255 255 / 0.1);
-    backdrop-filter: blur(24px) saturate(165%);
-    -webkit-backdrop-filter: blur(24px) saturate(165%);
+    border: var(--control-border);
+    border-radius: var(--control-radius);
+    background: var(--control-surface);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
     overflow: hidden;
-    transform: translate(-0.75rem, 0.9rem) scale(0.96);
+    transform: translateY(.4rem);
     transform-origin: left bottom;
     transition:
       opacity var(--overlay-duration) var(--overlay-easing),
@@ -263,12 +249,14 @@ const tocTree = buildTocTree(filteredHeadings)
     justify-content: space-between;
     gap: 0.55rem;
     margin-bottom: 0.52rem;
+    padding-bottom: .35rem;
+    border-bottom: var(--section-divider);
   }
 
   .toc-mobile-panel__title {
     margin: 0;
-    font-family: "Songti SC", "STSong", "Noto Serif SC", Georgia, serif;
-    font-size: 1.25rem;
+    font-family: var(--font-sans);
+    font-size: var(--module-title-size);
     font-weight: 700;
     letter-spacing: 0.01em;
     color: oklch(var(--un-preset-theme-colors-primary) / 0.95);
@@ -279,8 +267,6 @@ const tocTree = buildTocTree(filteredHeadings)
     align-items: center;
     gap: 0.18rem;
     padding: 0.16rem;
-    border-radius: 999px;
-    background: oklch(var(--un-preset-theme-colors-secondary) / 0.08);
   }
 
   .toc-mobile-tab {
@@ -288,7 +274,7 @@ const tocTree = buildTocTree(filteredHeadings)
     height: 1.9rem;
     padding: 0 0.72rem;
     border: none;
-    border-radius: 999px;
+    border-radius: 0;
     background: transparent;
     color: oklch(var(--un-preset-theme-colors-secondary) / 0.72);
     font-size: 0.76rem;
@@ -302,7 +288,6 @@ const tocTree = buildTocTree(filteredHeadings)
 
   .toc-mobile-tab.is-active {
     color: oklch(var(--un-preset-theme-colors-primary) / 0.96);
-    background: oklch(var(--un-preset-theme-colors-background) / 0.68);
     box-shadow: inset 0 -2px oklch(var(--un-preset-theme-colors-accent));
     transform: translateY(-0.02rem);
   }
@@ -323,8 +308,8 @@ const tocTree = buildTocTree(filteredHeadings)
   .toc-mobile-panel__viewport {
     position: relative;
     display: grid;
-    align-items: start;
-    min-height: min(17rem, 38vh);
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
   }
 
   .toc-mobile-panel__body {
@@ -446,7 +431,6 @@ const tocTree = buildTocTree(filteredHeadings)
   @media (min-width: 769px) and (hover: none) and (pointer: coarse) {
     .toc-mobile-shell {
       --toc-mobile-panel-width: min(18rem, calc(100vw - 3rem));
-      --toc-mobile-offset-bottom: calc(1.5rem + env(safe-area-inset-bottom));
     }
 
     .toc-mobile-panel {
@@ -457,7 +441,6 @@ const tocTree = buildTocTree(filteredHeadings)
   @media (max-width: 768px) {
     .toc-mobile-shell {
       --toc-mobile-panel-width: min(15.7rem, calc(100vw - 2.6rem));
-      --toc-mobile-offset-bottom: calc(8.5rem + env(safe-area-inset-bottom));
     }
 
     .toc-mobile-panel {

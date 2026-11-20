@@ -29,21 +29,23 @@ const titleId = `record-${album.catalogNo}-title`
     </a>
 
     <div class="album__info">
-      <p class="rec-label">RECORD NO. <span class="rec-value">{album.catalogNo}</span></p>
-      <h3 class="album__title" id={titleId}>
-        <a
-          class="album__link"
-          href={album.url}
-          target="_blank"
-          rel="noopener"
-          data-umami-event="outbound-link-click"
-          data-umami-event-url={album.url}
-        >
-          <span class="album__name">{album.name}</span>
-          <span class="rec-arrow album__arrow" aria-hidden="true">↗</span>
-        </a>
-      </h3>
-      {album.artist && <p class="rec-label album__artist">ARTIST / <span class="rec-value">{album.artist}</span></p>}
+      <div class="album__identity">
+        <p class="rec-label">RECORD NO. <span class="rec-value">{album.catalogNo}</span></p>
+        <h3 class="album__title" id={titleId}>
+          <a
+            class="album__link"
+            href={album.url}
+            target="_blank"
+            rel="noopener"
+            data-umami-event="outbound-link-click"
+            data-umami-event-url={album.url}
+          >
+            <span class="album__name">{album.name}</span>
+            <span class="rec-arrow album__arrow" aria-hidden="true">↗</span>
+          </a>
+        </h3>
+        {album.artist && <p class="rec-label album__artist">ARTIST / <span class="rec-value">{album.artist}</span></p>}
+      </div>
       {album.description && <p class="album__notes">{album.description}</p>}
       {album.genres && album.genres.length > 0 && (
         <p class="rec-label album__genre">GENRE / <span class="rec-value">{album.genres.join(' · ')}</span></p>
@@ -52,38 +54,30 @@ const titleId = `record-${album.catalogNo}-title`
   </div>
 
     <div class="album__track" hidden={!track}>
-      <p class="rec-label album__track-label">
-        LATEST TRACK <span aria-hidden="true">/</span> <span class="album__track-note">最新曲目</span>
-      </p>
+      <div class="album__track-meta">
+        <p class="rec-label album__track-label">
+          最新曲目 <span lang="en">LATEST TRACK</span>
+        </p>
+        <time class="rec-label album__track-date" hidden={!track?.date} datetime={track?.date}>{formatRecordDate(track?.date)}</time>
+      </div>
       <a
-        class="album__track-title"
+        class="album__track-link"
         href={track?.url}
         target="_blank"
         rel="noopener"
         data-umami-event="outbound-link-click"
-        data-umami-event-url={track?.url}
+        data-umami-event-url={track?.url ?? ''}
       >
-        {track?.title}
+        <span class="album__track-title">{track?.title}</span>
+        <span class="rec-arrow" aria-hidden="true">↗</span>
       </a>
-      <div class="album__track-foot">
-        <time class="rec-label album__track-date" hidden={!track?.date} datetime={track?.date}>{formatRecordDate(track?.date)}</time>
-        <a
-          class="rec-action album__track-read"
-          href={track?.url}
-          target="_blank"
-          rel="noopener"
-          data-umami-event="outbound-link-click"
-          data-umami-event-url={track?.url}
-        >
-          READ TRACK <span class="rec-arrow" aria-hidden="true">↗</span>
-        </a>
-      </div>
     </div>
 </article>
 
 <style>
   /* Each album stands on its own: a hairline frame, no fill */
   .album {
+    container-type: inline-size;
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -167,6 +161,25 @@ const titleId = `record-${album.catalogNo}-title`
     color: var(--rec-ink-2);
   }
 
+  @container (max-width: 24rem) {
+    .album__info {
+      display: contents;
+    }
+
+    .album__identity {
+      min-width: 0;
+    }
+
+    .album__record .album__notes,
+    .album__record .album__genre {
+      grid-column: 1 / -1;
+    }
+
+    .album__notes {
+      margin-top: .7rem;
+    }
+  }
+
   /* ── Latest track: quieter than the record above it ───── */
   /* Pinned to the bottom, so tracks line up across a row of albums */
   .album__track {
@@ -179,17 +192,17 @@ const titleId = `record-${album.catalogNo}-title`
     color: var(--rec-muted);
   }
 
-  .album__track-note {
-    margin-left: 0.4em;
-    font-family: var(--rec-sans);
-    letter-spacing: 0.04em;
+  .album__track-label span {
+    margin-inline-start: .4em;
   }
 
-  /* Two lines at most */
-  .album__track-title {
-    display: -webkit-box;
-    margin-top: 0.4rem;
-    overflow: hidden;
+  .album__track-link {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    align-content: center;
+    gap: .6rem;
+    min-height: 2.75rem;
     color: var(--rec-ink);
     font-size: 0.975rem;
     font-weight: 500;
@@ -202,37 +215,26 @@ const titleId = `record-${album.catalogNo}-title`
     transition:
       color var(--motion-fast, 160ms) ease,
       text-decoration-color var(--motion-base, 220ms) ease;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
   }
 
-  .album__track-title:hover,
-  .album__track-title:focus-visible {
+  .album__track-link:hover,
+  .album__track-link:focus-visible {
     color: var(--rec-ink);
     text-decoration-color: currentColor;
   }
 
-  .album__track-foot {
+  .album__track-meta {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 0 1rem;
-    margin-top: 0.15rem;
   }
 
   .album__track-date {
     color: var(--rec-muted);
     letter-spacing: 0.06em;
     font-variant-numeric: tabular-nums;
-  }
-
-  .album .album__track-read {
-    min-height: 2.75rem;
-    margin-left: auto;
-    color: var(--rec-ink-2);
-    font-size: 0.8125rem;
   }
 
   /* ── Wider screens: cover beside the record ───────────── */

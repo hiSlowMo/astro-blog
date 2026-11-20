@@ -2,6 +2,19 @@
 @import "@fontsource-variable/noto-sans-sc";
 @import "@fontsource-variable/jetbrains-mono";
 :root {
+  --controls-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  --controls-edge: .75rem;
+  --control-size: 2.75rem;
+  --control-radius: .4rem;
+  --control-border: var(--rule-divider) solid oklch(var(--un-preset-theme-colors-secondary) / .32);
+  --control-surface: oklch(var(--un-preset-theme-colors-background));
+  --editorial-index: 110px;
+  --editorial-gap: clamp(.65rem, 2vw, 1.4rem);
+  --section-rule: oklch(var(--un-preset-theme-colors-secondary) / .18);
+  --section-divider: var(--rule-divider) solid var(--section-rule);
+  --focus-ring: var(--rule-focus) solid oklch(var(--un-preset-theme-colors-accent));
+  --cut-start: conic-gradient(from var(--cut-angle) at 0 100%, #000 0 180deg, transparent 180deg);
+  --cut-end: conic-gradient(from calc(180deg + var(--cut-angle)) at 100% 0, #000 0 180deg, transparent 180deg);
   --page-title-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
   --section-title-size: clamp(1.25rem, 1.12rem + .55vw, 1.5rem);
   --module-title-size: clamp(1.0625rem, 1rem + .25vw, 1.125rem);
@@ -75,10 +88,10 @@ h1, h2, h3, h4 {
 .archive-date,
 .archive-tags {
   font-weight: 400;
-  opacity: 0.82;
 }
 
 .font-time {
+  font-family: var(--font-mono);
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
 }
@@ -122,6 +135,7 @@ body::selection {
   content: '';
 }
 .highlight-static::after,
+.highlight-hover:focus-visible::after,
 .highlight-hover:hover::after {
   --at-apply: 'origin-bottom-left scale-x-100';
 }
@@ -142,6 +156,9 @@ h4:hover .heading-anchor-link svg {
 .heading-anchor-link svg {
   --at-apply: 'ml-0.4em aspect-square w-0.9em op-0 transition-opacity ease-out active:scale-90';
 }
+.heading-anchor-link:focus-visible svg {
+  opacity: 1;
+}
 h1:hover .heading-anchor-link svg:hover,
 h2:hover .heading-anchor-link svg:hover,
 h3:hover .heading-anchor-link svg:hover,
@@ -160,7 +177,7 @@ main img[data-zoom-ready='1'] {
   cursor: zoom-in;
 }
 main img[data-zoom-ready='1']:focus-visible {
-  outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.55);
+  outline: var(--focus-ring);
   outline-offset: 4px;
 }
 .zoom-close {
@@ -181,7 +198,7 @@ main img[data-zoom-ready='1']:focus-visible {
   cursor: pointer;
 }
 .zoom-close:focus-visible {
-  outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.6);
+  outline: var(--focus-ring);
   outline-offset: 3px;
 }
 html.reduce-motion .zoom-overlay,

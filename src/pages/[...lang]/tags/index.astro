@@ -27,9 +27,10 @@ const tagCounts = Object.fromEntries(
         <h1 class="section-label" id="tag-overview-title">{ui[currentLang].tags} <small lang="en">TAGS</small></h1>
         <p>同一篇文字，也可以有不同的入口。</p>
       </div>
-      <span class="font-time">{allTags.length} TOPICS</span>
+      <span class="topic-total font-time"><strong>{allTags.length}</strong> <small lang="en">TOPICS</small></span>
     </header>
     <TagList
+      indexLayout
       tags={allTags}
       lang={currentLang}
       counts={tagCounts}
@@ -40,12 +41,12 @@ const tagCounts = Object.fromEntries(
 <style>
   .tag-overview-header {
     display: flex;
-    align-items: baseline;
+    align-items: flex-end;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 2.25rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
+    margin-bottom: .75rem;
+    padding-bottom: 1rem;
+    border-bottom: var(--section-divider);
   }
 
   .tag-overview-header p {
@@ -55,10 +56,35 @@ const tagCounts = Object.fromEntries(
     line-height: 1.7;
   }
 
-  .tag-overview-header > span {
+  .topic-total {
     flex: none;
-    color: oklch(var(--un-preset-theme-colors-secondary) / 0.8);
-    font-size: 0.8rem;
+    display: flex;
+    align-items: flex-end;
+    gap: .35rem;
+    color: oklch(var(--un-preset-theme-colors-secondary));
+  }
+
+  .topic-total strong {
+    font-family: var(--font-mono);
+    font-size: clamp(2.25rem, 6vw, 4.4rem);
+    line-height: .88;
+    letter-spacing: -.055em;
+  }
+
+  .topic-total small {
+    writing-mode: vertical-rl;
+    font-size: .68rem;
     letter-spacing: 0.1em;
+    line-height: 1;
+  }
+
+  @media (max-width: 480px) {
+    .topic-total {
+      flex-direction: column;
+    }
+
+    .topic-total small {
+      writing-mode: horizontal-tb;
+    }
   }
 </style>

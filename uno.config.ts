@@ -8,6 +8,7 @@ import {
 } from 'unocss'
 import presetTheme from 'unocss-preset-theme'
 import { themeConfig } from './src/config.ts'
+import { editorialDesign } from './src/data/editorial-design'
 
 const { light, dark } = themeConfig.color
 
@@ -17,6 +18,9 @@ const fontMono = ['JetBrains Mono Variable', 'ui-monospace', 'SFMono-Regular', '
 const fontTime = ['JetBrains Mono Variable', ...fontSans]
 
 export default defineConfig({
+  preflights: [{
+    getCSS: () => `:root{--cut-angle:${editorialDesign.cutAngle}deg;--rule-divider:${editorialDesign.divider}px;--rule-focus:${editorialDesign.focus}px;--rule-masthead:${editorialDesign.masthead}px}`,
+  }],
   presets: [
     presetWind3(),
     presetAttributify(),

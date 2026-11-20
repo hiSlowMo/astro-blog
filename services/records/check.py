@@ -56,6 +56,27 @@ class Checks(unittest.TestCase):
         with database() as conn:
             self.assertEqual(conn.execute("SELECT count(*) FROM applications").fetchone()[0], 0)
 
+    def test_site_metadata(self):
+        path = BASE + "/site-metadata"
+        page = b"""<head><base href="../assets/"><title>Blog - Tagline</title>
+        <meta property="og:site_name" content="Blog &amp; Notes">
+        <meta name="description" content="Some notes">
+        <link rel="apple-touch-icon" href="touch.png"><link rel="icon" href="icon.png">
+        <link rel="alternate" type="application/atom+xml" href="/atom.xml"></head>"""
+        with patch("metadata.fetch", return_value=("https://example.org/blog/", page)) as fetch:
+            data = {"url": "https://example.org/"}
+            result = self.api.post(path, json=data)
+            self.assertEqual(result.json, {"name": "Blog & Notes", "description": "Some notes",
+                                           "icon": "https://example.org/assets/icon.png",
+                                           "rss": "https://example.org/atom.xml"})
+            self.assertEqual(self.api.post(path, json={"url": "http://127.0.0.1/"}).status_code, 422)
+            self.assertEqual(self.api.post(path, json=data, headers={"Origin": "https://other.org"}).status_code, 403)
+            fetch.assert_called_once_with(data["url"], html_only=True)
+            fetch.side_effect = ValueError()
+            self.assertEqual(self.api.post(path, json=data).status_code, 422)
+        with database() as conn:
+            self.assertEqual(conn.execute("SELECT count(*) FROM applications").fetchone()[0], 0)
+
     def test_feed_failure_and_manual(self):
         atom = b'<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>A</title><link href="/post"/><updated>2026-11-10T07:00:00Z</updated></entry></feed>'
         self.assertEqual(parse_tracks(atom, "https://example.org/feed")[0]["publishedAt"], "2026-11-10T07:00:00Z")
