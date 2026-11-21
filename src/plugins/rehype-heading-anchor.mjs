@@ -26,6 +26,8 @@ export function rehypeHeadingAnchor() {
             tagName: 'svg',
             properties: {
               'viewBox': '0 0 24 24',
+              'width': '0.9em',
+              'height': '0.9em',
               'aria-hidden': 'true',
               'fill': 'currentColor',
             },

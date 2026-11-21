@@ -154,7 +154,7 @@ h4:hover .heading-anchor-link svg {
   --at-apply: 'op-40';
 }
 .heading-anchor-link svg {
-  --at-apply: 'ml-0.4em aspect-square w-0.9em op-0 transition-opacity ease-out active:scale-90';
+  --at-apply: 'ml-0.4em op-0 transition-opacity ease-out active:scale-90';
 }
 .heading-anchor-link:focus-visible svg {
   opacity: 1;

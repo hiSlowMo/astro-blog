@@ -1,0 +1,12 @@
+{
+  "ref": "blog_asset_error_headers",
+  "description": "Prevent browsers from retaining failed blog asset requests",
+  "expression": "(http.host eq \"www.theslowmo.com\" and starts_with(http.request.uri.path, \"/_astro/\") and http.response.code ge 400)",
+  "action": "rewrite",
+  "action_parameters": {
+    "headers": {
+      "cache-control": { "operation": "set", "value": "no-store" }
+    }
+  },
+  "enabled": true
+}

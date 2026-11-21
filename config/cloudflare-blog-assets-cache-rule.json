@@ -1,0 +1,20 @@
+{
+  "ref": "blog_hashed_assets",
+  "description": "Blog build assets: do not cache error responses",
+  "expression": "(http.host eq \"www.theslowmo.com\" and http.request.method in {\"GET\" \"HEAD\"} and starts_with(http.request.uri.path, \"/_astro/\"))",
+  "action": "set_cache_settings",
+  "action_parameters": {
+    "cache": true,
+    "edge_ttl": {
+      "mode": "bypass_by_default",
+      "status_code_ttl": [
+        {
+          "status_code_range": { "from": 400 },
+          "value": -1
+        }
+      ]
+    },
+    "browser_ttl": { "mode": "respect_origin" }
+  },
+  "enabled": true
+}
