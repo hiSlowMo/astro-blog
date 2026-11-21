@@ -4,6 +4,10 @@ html[data-reading-layout='article'] #site-footer {
 }
 
 @media (max-width: 767.98px) {
+  #post-content :is(p, h1, h2, h3):not(.no-heti, .no-heti *) {
+    text-wrap: wrap;
+  }
+
   html[data-reading-layout='article'] .footer-default {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
