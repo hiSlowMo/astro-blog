@@ -8,6 +8,16 @@ html[data-reading-layout='article'] #site-footer {
     text-wrap: wrap;
   }
 
+  html[data-reading-layout='article'] #post-content p:lang(zh):not(.no-heti, .no-heti *) {
+    letter-spacing: normal;
+    text-align: justify;
+    text-align-last: start;
+  }
+
+  #post-content p:lang(zh):not(.no-heti, .no-heti *) .paragraph-ending {
+    white-space: nowrap;
+  }
+
   html[data-reading-layout='article'] .footer-default {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

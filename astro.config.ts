@@ -16,6 +16,7 @@ import { rehypeHeadingAnchor } from './src/plugins/rehype-heading-anchor.mjs'
 import { rehypeImageProcessor } from './src/plugins/rehype-image-processor.mjs'
 import { rehypeMermaidSource } from './src/plugins/rehype-mermaid-source.mjs'
 import { rehypePagefindOptimize } from './src/plugins/rehype-pagefind-optimize.mjs'
+import { rehypeParagraphEndings } from './src/plugins/rehype-paragraph-endings.mjs'
 import { remarkContainerDirectives } from './src/plugins/remark-container-directives.mjs'
 import { remarkLeafDirectives } from './src/plugins/remark-leaf-directives.mjs'
 import { remarkReadingTime } from './src/plugins/remark-reading-time.mjs'
@@ -93,6 +94,7 @@ export default defineConfig({
       rehypeHeadingAnchor,
       rehypeImageProcessor,
       rehypePagefindOptimize,
+      rehypeParagraphEndings,
       rehypeExternalLinks,
       rehypeCodeCopyButton,
     ],
