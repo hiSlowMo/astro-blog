@@ -19,11 +19,6 @@ export interface ThemeConfig {
     favicon: string
     startDate: string
     birthYear?: number
-    status?: {
-      text: string | string[]
-      tone?: 'online' | 'away' | 'offline'
-      interval?: number
-    }
   }
   color: {
     mode: 'light' | 'dark' | 'auto'

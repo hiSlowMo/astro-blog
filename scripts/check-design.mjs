@@ -9,7 +9,7 @@ const routes = ['/', '/about/', '/archive/', '/tags/', '/moments/', '/search/', 
 async function headerGeometry(page) {
   await page.locator('#site-nav[data-nav-bound="1"]').waitFor()
   await page.evaluate(() => document.fonts.ready)
-  return page.locator('#site-title-link, #site-status, #theme-toggle-button, #site-nav')
+  return page.locator('#site-title-link, #theme-toggle-button, #site-nav')
     .evaluateAll(elements => elements.map((element) => {
       const { x, y, width, height } = element.getBoundingClientRect()
       return [x, y, width, height]

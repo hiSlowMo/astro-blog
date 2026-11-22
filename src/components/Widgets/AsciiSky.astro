@@ -146,7 +146,7 @@ const { scene = 'clouds' } = Astro.props
   const HAIR = 1
   const STROKE = 2
   const EYE = 3
-  // What a cell flickers through while it decodes into the next scene
+  // Glyphs for the portrait's brief reveal
   const SCRAMBLE = Array.from('.:-=+*#%|/\\', glyphIndex)
 
   const FONT_FAMILY = '"JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace'
@@ -159,7 +159,7 @@ const { scene = 'clouds' } = Astro.props
   const FRAME_INTERVAL = 70
   const MORPH_FRAME_INTERVAL = 40
   const MORPH_DURATION = 1500
-  // Share of the morph each cell spends scrambling
+  // Share of the morph spent transitioning a single cell
   const DECODE_SPAN = 0.3
   // The portrait only shimmers in a thin wave, so it never breaks up while the sky changes around it
   const WAVE_SPAN = 0.07
@@ -289,7 +289,7 @@ const { scene = 'clouds' } = Astro.props
 
   // Drifting clouds, a touch denser around the title; at night stars show through the gaps
   function drawClouds(f: Field, t: number, threshold: number, stars: boolean) {
-    threshold += f.compact ? 0.025 : 0
+    threshold += f.compact ? 0.055 : 0.02
     const drift = t * 0.04
     const morph = t * 0.022
     for (let row = 0; row < f.rows; row++) {
@@ -1256,10 +1256,15 @@ const { scene = 'clouds' } = Astro.props
           shownGlyph[i] = fromGlyph[i]
           shownTone[i] = fromTone[i]
         }
+        else if (local < 0.5) {
+          shownAlpha[i] = fromAlpha[i] * (1 - 2 * local)
+          shownGlyph[i] = fromGlyph[i]
+          shownTone[i] = fromTone[i]
+        }
         else {
-          shownAlpha[i] = Math.max(field.alpha[i] * strength, fromAlpha[i])
-          shownGlyph[i] = SCRAMBLE[Math.floor(hash3(i, frame, 5) * SCRAMBLE.length)]
-          shownTone[i] = 0
+          shownAlpha[i] = field.alpha[i] * strength * (2 * local - 1)
+          shownGlyph[i] = field.glyph[i]
+          shownTone[i] = field.tone[i]
         }
       }
 
@@ -1273,7 +1278,7 @@ const { scene = 'clouds' } = Astro.props
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      const ink = (colors.dark ? 0.62 : 0.5) * (field.compact ? 0.92 : 1)
+      const ink = (colors.dark ? 0.5 : 0.42) * (field.compact ? 0.78 : 1)
       const pointer = field.pointer
       const { cols, rows, cellW, cellH } = field
       const t = skyTime()

@@ -25,19 +25,6 @@ export const themeConfig: ThemeConfig = {
     startDate: '2026-02-14',
     // used by the archive page age watermark
     birthYear: 2006,
-    // status light under the site title, remove to hide it
-    status: {
-      text: [
-        '办公中',
-        '整理思路',
-        '写点东西',
-        '看会儿代码',
-        '慢慢琢磨',
-        '发会儿呆',
-      ],
-      tone: 'online', // online | away | offline
-      interval: 3200,
-    },
   },
   // SITE INFORMATION >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END
 
@@ -61,7 +48,7 @@ export const themeConfig: ThemeConfig = {
       secondary: 'oklch(72% 0 0)',
       // background color
       background: 'oklch(14.5% 0 0)',
-      // accent color, used sparingly: links, the status light, a few glyphs of the sky
+      // accent color, used sparingly on links and a few glyphs of the sky
       accent: 'oklch(76% 0.15 167)', // mint
       // highlight color
       highlight: 'oklch(76% 0.15 167 / 0.2)',
