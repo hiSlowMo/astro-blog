@@ -93,5 +93,23 @@
         "date": "2026-11-01"
       }
     ]
+  },
+  {
+    "catalogNo": "004",
+    "name": "RAGNote",
+    "url": "https://ragnote.top",
+    "description": "RAGNote 是一个面向知识管理、技术笔记与 RAG 实践 of 个人博客，记录文章、归档、标签与知识问答内容。",
+    "artist": "Alex",
+    "icon": "https://ragnote.top/default-favicon.png",
+    "iconSize": 64,
+    "rss": "https://api.ragnote.top/rss.xml",
+    "addedAt": "2026-11-22",
+    "tracks": [
+      {
+        "title": "超越 Vibe Coding：Grok Bot 背后的工业级多 Agent 编排与架构约束",
+        "url": "https://ragnote.top/article/06cea4956a1f4d2db5be170732b102ef",
+        "date": "2026-11-19"
+      }
+    ]
   }
 ]
