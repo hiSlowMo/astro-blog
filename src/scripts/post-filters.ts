@@ -16,7 +16,7 @@ function initPostFilters() {
   const buttons = Array.from(root.querySelectorAll<HTMLElement>('.post-filter-option[data-filter]'))
   const items = Array.from(root.querySelectorAll<HTMLElement>('.post-item'))
   const sections = Array.from(root.querySelectorAll<HTMLElement>('.post-year-section'))
-  const list = root.querySelector('ul')
+  const yearLists = new Map(sections.map(section => [Number(section.dataset.year), section.querySelector('ul')]))
   const dropdown = createDropdownController(root.querySelector<HTMLElement>('[data-filter-dropdown]'))
   let currentSortKey: PostSortKey = 'created'
   let transitionRequestId = 0
@@ -90,7 +90,16 @@ function initPostFilters() {
   const reorderBySortKey = () => {
     items.slice()
       .sort((first, second) => getKeyTime(second, currentSortKey) - getKeyTime(first, currentSortKey))
-      .forEach(item => list?.appendChild(item))
+      .forEach((item) => {
+        const year = new Date(getKeyTime(item, currentSortKey)).getUTCFullYear()
+        yearLists.get(year)?.appendChild(item)
+      })
+
+    sections.forEach((section) => {
+      const empty = !section.querySelector('.post-item:not(.is-hidden)')
+      section.classList.toggle('is-hidden', empty)
+      section.toggleAttribute('inert', empty)
+    })
   }
 
   let activeFilterValues: string[] = []
@@ -104,12 +113,6 @@ function initPostFilters() {
       item.classList.toggle('is-hidden', !match)
       item.setAttribute('aria-hidden', match ? 'false' : 'true')
       item.toggleAttribute('inert', !match)
-    })
-
-    sections.forEach((section) => {
-      const visibleItems = section.querySelectorAll('.post-item:not(.is-hidden)')
-      section.classList.toggle('is-hidden', visibleItems.length === 0)
-      section.toggleAttribute('inert', visibleItems.length === 0)
     })
 
     reorderBySortKey()

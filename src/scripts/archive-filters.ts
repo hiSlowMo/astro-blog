@@ -196,7 +196,7 @@ function initArchiveInteractions() {
 
   const interactionController = new AbortController()
   window.matchMedia('(max-width: 768px)').addEventListener('change', () => {
-    root.querySelectorAll('.archive-year-toggle[aria-pressed="true"]').forEach((button) => {
+    root.querySelectorAll('.year-toggle[aria-pressed="true"]').forEach((button) => {
       button.setAttribute('aria-pressed', 'false')
     })
   }, { signal: interactionController.signal })
@@ -206,7 +206,7 @@ function initArchiveInteractions() {
     if (!(target instanceof Element))
       return
 
-    const yearToggle = target.closest<HTMLButtonElement>('.archive-year-toggle')
+    const yearToggle = target.closest<HTMLButtonElement>('.year-toggle')
     if (yearToggle) {
       yearToggle.setAttribute('aria-pressed', String(yearToggle.getAttribute('aria-pressed') !== 'true'))
       yearToggle.closest('.archive-year')?.classList.remove('is-active')
@@ -230,18 +230,14 @@ function initArchiveInteractions() {
   }, { signal: interactionController.signal })
 
   root.addEventListener('pointerover', (event) => {
-    if (isLayoutAnimating())
+    if (event.pointerType === 'touch' || isLayoutAnimating())
       return
 
     const target = event.target
     if (!(target instanceof Element))
       return
 
-    const item = target.closest<HTMLElement>('.archive-item')
-    if (!item || !root.contains(item))
-      return
-
-    item.closest<HTMLElement>('.archive-year')?.classList.add('is-active')
+    target.closest<HTMLElement>('.archive-year')?.classList.add('is-active')
   }, { signal: interactionController.signal })
 
   root.addEventListener('pointerout', (event) => {

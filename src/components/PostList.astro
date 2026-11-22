@@ -5,7 +5,6 @@ import PinIcon from '@/assets/icons/pin-icon.svg'
 import SortableDate from '@/components/SortableDate.astro'
 import StatusBadge from '@/components/StatusBadge.astro'
 import { getPostPath } from '@/i18n/path'
-import { ui } from '@/i18n/ui'
 import { getPostDescription } from '@/utils/description'
 
 export interface Props {
@@ -28,18 +27,6 @@ const { posts, lang } = Astro.props
         data-created={post.data.published.valueOf()}
         data-updated={(post.data.updated ?? post.data.published).valueOf()}
       >
-        <div
-          class="post-date font-time"
-          transition:name={`time-${slug}${lang ? `-${lang}` : ''}`}
-          data-disable-theme-toggle-transition
-        >
-          <span class="post-date-full">
-            <SortableDate date={post.data.published} updatedDate={post.data.updated} format="YYYY-MM-DD" />
-          </span>
-          <span class="post-date-short">
-            <SortableDate date={post.data.published} updatedDate={post.data.updated} format="MM.DD" />
-          </span>
-        </div>
         <div class="post-copy">
           <h3>
             <a
@@ -51,13 +38,17 @@ const { posts, lang } = Astro.props
               {post.data.title}
             </a>
           </h3>
-          <div class="post-meta font-time">
-            <span>{ui[lang].readingMinutes.replace('{COUNT}', String(post.remarkPluginFrontmatter.minutes))}</span>
+          <span class="post-meta font-time">
+            <span transition:name={`time-${slug}${lang ? `-${lang}` : ''}`} data-disable-theme-toggle-transition>
+              <SortableDate date={post.data.published} updatedDate={post.data.updated} format="MMM D" />
+            </span>
+            <span aria-hidden="true">·</span>
+            <span lang="en">{post.remarkPluginFrontmatter.minutes}min</span>
             {(post.data.pin ?? 0) > 0 && (
               <PinIcon aria-hidden="true" class="w-1em" fill="currentColor" />
             )}
             {post.data.status && <StatusBadge status={post.data.status} dotOnly />}
-          </div>
+          </span>
           <div class="heti post-summary mt-1 hidden sm:block">
             <p>{getPostDescription(post, 'list')}</p>
           </div>
@@ -68,50 +59,50 @@ const { posts, lang } = Astro.props
 </ul>
 
 <style>
-  .post-item {
-    display: grid;
-    grid-template-columns: var(--editorial-index) minmax(0, 1fr);
-    align-items: baseline;
-    column-gap: var(--editorial-gap);
-  }
-
-  .post-date, .post-meta {
-    color: oklch(var(--un-preset-theme-colors-secondary));
-    font-size: .85rem;
-  }
-
-  .post-date {
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-
   .post-copy {
     overflow-wrap: anywhere;
   }
 
-  .post-date-short {
-    display: none;
+  .post-copy h3 {
+    display: inline;
   }
 
-  @media (max-width: 768px) {
-    .post-item {
-      grid-template-columns: clamp(64px, 12vw, 72px) minmax(0, 1fr);
-    }
-
-    .post-date-full {
-      display: none;
-    }
-
-    .post-date-short {
-      display: inline;
-    }
+  ul {
+    position: relative;
+    z-index: 1;
   }
 
   .post-meta {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: .4rem;
-    margin-top: .15rem;
+    gap: .3em;
+    padding-inline-start: .35em;
+    color: oklch(var(--un-preset-theme-colors-secondary));
+    font-size: .85rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .post-meta :global(.status-hint) {
+    inset-inline: auto 100%;
+    background: oklch(var(--un-preset-theme-colors-background));
+  }
+
+  @media (max-width: 639px) {
+    .post-copy {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: .12rem .5rem;
+    }
+
+    .post-copy h3 {
+      min-width: 0;
+      text-wrap: balance;
+    }
+
+    .post-copy h3 a { text-wrap: inherit; }
+    .post-meta { padding-inline-start: 0; }
   }
 
   .post-summary :global(p) {

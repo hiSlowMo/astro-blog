@@ -1,8 +1,12 @@
 import type { ThemeConfig } from '@/types'
 
-export type DateFormat = ThemeConfig['global']['dateFormat'] | 'MM/DD' | 'MM.DD'
+export type DateFormat = ThemeConfig['global']['dateFormat'] | 'MM/DD' | 'MM.DD' | 'MMM D'
+
+const monthDay = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
 
 export function formatPostDate(date: Date, format: DateFormat) {
+  if (format === 'MMM D')
+    return monthDay.format(date)
   const iso = date.toISOString().split('T')[0]
   if (format === 'YYYY-MM-DD')
     return iso

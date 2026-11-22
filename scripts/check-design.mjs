@@ -9,6 +9,7 @@ const routes = ['/', '/about/', '/archive/', '/tags/', '/moments/', '/search/', 
 async function headerGeometry(page) {
   await page.locator('#site-nav[data-nav-bound="1"]').waitFor()
   await page.evaluate(() => document.fonts.ready)
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
   return page.locator('#site-title-link, #theme-toggle-button, #site-nav')
     .evaluateAll(elements => elements.map((element) => {
       const { x, y, width, height } = element.getBoundingClientRect()
@@ -64,6 +65,14 @@ async function checkFade(page) {
 
 async function checkArticleControls(page) {
   const trigger = page.locator('#toc-mobile-trigger')
+  const hiddenDuringInput = await page.evaluate(() => {
+    document.documentElement.setAttribute('data-comment-keyboard', '')
+    const hidden = ['#toc-mobile-trigger', '#site-utility'].every(selector =>
+      getComputedStyle(document.querySelector(selector)).visibility === 'hidden')
+    document.documentElement.removeAttribute('data-comment-keyboard')
+    return hidden
+  })
+  assert(hiddenDuringInput, 'Reading controls overlap comment input')
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
   await page.waitForFunction(() => !document.documentElement.hasAttribute('data-reading-controls-hidden'))
   await page.evaluate(() => window.scrollTo({ top: 320, behavior: 'instant' }))
@@ -89,14 +98,79 @@ async function checkArticleControls(page) {
   assert.equal(await trigger.getAttribute('aria-expanded'), 'false')
 }
 
+async function checkArchiveStats(page) {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const year = page.locator('[data-archive-bound="1"] .archive-year').first()
+  const item = year.locator('.archive-item').first()
+  const stats = year.locator('.archive-year-stats')
+  const toggle = year.locator('.year-toggle')
+  const opacity = () => stats.evaluate(element => Number(getComputedStyle(element).opacity))
+  const faces = year.locator('.year-faces[data-can-flip]')
+  const flipped = () => faces.evaluate(element => new DOMMatrix(getComputedStyle(element).transform).m22 < 0)
+  const mark = await faces.boundingBox()
+  const row = await item.boundingBox()
+  assert(mark.y < row.y && mark.y + mark.height > row.y, 'Watermark should overlap the first row')
+  await item.locator('.archive-title').hover()
+  assert(await flipped())
+  await page.mouse.move(0, 0)
+  assert.equal(await flipped(), false)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await item.dispatchEvent('pointerover', { pointerType: 'touch' })
+  assert.equal(await opacity(), 0)
+  await toggle.click()
+  assert(await opacity() > 0)
+  assert(await flipped())
+  await toggle.click()
+  assert.equal(await opacity(), 0)
+  await toggle.focus()
+  await page.keyboard.press(process.platform === 'darwin' && page.context().browser().browserType().name() === 'webkit' ? 'Alt+Tab' : 'Tab')
+  assert(await item.locator('.archive-title').evaluate(element => element.matches(':focus-visible')))
+  assert(await opacity() > 0)
+}
+
+async function checkRecentYears(page) {
+  await page.goto('/')
+  const section = page.locator('[data-filter-bound="1"] .post-year-section:not(.is-hidden)').first()
+  assert.equal(await section.locator('.year-toggle, .year-age, [data-can-flip]').count(), 0)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const item = section.locator('.post-item:not(.is-hidden)').first()
+  await item.locator('h3 a').hover()
+  assert.equal(await section.locator('.year-faces').evaluate(element => getComputedStyle(element).transform), 'none')
+  const title = await item.locator('h3 a').boundingBox()
+  const date = await item.locator('time').boundingBox()
+  assert(date.x >= title.x + title.width && date.y < title.y + title.height)
+  const mark = await section.locator('.watermark').boundingBox()
+  const label = await page.locator('#recent-label').boundingBox()
+  const leadTitle = await page.locator('.latest-title').boundingBox()
+  assert(Math.abs(mark.x - label.x) <= mark.height * .06 && Math.abs(title.x - leadTitle.x) <= 1)
+  assert(mark.x < title.x && title.y > mark.y + mark.height * .5 && title.y < mark.y + mark.height)
+  assert.match(await item.locator('.post-meta [lang="en"]').textContent(), /^\d+min$/)
+  await page.setViewportSize({ width: 320, height: 700 })
+  assert((await section.locator('.watermark').boundingBox()).x >= 0)
+  for (const key of ['created', 'updated']) {
+    if (key === 'updated')
+      await page.locator('[data-sort-button]').click()
+    const consistent = await page.locator('.post-item:not(.is-hidden)').evaluateAll((rows, key) => rows.every((row) => {
+      const date = new Date(Number(row.dataset[key]))
+      const time = row.querySelector('time')
+      return String(date.getUTCFullYear()) === row.closest('[data-year]').dataset.year
+        && time.textContent === date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+        && row.querySelector('.post-meta').getBoundingClientRect().right <= row.getBoundingClientRect().right + 1
+    }), key)
+    assert(consistent, `Recent entries must align dates and group by ${key} year`)
+  }
+}
+
 for (const engine of [chromium, webkit]) {
   const browser = await engine.launch()
   try {
     const page = await browser.newPage({ baseURL, reducedMotion: 'reduce' })
     await page.route('**/*', route => new URL(route.request().url()).origin === new URL(baseURL).origin ? route.continue() : route.abort())
     await page.goto('/archive/')
+    await checkArchiveStats(page)
     const post = await page.locator('.archive-title[href]').first().getAttribute('href')
     const tag = await page.locator('.archive-tag[href]').first().getAttribute('href')
+    await checkRecentYears(page)
     await checkNavigation(page)
     for (const path of [...routes, post, tag]) {
       assert.equal((await page.goto(path)).status(), 200, path)

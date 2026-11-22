@@ -34,10 +34,10 @@ html[data-reading-layout='article'] #site-footer {
     font-size: .875rem;
     line-height: 1.75;
   }
+}
 
-  html[data-comment-keyboard] :is(#site-utility, .toc-mobile-trigger) {
-    visibility: hidden;
-  }
+html[data-reading-layout='article'][data-comment-keyboard] :is(#site-utility, .toc-mobile-trigger) {
+  visibility: hidden;
 }
 
 /* Tablet and desktop article layout. Phones retain the existing flow. */

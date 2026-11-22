@@ -164,7 +164,7 @@ const { scene = 'clouds' } = Astro.props
   // The portrait only shimmers in a thin wave, so it never breaks up while the sky changes around it
   const WAVE_SPAN = 0.07
   const LANTERN_RADIUS = 150
-  // A tap or click sends a ring of light out across the sky, in pixels per millisecond and milliseconds
+  // Speed and lifetime of a ripple from a click on the sky
   const RIPPLE_SPEED = 0.34
   const RIPPLE_LIFE = 1500
 
@@ -189,8 +189,8 @@ const { scene = 'clouds' } = Astro.props
   ]
   const QUIET_FEATHER = 44
   // On phones the sky sits right behind the title and navigation, so it steps back from each line of text, not whole blocks
-  const LINE_QUIET = 0.2
-  const LINE_FEATHER = 24
+  const LINE_QUIET = 0.12
+  const LINE_FEATHER = 32
   // How far, in cells, the quiet zones and the edges of the sky wander
   const WANDER_COLS = 8
   const WANDER_ROWS = 4
@@ -1193,7 +1193,7 @@ const { scene = 'clouds' } = Astro.props
       }
     }
 
-    // Rings sent out by taps and clicks: what they pass over lights up, and their crest catches the accent color
+    // The crest of each ripple catches the accent color
     const overlayRipples = (now: number) => {
       const { cols, rows, cellW, cellH } = field
       for (let n = ripples.length - 1; n >= 0; n--) {
@@ -1501,7 +1501,11 @@ const { scene = 'clouds' } = Astro.props
     document.addEventListener('pointerdown', (event) => {
       const rect = root.getBoundingClientRect()
       lastPress = { x: event.clientX - rect.left, y: event.clientY - rect.top, time: performance.now() }
-      if (!reduceMotion && lastPress.x >= 0 && lastPress.y >= 0 && lastPress.x <= rect.width && lastPress.y <= rect.height) {
+      if (reduceMotion || event.pointerType !== 'mouse')
+        return
+      if (event.target instanceof Element && event.target.closest('a, button, input, select, textarea, [role="button"]'))
+        return
+      if (lastPress.x >= 0 && lastPress.y >= 0 && lastPress.x <= rect.width && lastPress.y <= rect.height) {
         ripples.push({ ...lastPress })
         if (ripples.length > 4)
           ripples.shift()

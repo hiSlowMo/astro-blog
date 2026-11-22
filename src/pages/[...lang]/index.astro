@@ -1,6 +1,7 @@
 ---
 import PostList from '@/components/PostList.astro'
 import ReleaseSleeve from '@/components/Records/ReleaseSleeve.astro'
+import YearWatermark from '@/components/YearWatermark.astro'
 import { allLocales, themeConfig } from '@/config'
 import { getUsedCategoryFilters } from '@/data/post-categories'
 import { getLangRouteParam } from '@/i18n/lang'
@@ -20,6 +21,10 @@ export async function getStaticPaths() {
 const { currentLang } = getPageInfo(Astro.url.pathname)
 const [latest, ...recentPosts] = await getPosts(currentLang)
 const categoryFilters = getUsedCategoryFilters(recentPosts)
+const recentYears = [...new Set(recentPosts.flatMap(({ data }) => [
+  data.published.getUTCFullYear(),
+  (data.updated ?? data.published).getUTCFullYear(),
+]))].sort((first, second) => second - first)
 const thumbnails = import.meta.glob<string>('/src/assets/post-thumbnails/*.webp', { eager: true, query: '?url', import: 'default' })
 const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/src/assets/post-thumbnails/${latest.id}.webp`])
 ---
@@ -110,9 +115,15 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
       </div>
     </section>
 
-    <div class="post-year-section">
-      <PostList posts={recentPosts} lang={currentLang} />
-    </div>
+    {recentYears.map((year) => {
+      const entries = recentPosts.filter(post => post.data.published.getUTCFullYear() === year)
+      return (
+        <section class:list={['post-year-section', { 'is-hidden': !entries.length }]} data-year={year} inert={!entries.length}>
+          <YearWatermark year={year} showAge={false} />
+          <PostList posts={entries} lang={currentLang} />
+        </section>
+      )
+    })}
   </section>
 )}
 </Layout>
@@ -185,17 +196,22 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
     letter-spacing: .05em;
   }
 
+  .latest-entry, .post-year-section {
+    --date-column: clamp(.75rem, 3%, 1.4rem);
+    --date-gap: clamp(.55rem, 2.5%, 1.1rem);
+  }
+
   .latest-entry {
     display: grid;
-    grid-template-columns: clamp(.75rem, 3cqi, 1.4rem) minmax(0, 1fr) clamp(4.5rem, 25cqi, 10rem);
+    grid-template-columns: var(--date-column) minmax(0, 1fr) clamp(4.5rem, 25cqi, 10rem);
     grid-template-areas: "date title title" "date summary cover";
     align-items: start;
-    gap: clamp(.7rem, 2cqi, 1rem) clamp(.55rem, 2.5cqi, 1.1rem);
+    gap: clamp(.7rem, 2cqi, 1rem) var(--date-gap);
     margin: 1rem 0 clamp(1.2rem, 4cqi, 1.75rem);
   }
 
   .latest-entry--short {
-    grid-template-columns: clamp(.75rem, 3cqi, 1.4rem) minmax(0, 1fr) clamp(4.5rem, 16cqi, 7rem);
+    grid-template-columns: var(--date-column) minmax(0, 1fr) clamp(4.5rem, 16cqi, 7rem);
     grid-template-areas: "date title cover" "date summary cover";
   }
 
@@ -233,7 +249,7 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
   .recent-heading {
     padding-top: .75rem;
     margin-bottom: .7rem;
-    border-top: var(--rule-masthead) solid oklch(var(--un-preset-theme-colors-primary));
+    border-top: var(--section-divider);
   }
 
   #recent-label {
@@ -243,7 +259,6 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
   .post-year-section :global(.post-item:not(.is-hidden)) {
     padding-block: clamp(.6rem, 1.5vw, .85rem);
     margin-bottom: 0;
-    border-top: var(--section-divider);
   }
 
   .latest-title a {
@@ -445,14 +460,19 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
 
   /* ===== 文章分组隐藏动画（保留你原逻辑） ===== */
   .post-year-section {
-    overflow: hidden;
+    position: relative;
     transition:
       opacity var(--post-layout-duration) var(--post-motion-easing),
       transform var(--post-layout-duration) var(--post-motion-easing),
       max-height var(--post-layout-duration) var(--post-motion-easing);
   }
 
+  .post-year-section > :global(ul) {
+    margin-inline-start: calc(var(--date-column) + var(--date-gap));
+  }
+
   .post-year-section.is-hidden {
+    overflow: hidden;
     opacity: 0;
     max-height: 0;
     margin-top: 0;

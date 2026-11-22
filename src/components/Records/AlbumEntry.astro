@@ -30,7 +30,7 @@ const titleId = `record-${album.catalogNo}-title`
 
     <div class="album__info">
       <div class="album__identity">
-        <p class="rec-label">RECORD NO. <span class="rec-value">{album.catalogNo}</span></p>
+        <p class="rec-label"><span class="sr-only">唱片编号 </span>No. <span class="rec-value">{album.catalogNo}</span></p>
         <h3 class="album__title" id={titleId}>
           <a
             class="album__link"
@@ -44,7 +44,9 @@ const titleId = `record-${album.catalogNo}-title`
             <span class="rec-arrow album__arrow" aria-hidden="true">↗</span>
           </a>
         </h3>
-        {album.artist && <p class="rec-label album__artist">ARTIST / <span class="rec-value">{album.artist}</span></p>}
+        {album.artist && album.artist !== album.name && (
+          <p class="rec-label"><span class="sr-only">作者 </span><span class="rec-value">{album.artist}</span></p>
+        )}
       </div>
       {album.description && <p class="album__notes">{album.description}</p>}
       {album.genres && album.genres.length > 0 && (
@@ -55,9 +57,7 @@ const titleId = `record-${album.catalogNo}-title`
 
     <div class="album__track" hidden={!track}>
       <div class="album__track-meta">
-        <p class="rec-label album__track-label">
-          最新曲目 <span lang="en">LATEST TRACK</span>
-        </p>
+        <p class="rec-label">最新曲目</p>
         <time class="rec-label album__track-date" hidden={!track?.date} datetime={track?.date}>{formatRecordDate(track?.date)}</time>
       </div>
       <a
@@ -186,14 +186,6 @@ const titleId = `record-${album.catalogNo}-title`
     margin-top: auto;
     padding-top: 0.85rem;
     border-top: 1px solid var(--rec-hair);
-  }
-
-  .album__track-label {
-    color: var(--rec-muted);
-  }
-
-  .album__track-label span {
-    margin-inline-start: .4em;
   }
 
   .album__track-link {
