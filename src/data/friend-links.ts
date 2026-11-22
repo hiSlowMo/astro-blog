@@ -122,6 +122,24 @@ export const friendLinks: FriendAlbum[] = [
       },
     ],
   },
+  {
+    catalogNo: '003',
+    name: 'Frederick\'s Blog',
+    url: 'https://www.ooowl.net/',
+    description: 'Sky is the limit/',
+    artist: 'Frederick Chen',
+    icon: 'https://www.ooowl.net/favicon.svg',
+    rss: 'https://www.ooowl.net/atom.xml',
+    genres: ['Life', 'Notes', 'Thoughts'],
+    addedAt: '2026-11-22',
+    tracks: [
+      {
+        title: '我在用什么：2026',
+        url: 'https://www.ooowl.net/posts/what-im-using-2026/',
+        date: '2026-11-01',
+      },
+    ],
+  },
 ]
 
 export const websiteLinks: FriendLink[] = []

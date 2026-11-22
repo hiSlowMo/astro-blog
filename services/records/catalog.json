@@ -71,5 +71,27 @@
         "excerpt": "本文记述笔者从快捷记账转向beancount，并利用Telegram Bot与AI自行开发自动化记账工具的历程与反思。"
       }
     ]
+  },
+  {
+    "catalogNo": "003",
+    "name": "Frederick's Blog",
+    "url": "https://www.ooowl.net/",
+    "description": "Sky is the limit/",
+    "artist": "Frederick Chen",
+    "icon": "https://www.ooowl.net/favicon.svg",
+    "rss": "https://www.ooowl.net/atom.xml",
+    "genres": [
+      "Life",
+      "Notes",
+      "Thoughts"
+    ],
+    "addedAt": "2026-11-22",
+    "tracks": [
+      {
+        "title": "我在用什么：2026",
+        "url": "https://www.ooowl.net/posts/what-im-using-2026/",
+        "date": "2026-11-01"
+      }
+    ]
   }
 ]
