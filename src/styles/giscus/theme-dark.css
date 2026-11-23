@@ -6,7 +6,7 @@
 :root, main {
   --comment-page: oklch(14.5% 0 0);
   --comment-text: #d8d8d8;
-  --comment-muted: #a2a2a2;
+  --comment-muted: #8f8f8f;
   --comment-line: rgb(255 255 255 / 16%);
   --comment-wash: rgb(255 255 255 / 6%);
   --comment-focus: rgb(255 255 255 / 35%);

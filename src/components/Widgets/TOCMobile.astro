@@ -108,11 +108,7 @@ const tocTree = buildTocTree(filteredHeadings)
           aria-labelledby={hasToc && hasSeries ? 'toc-mobile-tab-toc' : undefined}
           aria-hidden={mobileDefaultTab === 'toc' ? 'false' : 'true'}
         >
-          <TocTreeList
-            nodes={tocTree}
-            isRoot
-            linkClass="toc-mobile-link"
-          />
+          <TocTreeList nodes={tocTree} />
         </nav>
       )}
 
@@ -329,22 +325,10 @@ const tocTree = buildTocTree(filteredHeadings)
     border-radius: 999px;
   }
 
-  .toc-mobile-links-list,
   .toc-mobile-series-list {
     margin: 0;
     padding: 0;
     list-style: none;
-  }
-
-  .toc-mobile-links-list {
-    display: grid;
-    gap: 0.35rem;
-  }
-
-  .toc-mobile-link {
-    display: block;
-    padding: 0.12rem 0;
-    text-decoration: none;
   }
 
   .toc-mobile-series-list {
@@ -382,13 +366,6 @@ const tocTree = buildTocTree(filteredHeadings)
     font-size: 0.72rem;
     letter-spacing: 0.03em;
     opacity: 0.66;
-  }
-
-  .toc-links-h2,
-  .toc-links-h3,
-  .toc-links-h4 {
-    --at-apply: 'text-balance text-sm font-normal no-underline';
-    transition: color var(--motion-fast, 160ms) ease-out, font-weight var(--motion-fast, 160ms) ease-out;
   }
 
   .toc-mobile-tab-panel {

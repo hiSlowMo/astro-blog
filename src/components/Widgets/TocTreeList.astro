@@ -3,191 +3,58 @@ import type { TocTreeNode } from '@/components/Widgets/toc-shared'
 
 interface Props {
   nodes: TocTreeNode[]
-  isRoot?: boolean
   id?: string
-  linkClass?: string
 }
 
-const {
-  nodes = [],
-  isRoot = false,
-  id,
-  linkClass = '',
-} = Astro.props as Props
+const { nodes, id } = Astro.props
 ---
 
-<ul
-  id={id}
-  class:list={[
-    'no-heti toc-tree',
-    isRoot ? 'toc-tree--root' : 'toc-tree--nested',
-  ]}
->
+<ul id={id} class="no-heti toc-tree">
   {nodes.map(node => (
-    <li class="toc-tree-item">
-      <a
-        href={`#${node.slug}`}
-        title={node.text}
-        data-toc-link
-        data-toc-slug={node.slug}
-        data-toc-depth={node.depth}
-        class:list={[
-          'no-heti toc-tree-link',
-          linkClass,
-          { 'toc-links-h2': node.depth === 2 },
-          { 'toc-links-h3': node.depth === 3 },
-          { 'toc-links-h4': node.depth === 4 },
-        ]}
-      >
+    <li>
+      <a href={`#${node.slug}`} data-toc-link data-toc-slug={node.slug} class="no-heti toc-tree-link">
         {node.text}
       </a>
-      {node.children.length > 0 && (
-        <Astro.self
-          nodes={node.children}
-          isRoot={false}
-          linkClass={linkClass}
-        />
-      )}
+      {node.children.length > 0 && <Astro.self nodes={node.children} />}
     </li>
   ))}
 </ul>
 
 <style>
   .toc-tree {
-    list-style: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    margin: 0;
+    padding: 0;
+    list-style: none;
     font-family: var(--font-sans);
   }
 
-  .toc-tree--root {
-    margin-top: 0.2rem !important;
-    padding-left: 0.25rem !important;
-  }
-
-  .toc-tree--nested {
-    margin: 0 !important;
-    padding-left: 0.1rem !important;
-  }
-
-  .toc-tree-item {
-    position: relative;
-    margin: 0 !important;
-    padding: 0.2rem 0 0.2rem 0.75rem !important;
-    list-style: none !important;
-    line-height: 1.45;
-  }
-
-  /* Continuous vertical trunk / branch line */
-  .toc-tree-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.48);
-    pointer-events: none;
-  }
-
-  .toc-tree--root > .toc-tree-item {
-    padding: .35rem 0 !important;
-    border-bottom: 1px solid var(--section-rule);
-  }
-
-  .toc-tree--root > .toc-tree-item::before,
-  .toc-tree--root > .toc-tree-item::after {
-    display: none;
-  }
-
-  .toc-tree--root > .toc-tree-item > .toc-tree-link {
+  .toc-tree .toc-tree {
     padding-inline-start: .85rem;
-    position: relative;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .toc-tree--root > .toc-tree-item > .toc-tree-link[aria-current='location']::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: 0;
-    top: .32em;
-    width: .4rem;
-    height: .82em;
-    background: oklch(var(--un-preset-theme-colors-accent));
-    mask-image: var(--cut-start), var(--cut-end);
-    mask-composite: intersect;
-  }
-
-  .toc-tree--root > .toc-tree-item > .toc-tree--nested {
-    margin-inline-start: .85rem !important;
-  }
-
-  /* Nested branch connects seamlessly to bottom of parent label */
-  .toc-tree--nested > .toc-tree-item:first-child::before {
-    top: -0.16rem;
-  }
-
-  /* Last sibling terminates cleanly at the horizontal branch (└) */
-  .toc-tree-item:last-child::before {
-    bottom: auto;
-    height: 0.92rem;
-  }
-
-  .toc-tree--nested > .toc-tree-item:first-child:last-child::before {
-    height: 1.08rem;
-  }
-
-  /* Horizontal branch tick (├ / └) */
-  .toc-tree-item::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.92rem;
-    width: 0.5rem;
-    height: 1px;
-    background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.48);
-    pointer-events: none;
   }
 
   .toc-tree-link {
     display: block;
+    width: fit-content;
     max-width: 100%;
-    padding: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    text-decoration: none !important;
-    font-size: 0.9375rem;
-    line-height: 1.45;
-    font-weight: 400;
-    color: oklch(var(--un-preset-theme-colors-secondary));
-    transition:
-      color var(--motion-fast, 160ms) ease-out,
-      font-weight var(--motion-fast, 160ms) ease-out;
+    padding-block: .23rem;
+    color: var(--toc-hidden-ink, var(--text-meta, oklch(var(--un-preset-theme-colors-secondary))));
+    font-size: .875rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    text-decoration: underline;
+    text-decoration-color: var(--toc-hidden-ink, var(--section-rule));
+    text-decoration-thickness: 1px;
+    text-underline-offset: .2em;
+    transition: color var(--toc-fade-duration, var(--motion-fast)) linear, text-decoration-color var(--toc-fade-duration, var(--motion-fast)) linear;
   }
 
-  .toc-tree-link::after {
-    display: none !important;
-  }
-
-  .toc-tree-link:hover {
-    color: oklch(var(--un-preset-theme-colors-primary) / 0.9);
-  }
-
-  .toc-tree-item:has(> .toc-tree-link[aria-current='location'])::after {
-    height: 2px;
-    background-color: oklch(var(--un-preset-theme-colors-accent));
-  }
-
-  .toc-tree-link:is(.is-active, :target-current) {
-    color: oklch(var(--un-preset-theme-colors-primary));
-    font-weight: 700;
+  .toc-tree-link:is(:hover, :focus-visible, [aria-current='location']) {
+    color: var(--toc-hidden-ink, oklch(var(--un-preset-theme-colors-primary)));
+    text-decoration-color: currentColor;
   }
 
   .toc-tree-link:focus-visible {
-    outline: 2px solid oklch(var(--un-preset-theme-colors-accent));
-    outline-offset: -2px;
-    border-radius: 2px;
+    outline: var(--focus-ring);
+    outline-offset: -1px;
   }
 </style>

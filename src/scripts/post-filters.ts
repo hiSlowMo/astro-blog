@@ -1,5 +1,6 @@
 import { animateExitTransition, animateTextSwap, clearTransitionState, createDropdownController, runFlipTransition } from '@/scripts/filter-interactions'
 import { syncSortDates } from '@/scripts/sort-dates'
+import { calendarYear } from '@/utils/calendar.mjs'
 
 type PostSortKey = 'created' | 'updated'
 type PostFilterRoot = HTMLElement & {
@@ -91,7 +92,7 @@ function initPostFilters() {
     items.slice()
       .sort((first, second) => getKeyTime(second, currentSortKey) - getKeyTime(first, currentSortKey))
       .forEach((item) => {
-        const year = new Date(getKeyTime(item, currentSortKey)).getUTCFullYear()
+        const year = calendarYear(new Date(getKeyTime(item, currentSortKey)))
         yearLists.get(year)?.appendChild(item)
       })
 

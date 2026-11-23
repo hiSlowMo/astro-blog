@@ -57,9 +57,7 @@ html[data-reading-layout='article'][data-comment-keyboard] :is(#site-utility, .t
   }
 
   html[data-reading-layout='article'] #post-date,
-  html[data-reading-layout='article'] #post-content > *,
-  html[data-reading-layout='article'] #toc-desktop-icon,
-  html[data-reading-layout='article'] #toc-links-list > * {
+  html[data-reading-layout='article'] #post-content > * {
     opacity: 1;
     transform: none;
     animation: none;

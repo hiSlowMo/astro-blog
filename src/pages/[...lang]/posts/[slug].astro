@@ -10,12 +10,13 @@ import TagList from '@/components/TagList.astro'
 import BackButton from '@/components/Widgets/BackButton.astro'
 import Mermaid from '@/components/Widgets/Mermaid.astro'
 import TOC from '@/components/Widgets/TOC.astro'
-import { allLocales } from '@/config'
+import { allLocales, themeConfig } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { getLocalizedPath, getPostPath } from '@/i18n/path'
 import Layout from '@/layouts/Layout.astro'
 import { checkPostSlugDuplication, getPostCoverURL, getPostsBySeries, getPostUpdatedAt, shouldIncludePost } from '@/utils/content'
 import { getPostDescription } from '@/utils/description'
+import { formatPostDate } from '@/utils/date'
 import { hasMathContent } from '@/utils/math'
 
 export async function getStaticPaths() {
@@ -96,7 +97,7 @@ const seriesItems = seriesPosts.map((seriesPost) => {
   return {
     title: seriesPost.data.title,
     href: getPostPath(seriesSlug, currentLang),
-    date: seriesPost.data.published.toISOString().split('T')[0],
+    date: formatPostDate(seriesPost.data.published, themeConfig.global.dateFormat),
     isCurrent: seriesSlug === slug,
   }
 })
@@ -271,6 +272,7 @@ const searchCategories = post.data.categories.join(' ')
 
   .post-masthead .post-title {
     margin: 0;
+    color: var(--text-heading, oklch(var(--un-preset-theme-colors-primary)));
     text-wrap: balance;
     overflow-wrap: anywhere;
   }
@@ -280,7 +282,7 @@ const searchCategories = post.data.categories.join(' ')
     flex-direction: column;
     align-items: flex-end;
     gap: .35rem;
-    color: oklch(var(--un-preset-theme-colors-secondary));
+    color: var(--text-meta, oklch(var(--un-preset-theme-colors-secondary)));
     font-size: .85rem;
   }
 
@@ -288,10 +290,14 @@ const searchCategories = post.data.categories.join(' ')
     margin-inline: 0;
   }
 
+  #post-date :global(.status-hint) {
+    inset-inline: auto 100%;
+  }
+
   #post-date > :global(time:first-child) {
     padding: .2rem .55rem .2rem .95rem;
     mask-image: var(--cut-start);
-    background: oklch(var(--un-preset-theme-colors-primary));
+    background: var(--text-meta, oklch(var(--un-preset-theme-colors-primary)));
     color: oklch(var(--un-preset-theme-colors-background));
     font-variant-numeric: tabular-nums;
   }

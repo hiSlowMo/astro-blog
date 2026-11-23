@@ -106,6 +106,19 @@ import '@/scripts/theme-toggle'
     text-transform: uppercase;
   }
 
+  html.dark .records-shell {
+    --rec-ink: var(--text-heading);
+    --rec-ink-2: oklch(var(--un-preset-theme-colors-secondary));
+    --rec-muted: var(--text-meta);
+    --rec-faint: var(--text-meta);
+    --rec-rule: var(--text-heading);
+  }
+
+  .records-shell time,
+  .records-shell time.rec-label {
+    text-transform: none;
+  }
+
   .records-shell .rec-value {
     font-variant-numeric: tabular-nums;
     color: var(--rec-ink-2);

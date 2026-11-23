@@ -2,8 +2,17 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { parse } from 'node-html-parser'
 import sanitizeHtml from 'sanitize-html'
+import { calendarDay, calendarYear } from '../src/utils/calendar.mjs'
 import { countMarkdownWords, renderFeedMarkdown } from '../src/utils/markdown-content.mjs'
 import { groupPostsByYear } from '../src/utils/post-groups.mjs'
+
+test('publication days and archive years use Shanghai midnight', () => {
+  const date = new Date('2025-12-31T16:00:00Z')
+  assert.equal(calendarDay(date), '2026-01-01')
+  assert.equal(calendarYear(date), 2026)
+  assert.deepEqual([...groupPostsByYear([{ data: { published: date } }]).keys()], [2026])
+  assert.equal(calendarDay(new Date(date.valueOf() - 1)), '2025-12-31')
+})
 
 test('word counts preserve link text and omit URLs, code and image metadata', () => {
   const markdown = [

@@ -28,12 +28,12 @@ const readingLabel = currentUI.readingMinutes?.replace('{COUNT}', String(minutes
 <!-- published date -->
 {sortable
   ? <SortableDate {date} {updatedDate} {format} />
-  : <time datetime={date.toISOString().split('T')[0]}>{formatPostDate(date, format)}</time>}
+  : <time datetime={date.toISOString()}>{formatPostDate(date, format)}</time>}
 
 <!-- updated date -->
 {showUpdated && updatedDate && (
   <time
-    datetime={updatedDate.toISOString().split('T')[0]}
+    datetime={updatedDate.toISOString()}
     class={timeSpacingClass}
   >
     {currentUI.updatedAt?.replace('{DATE}', formatPostDate(updatedDate, format)) ?? `updated ${formatPostDate(updatedDate, format)}`}

@@ -1,4 +1,5 @@
 import type { FriendAlbum, FriendTrack } from '@/data/friend-links'
+import { formatPostDate } from './date'
 
 export const RECORDS_API = 'https://api.theslowmo.com/records/v1'
 
@@ -19,18 +20,12 @@ export function parseDay(value?: string): Date | undefined {
   return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
 }
 
-/** 2026-09-30 -> SEP 30, 2026 */
 export function formatRecordDate(value?: string): string {
   const date = parseDay(value)
   if (!date) {
     return ''
   }
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date).toUpperCase()
+  return formatPostDate(date, 'MMM D YYYY')
 }
 
 export function padNumber(value: number, length = 2): string {

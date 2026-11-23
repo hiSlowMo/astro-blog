@@ -368,6 +368,8 @@ const messages = {
   }
 
   html.dark .search-modal {
+    --search-text: var(--text-heading);
+    --search-muted: var(--text-meta);
     --search-surface: rgba(17, 19, 21, 0.38);
     --search-sheen: rgba(255, 255, 255, 0.045);
     --search-reflection: rgba(255, 255, 255, 0.008);
@@ -560,6 +562,7 @@ const messages = {
 
   .search-modal__result:hover,
   .search-modal__result:focus-visible {
+    --search-text: oklch(var(--un-preset-theme-colors-primary));
     background: var(--search-hover);
   }
 

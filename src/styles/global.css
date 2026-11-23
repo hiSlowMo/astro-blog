@@ -28,6 +28,8 @@
 :root.dark {
   --status-success: #6ee7b7;
   --status-error: #fda29b;
+  --text-heading: color-mix(in oklab, oklch(var(--un-preset-theme-colors-primary)) 35%, oklch(var(--un-preset-theme-colors-secondary)));
+  --text-meta: color-mix(in oklab, oklch(var(--un-preset-theme-colors-secondary)) 88%, oklch(var(--un-preset-theme-colors-background)));
 }
 
 html, body {
@@ -49,7 +51,7 @@ h1, h2, h3, h4 {
 
 .page-title, .section-label, .module-title {
   font-family: var(--font-sans);
-  color: oklch(var(--un-preset-theme-colors-primary));
+  color: var(--text-heading, oklch(var(--un-preset-theme-colors-primary)));
   overflow-wrap: anywhere;
 }
 
@@ -73,7 +75,7 @@ h1, h2, h3, h4 {
 }
 
 .section-label > small {
-  color: oklch(var(--un-preset-theme-colors-secondary));
+  color: var(--text-meta, oklch(var(--un-preset-theme-colors-secondary)));
   font: 450 var(--label-size)/1.4 var(--font-mono);
   letter-spacing: .055em;
 }
@@ -82,6 +84,16 @@ h1, h2, h3, h4 {
   font-size: var(--module-title-size);
   font-weight: 550;
   line-height: 1.5;
+}
+
+@media (hover: hover) {
+  :root.dark .entry-link:hover {
+    color: oklch(var(--un-preset-theme-colors-primary));
+  }
+}
+
+:root.dark .entry-link:focus-visible {
+  color: oklch(var(--un-preset-theme-colors-primary));
 }
 
 .font-time,

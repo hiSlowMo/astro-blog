@@ -106,51 +106,6 @@ html[data-theme-changing] [data-disable-theme-toggle-transition] {
   }
 }
 
-/* TOC Progressive Animation */
-@keyframes fadeInUpMini {
-  from {
-    opacity: 0;
-    transform: translateY(1.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (min-width: 1536px) {
-  #toc-desktop-icon {
-    opacity: 0;
-    animation: fadeInUpMini 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
-    animation-delay: 0.175s;
-  }
-
-  #toc-links-list > * {
-    opacity: 0;
-    animation: fadeInUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
-  }
-
-  #toc-links-list > *:nth-child(1) { animation-delay: 0.175s; }
-  #toc-links-list > *:nth-child(2) { animation-delay: 0.2s; }
-  #toc-links-list > *:nth-child(3) { animation-delay: 0.225s; }
-  #toc-links-list > *:nth-child(4) { animation-delay: 0.25s; }
-  #toc-links-list > *:nth-child(5) { animation-delay: 0.275s; }
-  #toc-links-list > *:nth-child(6) { animation-delay: 0.3s; }
-  #toc-links-list > *:nth-child(7) { animation-delay: 0.325s; }
-  #toc-links-list > *:nth-child(8) { animation-delay: 0.35s; }
-  #toc-links-list > *:nth-child(9) { animation-delay: 0.375s; }
-  #toc-links-list > *:nth-child(10) { animation-delay: 0.4s; }
-  #toc-links-list > *:nth-child(11) { animation-delay: 0.425s; }
-  #toc-links-list > *:nth-child(12) { animation-delay: 0.45s; }
-  #toc-links-list > *:nth-child(13) { animation-delay: 0.475s; }
-  #toc-links-list > *:nth-child(14) { animation-delay: 0.5s; }
-  #toc-links-list > *:nth-child(15) { animation-delay: 0.525s; }
-  #toc-links-list > *:nth-child(16) { animation-delay: 0.55s; }
-  #toc-links-list > *:nth-child(17) { animation-delay: 0.575s; }
-  #toc-links-list > *:nth-child(18) { animation-delay: 0.6s; }
-  #toc-links-list > *:nth-child(n+19) { animation-delay: 0.625s; }
-}
-
 /* Back Button Animation */
 @keyframes fadeInLeft {
   from {
@@ -183,8 +138,6 @@ html.reduce-motion {
   #toc-container,
   #post-date,
   #post-content > *,
-  #toc-desktop-icon,
-  #toc-links-list > *,
   #back-button {
     opacity: 1;
     transform: translate(0);

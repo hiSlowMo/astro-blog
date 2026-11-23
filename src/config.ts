@@ -66,7 +66,7 @@ export const themeConfig: ThemeConfig = {
     // post font style
     fontStyle: 'sans', // sans | serif
     // post date format
-    dateFormat: 'YYYY-MM-DD', // YYYY-MM-DD | MM-DD-YYYY | DD-MM-YYYY | MMM D YYYY | D MMM YYYY
+    dateFormat: 'MMM D YYYY', // YYYY-MM-DD | MM-DD-YYYY | DD-MM-YYYY | MMM D YYYY | D MMM YYYY
     // enable table of contents
     toc: true, // true | false
     // enable katex math rendering

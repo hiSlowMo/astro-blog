@@ -1,5 +1,6 @@
 ---
 import type { TocPanelProps } from '@/components/Widgets/toc-shared'
+import TocIcon from '@/assets/icons/toc-icon.svg'
 import { buildTocTree } from '@/components/Widgets/toc-shared'
 import TocTreeList from '@/components/Widgets/TocTreeList.astro'
 
@@ -24,19 +25,18 @@ const tocTree = buildTocTree(filteredHeadings)
       <div class="toc-heading-row">
         <button
           type="button"
-          class="toc-toggle-label"
+          class="toc-toggle-label toc-icon-button"
           data-toc-disclosure
           aria-controls="toc-accordion-wrapper"
-          aria-expanded="true"
-          aria-label="收起目录"
+          aria-expanded="false"
+          aria-label="展开目录"
         >
-          <span id="toc-desktop-title">
-            {currentUI.toc}
-          </span>
+          <TocIcon width="18" height="18" fill="currentColor" aria-hidden="true" />
+          <span class="sr-only">{currentUI.toc}</span>
         </button>
       </div>
 
-      <div id="toc-accordion-wrapper" class="toc-disclosure-body" data-open="1">
+      <div id="toc-accordion-wrapper" class="toc-disclosure-body" data-open="0" aria-hidden="true" inert>
         <div class="toc-disclosure-clip">
           <nav
             id="toc-accordion-content"
@@ -45,7 +45,6 @@ const tocTree = buildTocTree(filteredHeadings)
             <TocTreeList
               id="toc-links-list"
               nodes={tocTree}
-              isRoot
             />
           </nav>
         </div>
@@ -102,6 +101,7 @@ const tocTree = buildTocTree(filteredHeadings)
 
 <style>
   #toc-container {
+    --toc-fade-duration: 320ms;
     --toc-side-offset: clamp(0.9rem, 1.35vw, 1.6rem);
   }
 
@@ -127,7 +127,7 @@ const tocTree = buildTocTree(filteredHeadings)
     transition: opacity var(--motion-fast, 160ms) ease;
   }
 
-  .toc-toggle-label:hover {
+  .toc-toggle-label:not(.toc-icon-button):hover {
     opacity: 0.82;
   }
 
@@ -136,7 +136,19 @@ const tocTree = buildTocTree(filteredHeadings)
     outline-offset: 3px;
   }
 
-  #toc-desktop-title,
+  .toc-icon-button {
+    min-width: 2rem;
+    min-height: 2rem;
+    justify-content: center;
+    margin-inline-start: calc((18px - 2rem) / 2);
+    color: color-mix(in oklab, oklch(var(--un-preset-theme-colors-primary)) 55%, oklch(var(--un-preset-theme-colors-background)));
+    transition: color var(--toc-fade-duration) linear;
+  }
+
+  .toc-icon-button:is([aria-expanded='true'], :hover, :focus-visible) {
+    color: oklch(var(--un-preset-theme-colors-primary));
+  }
+
   .post-series-heading {
     font-family: var(--font-sans);
     font-size: 1.22rem;
@@ -291,13 +303,31 @@ const tocTree = buildTocTree(filteredHeadings)
     overflow: hidden;
   }
 
+  #toc-accordion-wrapper {
+    transition: grid-template-rows 0s, visibility 0s;
+  }
+
+  #toc-accordion-wrapper[data-open='0'] {
+    --toc-hidden-ink: oklch(var(--un-preset-theme-colors-background));
+    transition-delay: var(--toc-fade-duration);
+  }
+
   @media (prefers-reduced-motion: reduce) {
+    #toc-container {
+      --toc-fade-duration: 0s;
+    }
+    .toc-icon-button,
     #toc-accordion-wrapper,
     #series-accordion-wrapper {
       transition: none;
     }
   }
 
+  :global(html.reduce-motion) #toc-container {
+    --toc-fade-duration: 0s;
+  }
+
+  :global(html.reduce-motion) .toc-icon-button,
   :global(html.reduce-motion) #toc-accordion-wrapper,
   :global(html.reduce-motion) #series-accordion-wrapper {
     transition: none;
@@ -308,26 +338,67 @@ const tocTree = buildTocTree(filteredHeadings)
 const isDesktopToc = window.matchMedia('(min-width: 1100px)')
 
 let ticking = false
-let lastFirstActiveSlug = ''
-let headingEntries: Array<{ slug: string, depth: number, el: HTMLElement }> = []
+let activeSlug = ''
+let headingOffset = 0
+let headingEntries: Array<{ slug: string, el: HTMLElement }> = []
 let linksBySlug = new Map<string, HTMLAnchorElement[]>()
 let disclosureController: AbortController | undefined
 
 function setupDisclosures() {
   disclosureController?.abort()
   disclosureController = new AbortController()
+  const { signal } = disclosureController
   document.querySelectorAll<HTMLButtonElement>('#toc-container [data-toc-disclosure]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const panel = document.getElementById(button.getAttribute('aria-controls') || '')
-      if (!panel)
-        return
-      const open = panel.dataset.open !== '1'
+    const panel = document.getElementById(button.getAttribute('aria-controls') || '')
+    if (!panel)
+      return
+    const setOpen = (open: boolean) => {
       panel.dataset.open = open ? '1' : '0'
       button.setAttribute('aria-expanded', String(open))
       button.setAttribute('aria-label', `${open ? '收起' : '展开'}${button.textContent?.trim()}`)
       panel.setAttribute('aria-hidden', String(!open))
       panel.inert = !open
-    }, { signal: disclosureController!.signal })
+    }
+
+    let pinned = false
+    button.addEventListener('click', () => {
+      pinned = panel.dataset.open !== '1'
+      setOpen(pinned)
+    }, { signal })
+
+    const article = button.closest('article')
+    if (panel.id !== 'toc-accordion-wrapper' || !article)
+      return
+    let openedOnHover = false
+    let lastX: number | undefined
+    let lastY: number | undefined
+    document.addEventListener('pointermove', (event) => {
+      if (!isDesktopToc.matches || event.pointerType !== 'mouse' || (event.clientX === lastX && event.clientY === lastY))
+        return
+      lastX = event.clientX
+      lastY = event.clientY
+      if (openedOnHover || !(event.target instanceof Node) || !article.contains(event.target))
+        return
+      openedOnHover = true
+      setOpen(true)
+    }, { signal })
+    article.addEventListener('pointerleave', () => {
+      openedOnHover = false
+      if (!pinned && !article.matches(':focus-within'))
+        setOpen(false)
+    }, { signal })
+    article.addEventListener('focusin', (event) => {
+      if (isDesktopToc.matches && event.target instanceof Element && !event.target.closest('#toc-container'))
+        setOpen(true)
+    }, { signal })
+    article.addEventListener('focusout', (event) => {
+      if (!pinned && !article.matches(':hover') && !(event.relatedTarget instanceof Node && article.contains(event.relatedTarget)))
+        setOpen(false)
+    }, { signal })
+    isDesktopToc.addEventListener('change', () => {
+      pinned = false
+      setOpen(false)
+    }, { signal })
   })
 }
 
@@ -339,6 +410,7 @@ function collectTocEntries() {
   const seenSlugs = new Set<string>()
 
   allTocLinks.forEach((link) => {
+    link.removeAttribute('aria-current')
     const slug = link.dataset.tocSlug
     if (!slug)
       return
@@ -351,11 +423,16 @@ function collectTocEntries() {
       seenSlugs.add(slug)
       const headingEl = document.getElementById(slug)
       if (headingEl) {
-        const depth = Number(link.dataset.tocDepth) || 2
-        headingEntries.push({ slug, depth, el: headingEl })
+        headingEntries.push({ slug, el: headingEl })
       }
     }
   })
+  measureHeadingOffset()
+}
+
+function measureHeadingOffset() {
+  const first = headingEntries[0]
+  headingOffset = first ? parseFloat(getComputedStyle(first.el).scrollMarginTop) || 0 : 0
 }
 
 function updateActiveTocLinks() {
@@ -364,71 +441,22 @@ function updateActiveTocLinks() {
     return
   }
 
-  const viewportTop = 48
-  const viewportBottom = window.innerHeight - 48
-  const postContent = document.getElementById('post-content')
-  const contentBottom = postContent
-    ? postContent.getBoundingClientRect().bottom
-    : document.documentElement.getBoundingClientRect().bottom
-
-  const activeSlugs = new Set<string>()
-  let fallbackIndex = -1
-
-  for (let i = 0; i < headingEntries.length; i++) {
-    const current = headingEntries[i]
-    let nextSameOrShallower: { slug: string, depth: number, el: HTMLElement } | undefined
-    for (let j = i + 1; j < headingEntries.length; j++) {
-      if (headingEntries[j].depth <= current.depth) {
-        nextSameOrShallower = headingEntries[j]
-        break
-      }
-    }
-
-    const top = current.el.getBoundingClientRect().top
-    const bottom = nextSameOrShallower
-      ? nextSameOrShallower.el.getBoundingClientRect().top
-      : contentBottom
-
-    if (top <= viewportTop + 24) {
-      fallbackIndex = i
-    }
-
-    if (bottom > viewportTop && top < viewportBottom) {
-      activeSlugs.add(current.slug)
-    }
+  ticking = false
+  let current = headingEntries[0]
+  for (const entry of headingEntries) {
+    if (entry.el.getBoundingClientRect().top > headingOffset + 1)
+      break
+    current = entry
   }
 
-  if (activeSlugs.size === 0 && fallbackIndex >= 0) {
-    const fallback = headingEntries[fallbackIndex]
-    activeSlugs.add(fallback.slug)
-    let targetDepth = fallback.depth
-    for (let k = fallbackIndex - 1; k >= 0; k--) {
-      if (headingEntries[k].depth < targetDepth) {
-        activeSlugs.add(headingEntries[k].slug)
-        targetDepth = headingEntries[k].depth
-      }
-    }
-  }
-
-  let firstActiveLink: HTMLAnchorElement | null = null
-  let firstActiveSlug = ''
-
-  for (const [slug, links] of linksBySlug.entries()) {
-    const isActive = activeSlugs.has(slug)
-    for (const link of links) {
-      link.classList.toggle('is-active', isActive)
-      if (isActive)
-        link.setAttribute('aria-current', 'location')
-      else
-        link.removeAttribute('aria-current')
-      if (isActive && !firstActiveLink && link.closest('#toc-links-list')) {
-        firstActiveLink = link
-        firstActiveSlug = slug
-      }
-    }
-  }
-
-  if (isDesktopToc.matches && firstActiveLink && firstActiveSlug !== lastFirstActiveSlug) {
+  if (current.slug === activeSlug)
+    return
+  linksBySlug.get(activeSlug)?.forEach(link => link.removeAttribute('aria-current'))
+  activeSlug = current.slug
+  const links = linksBySlug.get(activeSlug) ?? []
+  links.forEach(link => link.setAttribute('aria-current', 'location'))
+  const firstActiveLink = links.find(link => link.closest('#toc-links-list'))
+  if (isDesktopToc.matches && firstActiveLink) {
     const nav = firstActiveLink.closest<HTMLElement>('#toc-accordion-content')
     if (nav) {
       const linkRect = firstActiveLink.getBoundingClientRect()
@@ -436,10 +464,7 @@ function updateActiveTocLinks() {
       if (linkRect.top < navRect.top || linkRect.bottom > navRect.bottom)
         nav.scrollTop += linkRect.top - navRect.top - nav.clientHeight / 2 + linkRect.height / 2
     }
-    lastFirstActiveSlug = firstActiveSlug
   }
-
-  ticking = false
 }
 
 function handleScroll() {
@@ -449,10 +474,15 @@ function handleScroll() {
   }
 }
 
+function handleResize() {
+  measureHeadingOffset()
+  handleScroll()
+}
+
 function setupAutoScroll() {
   setupDisclosures()
   ticking = false
-  lastFirstActiveSlug = ''
+  activeSlug = ''
   collectTocEntries()
 
   if (headingEntries.length === 0) {
@@ -461,16 +491,16 @@ function setupAutoScroll() {
 
   updateActiveTocLinks()
   document.addEventListener('scroll', handleScroll, { passive: true })
-  window.addEventListener('resize', handleScroll, { passive: true })
+  window.addEventListener('resize', handleResize, { passive: true })
 }
 
 function cleanupAutoScroll() {
   disclosureController?.abort()
   disclosureController = undefined
   document.removeEventListener('scroll', handleScroll)
-  window.removeEventListener('resize', handleScroll)
+  window.removeEventListener('resize', handleResize)
   ticking = false
-  lastFirstActiveSlug = ''
+  activeSlug = ''
   headingEntries = []
   linksBySlug.clear()
 }

@@ -5,6 +5,8 @@ import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { ui } from '@/i18n/ui'
 import Layout from '@/layouts/Layout.astro'
+import { siteTimeZone } from '@/utils/calendar.mjs'
+import { formatPostDate } from '@/utils/date'
 import { hasMathContent } from '@/utils/math'
 
 export async function getStaticPaths() {
@@ -31,24 +33,9 @@ const renderedMoments = await Promise.all(
   }),
 )
 
-function formatMomentDate(date: Date) {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Shanghai',
-  }).formatToParts(date)
-
-  const get = (type: string) => parts.find(p => p.type === type)?.value ?? ''
-  return {
-    month: `${get('year')}-${get('month')}`,
-    day: get('day'),
-    clock: `${get('hour')}:${get('minute')}`,
-  }
-}
+const clockFormat = new Intl.DateTimeFormat('en-GB', {
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: siteTimeZone,
+})
 ---
 
 <Layout
@@ -74,15 +61,18 @@ function formatMomentDate(date: Date) {
     : (
         <ul class="moments-list">
           {renderedMoments.map(({ moment, Content }, index) => {
-            const { month, day, clock } = formatMomentDate(moment.data.published)
-            const timestamp = `${month}-${day} ${clock}`
+            const date = moment.data.published
+            const [month, day] = formatPostDate(date, 'MMM D').split(' ')
+            const year = formatPostDate(date, 'YYYY-MM-DD').slice(0, 4)
+            const clock = clockFormat.format(date)
+            const timestamp = `${formatPostDate(date, 'MMM D YYYY')} · ${clock}`
             return (
             <li id={`moment-${moment.id}`} class:list={['moment-card', { 'moment-lead': index === 0 }]} tabindex="0">
               {index === 0 && (
                 <time class="moment-dateline font-time" datetime={moment.data.published.toISOString()} aria-label={timestamp}>
                   <span>{month}</span>
                   <strong>{day}</strong>
-                  <span>{clock}</span>
+                  <span>{year} · {clock}</span>
                 </time>
               )}
               <div class="no-heti moment-content">
@@ -134,7 +124,7 @@ function formatMomentDate(date: Date) {
     .moments-count, .moment-footer {
       font-size: .85rem;
       line-height: 1.5;
-      color: oklch(var(--un-preset-theme-colors-secondary));
+      color: var(--text-meta, oklch(var(--un-preset-theme-colors-secondary)));
     }
 
     .moments-count {
@@ -294,7 +284,7 @@ function formatMomentDate(date: Date) {
       display: grid;
       justify-items: start;
       padding: .65rem .85rem;
-      background: oklch(var(--un-preset-theme-colors-primary));
+      background: var(--text-meta, oklch(var(--un-preset-theme-colors-primary)));
       color: oklch(var(--un-preset-theme-colors-background));
       font-size: .75rem;
       font-variant-numeric: tabular-nums;

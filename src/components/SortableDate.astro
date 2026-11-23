@@ -14,11 +14,11 @@ interface Props {
 
 const { date, updatedDate, format = themeConfig.global.dateFormat, class: className } = Astro.props
 const { currentLang } = getPageInfo(Astro.url.pathname)
-const createdISO = date.toISOString().split('T')[0]
-const updatedISO = (updatedDate ?? date).toISOString().split('T')[0]
-const createdTitle = `创建于 ${createdISO}`
+const createdISO = formatPostDate(date, 'YYYY-MM-DD')
+const updatedISO = formatPostDate(updatedDate ?? date, 'YYYY-MM-DD')
+const createdTitle = `创建于 ${formatPostDate(date, themeConfig.global.dateFormat)}`
 const updatedTitle = updatedDate
-  ? ui[currentLang].updatedAt.replace('{DATE}', updatedISO)
+  ? ui[currentLang].updatedAt.replace('{DATE}', formatPostDate(updatedDate, themeConfig.global.dateFormat))
   : `${createdTitle}（暂无更新）`
 ---
 

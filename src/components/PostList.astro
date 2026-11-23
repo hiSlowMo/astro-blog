@@ -30,7 +30,7 @@ const { posts, lang } = Astro.props
         <div class="post-copy">
           <h3>
             <a
-              class="module-title text-pretty"
+              class="module-title entry-link text-pretty"
               href={getPostPath(slug, lang)}
               transition:name={`post-${slug}${lang ? `-${lang}` : ''}`}
               data-disable-theme-toggle-transition
@@ -47,7 +47,7 @@ const { posts, lang } = Astro.props
             {(post.data.pin ?? 0) > 0 && (
               <PinIcon aria-hidden="true" class="w-1em" fill="currentColor" />
             )}
-            {post.data.status && <StatusBadge status={post.data.status} dotOnly />}
+            {post.data.status && <StatusBadge status={post.data.status} />}
           </span>
           <div class="heti post-summary mt-1 hidden sm:block">
             <p>{getPostDescription(post, 'list')}</p>
@@ -77,7 +77,7 @@ const { posts, lang } = Astro.props
     align-items: center;
     gap: .3em;
     padding-inline-start: .35em;
-    color: oklch(var(--un-preset-theme-colors-secondary));
+    color: var(--text-meta, oklch(var(--un-preset-theme-colors-secondary)));
     font-size: .85rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;

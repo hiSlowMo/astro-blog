@@ -8,6 +8,7 @@ import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { getPostPath, getTagPath } from '@/i18n/path'
 import { ui } from '@/i18n/ui'
 import Layout from '@/layouts/Layout.astro'
+import { calendarDay } from '@/utils/calendar.mjs'
 import { getPostsByYear } from '@/utils/content'
 import { countMarkdownWords } from '@/utils/markdown-content.mjs'
 
@@ -123,19 +124,19 @@ function formatWordCount(count: number) {
                 return (
                   <li
                     class="archive-item"
-                    data-month-break={index > 0 && post.data.published.getUTCMonth() !== posts[index - 1].data.published.getUTCMonth() ? '' : undefined}
+                    data-month-break={index > 0 && calendarDay(post.data.published).slice(0, 7) !== calendarDay(posts[index - 1].data.published).slice(0, 7) ? '' : undefined}
                     data-categories={categories.join(',')}
                     data-created={post.data.published.valueOf()}
                     data-updated={(post.data.updated ?? post.data.published).valueOf()}
                   >
                     <SortableDate class="archive-date font-time" date={post.data.published} updatedDate={post.data.updated} format="MMM D" />
 
-                    <a class="archive-title module-title" href={getPostPath(slug, currentLang)}>
+                    <a class="archive-title module-title entry-link" href={getPostPath(slug, currentLang)}>
                       {post.data.title}
                     </a>
                     {(post.data.status || tags.length > 0) && (
                       <div class="archive-meta">
-                        {post.data.status && <StatusBadge status={post.data.status} compact />}
+                        {post.data.status && <StatusBadge status={post.data.status} />}
                         {tags.length > 0 && (
                           <div class="archive-tags">
                             {tags.slice(0, 2).map((tag, index) => (
@@ -505,7 +506,7 @@ function formatWordCount(count: number) {
   }
 
   .archive-item[data-month-break] .archive-date {
-    color: oklch(var(--un-preset-theme-colors-primary));
+    color: var(--text-heading, oklch(var(--un-preset-theme-colors-primary)));
     font-weight: 600;
   }
 
@@ -538,7 +539,7 @@ function formatWordCount(count: number) {
     gap: .1rem .45rem;
     padding-top: .18rem;
     font-size: .8rem;
-    color: oklch(var(--un-preset-theme-colors-secondary));
+    color: var(--text-meta, oklch(var(--un-preset-theme-colors-secondary)));
     white-space: nowrap;
   }
 

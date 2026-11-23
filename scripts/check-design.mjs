@@ -153,8 +153,8 @@ async function checkRecentYears(page) {
     const consistent = await page.locator('.post-item:not(.is-hidden)').evaluateAll((rows, key) => rows.every((row) => {
       const date = new Date(Number(row.dataset[key]))
       const time = row.querySelector('time')
-      return String(date.getUTCFullYear()) === row.closest('[data-year]').dataset.year
-        && time.textContent === date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+      return date.toLocaleDateString('en-US', { year: 'numeric', timeZone: 'Asia/Shanghai' }) === row.closest('[data-year]').dataset.year
+        && time.textContent === date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'Asia/Shanghai' })
         && row.querySelector('.post-meta').getBoundingClientRect().right <= row.getBoundingClientRect().right + 1
     }), key)
     assert(consistent, `Recent entries must align dates and group by ${key} year`)

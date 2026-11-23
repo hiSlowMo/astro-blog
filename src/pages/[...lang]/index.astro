@@ -7,6 +7,7 @@ import { getUsedCategoryFilters } from '@/data/post-categories'
 import { getLangRouteParam } from '@/i18n/lang'
 import { getPostPath } from '@/i18n/path'
 import Layout from '@/layouts/Layout.astro'
+import { calendarYear } from '@/utils/calendar.mjs'
 import { getPostCoverURL, getPosts } from '@/utils/content'
 import { formatPostDate } from '@/utils/date'
 import { getPostDescription } from '@/utils/description'
@@ -22,8 +23,8 @@ const { currentLang } = getPageInfo(Astro.url.pathname)
 const [latest, ...recentPosts] = await getPosts(currentLang)
 const categoryFilters = getUsedCategoryFilters(recentPosts)
 const recentYears = [...new Set(recentPosts.flatMap(({ data }) => [
-  data.published.getUTCFullYear(),
-  (data.updated ?? data.published).getUTCFullYear(),
+  calendarYear(data.published),
+  calendarYear(data.updated ?? data.published),
 ]))].sort((first, second) => second - first)
 const thumbnails = import.meta.glob<string>('/src/assets/post-thumbnails/*.webp', { eager: true, query: '?url', import: 'default' })
 const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/src/assets/post-thumbnails/${latest.id}.webp`])
@@ -116,7 +117,7 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
     </section>
 
     {recentYears.map((year) => {
-      const entries = recentPosts.filter(post => post.data.published.getUTCFullYear() === year)
+      const entries = recentPosts.filter(post => calendarYear(post.data.published) === year)
       return (
         <section class:list={['post-year-section', { 'is-hidden': !entries.length }]} data-year={year} inert={!entries.length}>
           <YearWatermark year={year} showAge={false} />
@@ -184,6 +185,15 @@ const thumbnail = latest && (getPostCoverURL(latest.data.cover) || thumbnails[`/
   #latest-label small {
     color: inherit;
     font-size: .7rem;
+  }
+
+  :global(html.dark) #latest-label {
+    background: var(--text-meta);
+  }
+
+  :global(html.dark) .latest-title {
+    color: color-mix(in oklab, oklch(var(--un-preset-theme-colors-primary)) 75%, oklch(var(--un-preset-theme-colors-secondary)));
+    font-weight: 700;
   }
 
   .latest-date {

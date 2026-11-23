@@ -1,10 +1,11 @@
 ---
 import StatusBadge from '@/components/StatusBadge.astro'
-import { allLocales } from '@/config'
+import { allLocales, themeConfig } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { getLocalizedPath, getPostPath } from '@/i18n/path'
 import Layout from '@/layouts/Layout.astro'
 import { getAllTags, getPostsByTag, getTagSupportedLangs } from '@/utils/content'
+import { formatPostDate } from '@/utils/date'
 
 export async function getStaticPaths() {
   const paths = await Promise.all(allLocales.map(async (lang) => {
@@ -41,22 +42,22 @@ const supportedLangs = await getTagSupportedLangs(tag)
     <ul class="tag-post-list">
       {posts.map((post) => {
         const slug = post.data.abbrlink || post.id
-        const date = post.data.published.toISOString().split('T')[0]
+        const date = post.data.published
         return (
           <li class="tag-post">
-            <time class="tag-post-date font-time" datetime={date}>{date}</time>
+            <time class="tag-post-date font-time" datetime={date.toISOString()}>{formatPostDate(date, themeConfig.global.dateFormat)}</time>
             <div class="tag-post-title">
               <a
-                class="module-title"
+                class="module-title entry-link"
                 href={getPostPath(slug, currentLang)}
                 transition:name={`post-${slug}${currentLang ? `-${currentLang}` : ''}`}
                 data-disable-theme-toggle-transition
               >
                 {post.data.title}
               </a>
-              {post.data.status && <StatusBadge status={post.data.status} compact />}
+              {post.data.status && <StatusBadge status={post.data.status} />}
             </div>
-            <span class="tag-post-reading font-time">{post.remarkPluginFrontmatter.minutes} 分钟</span>
+            <span class="tag-post-reading font-time" lang="en">{post.remarkPluginFrontmatter.minutes}min</span>
           </li>
         )
       })}
@@ -89,7 +90,7 @@ const supportedLangs = await getTagSupportedLangs(tag)
   .tag-total {
     padding: .25rem .55rem .3rem 1rem;
     mask-image: var(--cut-start);
-    background: oklch(var(--un-preset-theme-colors-primary));
+    background: var(--text-meta, oklch(var(--un-preset-theme-colors-primary)));
     color: oklch(var(--un-preset-theme-colors-background));
     font-size: .8rem;
     line-height: 1;
@@ -158,6 +159,10 @@ const supportedLangs = await getTagSupportedLangs(tag)
   .tag-post-title :global(.status-badge) {
     font-size: 0.8125rem;
     color: oklch(var(--un-preset-theme-colors-secondary) / 0.85);
+  }
+
+  .tag-post-title :global(.status-hint) {
+    inset-inline: auto 100%;
   }
 
   .tag-post-title a:hover {

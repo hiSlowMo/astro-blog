@@ -1,3 +1,5 @@
+import { calendarYear } from './calendar.mjs'
+
 /**
  * @template {{ data: { published: Date, pin?: number } }} T
  * @param {T[]} posts
@@ -9,7 +11,7 @@ export function groupPostsByYear(posts, { includePinned = false } = {}) {
   for (const post of posts) {
     if (!includePinned && post.data.pin)
       continue
-    const year = post.data.published.getFullYear()
+    const year = calendarYear(post.data.published)
     const entries = years.get(year) ?? []
     entries.push(post)
     years.set(year, entries)

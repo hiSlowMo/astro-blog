@@ -63,9 +63,17 @@ const SubtitleTag = isPost ? 'div' : 'h2'
 </header>
 
 <style>
+  :global(html.dark) #site-title-link {
+    color: var(--text-heading);
+  }
+
+  :global(html.dark) #site-title-link:is(:hover, :focus-visible) {
+    color: oklch(var(--un-preset-theme-colors-primary));
+  }
+
   .site-sidebar-header {
     padding-top: .65rem;
-    border-top: var(--rule-masthead) solid oklch(var(--un-preset-theme-colors-primary));
+    border-top: var(--rule-masthead) solid var(--text-heading, oklch(var(--un-preset-theme-colors-primary)));
   }
 
   .site-sidebar-header h1 {

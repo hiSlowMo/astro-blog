@@ -2,6 +2,7 @@
 import { themeConfig } from '@/config'
 import { getLangFromPath } from '@/i18n/lang'
 import { getLocalizedPath } from '@/i18n/path'
+import { formatPostDate } from '@/utils/date'
 import stats from '../generated/stats.json'
 
 const { author } = themeConfig.site
@@ -51,7 +52,7 @@ const socialLinks = links.map(({ name, url }) => {
   }
 })
 
-const statsDate = stats.updatedAtLocal || stats.updatedAt.slice(0, 10)
+const statsDate = formatPostDate(new Date(stats.updatedAt), themeConfig.global.dateFormat)
 const startDate = new Date(themeConfig.site.startDate)
 const now = new Date()
 const uptimeDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1

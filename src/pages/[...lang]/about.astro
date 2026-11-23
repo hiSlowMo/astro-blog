@@ -58,7 +58,7 @@ const hasMath = hasMathContent(aboutEntry?.body, aboutEntry?.filePath)
   .about-opening {
     display: inline-block;
     padding-inline: .27em;
-    background: oklch(var(--un-preset-theme-colors-primary));
+    background: var(--text-meta, oklch(var(--un-preset-theme-colors-primary)));
     color: oklch(var(--un-preset-theme-colors-background));
     mask-image: var(--cut-start), var(--cut-end);
     mask-composite: intersect;
@@ -111,7 +111,7 @@ const hasMath = hasMathContent(aboutEntry?.body, aboutEntry?.filePath)
   }
 
   .about-topics strong {
-    color: oklch(var(--un-preset-theme-colors-primary));
+    color: var(--text-heading, oklch(var(--un-preset-theme-colors-primary)));
     font-weight: 600;
   }
 
@@ -145,7 +145,7 @@ const hasMath = hasMathContent(aboutEntry?.body, aboutEntry?.filePath)
   }
 
   .about-contacts a strong {
-    color: oklch(var(--un-preset-theme-colors-primary));
+    color: var(--text-heading, oklch(var(--un-preset-theme-colors-primary)));
     font-weight: 500;
     overflow-wrap: anywhere;
   }
