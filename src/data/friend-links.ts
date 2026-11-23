@@ -158,6 +158,34 @@ export const friendLinks: FriendAlbum[] = [
       },
     ],
   },
+  {
+    catalogNo: '005',
+    name: 'Mark的自留地',
+    url: 'https://markxu.icu/',
+    description: '这里是 Mark Xu 的个人博客，记录技术与生活。',
+    artist: 'Mark Xu',
+    icon: 'https://markxu.icu/favicon-32.png',
+    iconSize: 32,
+    rss: 'https://markxu.icu/feeds/zh/atom.xml',
+    addedAt: '2026-11-23',
+    tracks: [
+      {
+        title: '或许我们将来只有文科和工科，看3B1B视频有感',
+        url: 'https://markxu.icu/blog/future-of-liberal-arts-and-engineering-cn',
+        date: '2026-10-25',
+      },
+      {
+        title: '从408操作系统到生产环境：为什么发信号的函数叫 kill，而不是send？',
+        url: 'https://markxu.icu/blog/why-unix-signal-sender-is-called-kill-cn',
+        date: '2026-10-22',
+      },
+      {
+        title: '为什么有的网站有 www，有的没有？-现代配置篇',
+        url: 'https://markxu.icu/blog/why-does-some-website-has-www-2-cn',
+        date: '2026-10-01',
+      },
+    ],
+  },
 ]
 
 export const websiteLinks: FriendLink[] = []
